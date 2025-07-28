@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 final class SuiUrls {
   const SuiUrls._();
 
-  static const String mainnet = "https://mainnet-rpc.sui.chainbase.online/";
+  static const String mainnet = "https://fullnode.mainnet.sui.io";
   static const String testnet = "https://fullnode.testnet.sui.io";
   static const String devnet = "https://fullnode.devnet.sui.io";
 

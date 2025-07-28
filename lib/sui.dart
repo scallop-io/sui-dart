@@ -1,6 +1,8 @@
 library sui;
 
 export 'bcs/sui_bcs.dart';
+export 'bcs/sui_effects.dart';
+export 'bcs/sui_pure.dart';
 export 'builder/transaction_block_data.dart';
 export 'builder/transactions.dart';
 export 'builder/transaction.dart';

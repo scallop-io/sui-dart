@@ -6,27 +6,24 @@ import 'package:sui/bcs/type_tag_serializer.dart';
 import 'package:sui/types/common.dart';
 
 class SuiBcs {
-
   static const SUI_ADDRESS_LENGTH = 32;
 
-	static final U8 = Bcs.u8();
-	static final U16 = Bcs.u16();
-	static final U32 = Bcs.u32();
-	static final U64 = Bcs.u64();
-	static final U128 = Bcs.u128();
-	static final U256 = Bcs.u256();
-	static final ULEB128 = Bcs.uleb128();
+  static final U8 = Bcs.u8();
+  static final U16 = Bcs.u16();
+  static final U32 = Bcs.u32();
+  static final U64 = Bcs.u64();
+  static final U128 = Bcs.u128();
+  static final U256 = Bcs.u256();
+  static final ULEB128 = Bcs.uleb128();
   static final BOOL = Bcs.boolean();
-	static final STRING = Bcs.string();
-  static final VECTOR = Bcs.vector;
+  static final STRING = Bcs.string();
+  static const VECTOR = Bcs.vector;
 
   static BcsType<int, dynamic> unsafe_u64([BcsTypeOptions<int, dynamic>? options]) {
-    return Bcs.u64(
-      BcsTypeOptions(
-        name: 'unsafe_u64',
-        validate: options?.validate,
-      )
-    ).transform(
+    return Bcs.u64(BcsTypeOptions(
+      name: 'unsafe_u64',
+      validate: options?.validate,
+    )).transform(
       input: (dynamic val) => val is int ? val : int.parse(val.toString()),
       output: (BigInt val) => val.toInt(),
     );
@@ -46,8 +43,7 @@ class SuiBcs {
         throw Exception('Invalid Sui address $address');
       }
     },
-    input: (dynamic val) => 
-      val is String ? fromHEX(normalizeSuiAddress(val)) : val,
+    input: (dynamic val) => val is String ? fromHEX(normalizeSuiAddress(val)) : val,
     output: (Uint8List val) => normalizeSuiAddress(toHEX(val)),
   );
 
@@ -80,6 +76,19 @@ class SuiBcs {
     'Receiving': SuiObjectRef,
   });
 
+  static final Owner = Bcs.enumeration('Owner', {
+    'AddressOwner': Address,
+    'ObjectOwner': Address,
+    'Shared': Bcs.struct('Shared', {
+      'initialSharedVersion': Bcs.u64(),
+    }),
+    'Immutable': null,
+    'ConsensusAddressOwner': Bcs.struct('ConsensusAddressOwner', {
+      'owner': Address,
+      'startVersion': Bcs.u64(),
+    }),
+  });
+
   static final CallArg = Bcs.enumeration('CallArg', {
     'Pure': Bcs.struct('Pure', {
       'bytes': Bcs.vector(Bcs.u8()).transform(
@@ -105,8 +114,8 @@ class SuiBcs {
   }) as BcsType<dynamic, dynamic>;
 
   static final TypeTag = InnerTypeTag.transform(
-    input: (dynamic typeTag) => 
-      typeTag is String ? TypeTagSerializer.parseFromStr(typeTag, true) : typeTag,
+    input: (dynamic typeTag) =>
+        typeTag is String ? TypeTagSerializer.parseFromStr(typeTag, true) : typeTag,
     output: (dynamic typeTag) => TypeTagSerializer.tagToString(typeTag),
   );
 
@@ -150,8 +159,7 @@ class SuiBcs {
     }),
     'MakeMoveVec': Bcs.struct('MakeMoveVec', {
       'type': OptionEnum(TypeTag).transform(
-        input: (dynamic val) => 
-          val == null ? {'None': true} : {'Some': val},
+        input: (dynamic val) => val == null ? {'None': true} : {'Some': val},
         output: (Map<String, dynamic> val) => val['Some'],
       ),
       'elements': Bcs.vector(Argument),
@@ -244,6 +252,7 @@ class SuiBcs {
     'Secp256k1': Bcs.fixedArray(64, Bcs.u8()),
     'Secp256r1': Bcs.fixedArray(64, Bcs.u8()),
     'ZkLogin': Bcs.vector(Bcs.u8()),
+    'Passkey': Bcs.vector(Bcs.u8()),
   });
 
   static final PublicKey = Bcs.enumeration('PublicKey', {
@@ -251,6 +260,7 @@ class SuiBcs {
     'Secp256k1': Bcs.fixedArray(33, Bcs.u8()),
     'Secp256r1': Bcs.fixedArray(33, Bcs.u8()),
     'ZkLogin': Bcs.vector(Bcs.u8()),
+    'Passkey': Bcs.fixedArray(33, Bcs.u8()),
   });
 
   static final MultiSigPkMap = Bcs.struct('MultiSigPkMap', {
@@ -279,6 +289,12 @@ class SuiBcs {
     'txSignatures': Bcs.vector(base64String),
   });
 
-  static final SenderSignedData = Bcs.vector(SenderSignedTransaction, BcsTypeOptions(name: 'SenderSignedData'));
+  static final SenderSignedData =
+      Bcs.vector(SenderSignedTransaction, BcsTypeOptions(name: 'SenderSignedData'));
 
+  static final PasskeyAuthenticator = Bcs.struct('PasskeyAuthenticator', {
+    'authenticatorData': Bcs.vector(Bcs.u8()),
+    'clientDataJson': Bcs.string(),
+    'userSignature': Bcs.vector(Bcs.u8()),
+  });
 }

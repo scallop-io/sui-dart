@@ -6,3 +6,5 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   errors:
     invalid_annotation_target: ignore
+    constant_identifier_names: ignore
+    non_constant_identifier_names: ignore

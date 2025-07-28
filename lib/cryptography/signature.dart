@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:sui/bcs/sui_bcs.dart';
@@ -80,6 +79,7 @@ SignaturePubkeyPair parseSerializedSignature(
 ) {
   final bytes = base64Decode(serializedSignature);
   final signatureScheme = SIGNATURE_SCHEME_TO_FLAG.flagToScheme(bytes[0]);
+
   if (signatureScheme == SignatureScheme.MultiSig) {
     final signature = bytes.sublist(1);
     final multisig = MultiSigStruct.fromJson(SuiBcs.MultiSig.parse(signature));
@@ -87,19 +87,19 @@ SignaturePubkeyPair parseSerializedSignature(
   }
 
   if (signatureScheme == SignatureScheme.ZkLogin) {
-		final signatureBytes = bytes.sublist(1);
-		final signature = parseZkLoginSignature(signatureBytes);
-		final iss = extractClaimValue<String>(signature.inputs.issBase64Details, 'iss');
+    final signatureBytes = bytes.sublist(1);
+    final signature = parseZkLoginSignature(signatureBytes);
+    final iss = extractClaimValue<String>(signature.inputs.issBase64Details, 'iss');
     final addressSeed = BigInt.parse(signature.inputs.addressSeed);
-		final address = computeZkLoginAddressFromSeed(addressSeed, iss);
+    final address = computeZkLoginAddressFromSeed(addressSeed, iss);
     final zkLgoin = {
-				"inputs": signature.inputs,
-				"maxEpoch": signature.maxEpoch,
-				"userSignature": signature.userSignature,
-				"iss": iss,
-				"address": address,
-        "addressSeed": addressSeed,
-		};
+      "inputs": signature.inputs,
+      "maxEpoch": signature.maxEpoch,
+      "userSignature": signature.userSignature,
+      "iss": iss,
+      "address": address,
+      "addressSeed": addressSeed,
+    };
     return SignaturePubkeyPair(signatureScheme, bytes, zkLogin: zkLgoin);
   }
 
