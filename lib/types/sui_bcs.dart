@@ -1,4 +1,3 @@
-
 import 'package:sui/types/objects.dart';
 
 /// A reference to a shared object.
@@ -7,7 +6,7 @@ class SharedObjectRef {
   String objectId;
 
   /// The version the object was shared at
-  dynamic initialSharedVersion;
+  int initialSharedVersion;
 
   /// Whether reference is mutable
   bool mutable;
@@ -35,12 +34,7 @@ class StructTag {
   StructTag(this.address, this.module, this.name, this.typeParams);
 
   Map<String, dynamic> toJson() {
-    return {
-      "address": address,
-      "module": module,
-      "name": name,
-      "typeParams": typeParams
-    };
+    return {"address": address, "module": module, "name": name, "typeParams": typeParams};
   }
 }
 
