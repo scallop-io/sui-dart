@@ -361,12 +361,12 @@ class Transaction {
     return add(Commands.mergeCoins(destination, sources));
   }
 
-  TransactionResult publish(List<String> modules, List<String> dependencies) {
+  TransactionResult publish(List<dynamic> modules, List<String> dependencies) {
     return add(Commands.publish(modules: modules, dependencies: dependencies));
   }
 
   TransactionResult upgrade({
-    required List<String> modules,
+    required List<dynamic> modules,
     required List<String> dependencies,
     required String packageId,
     required dynamic ticket,
