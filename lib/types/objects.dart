@@ -10,7 +10,8 @@ class SuiObjectRef {
   /// Object version
   int version;
 
-  SuiObjectRef(this.digest, this.objectId, this.version);
+  SuiObjectRef(this.digest, this.objectId, final dynamic version)
+      : this.version = version is String ? int.parse(version) : version;
 
   factory SuiObjectRef.fromJson(dynamic data) {
     return SuiObjectRef(data['digest'], data['objectId'], int.parse(data['version'].toString()));

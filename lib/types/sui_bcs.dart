@@ -11,7 +11,9 @@ class SharedObjectRef {
   /// Whether reference is mutable
   bool mutable;
 
-  SharedObjectRef(this.objectId, this.initialSharedVersion, this.mutable);
+  SharedObjectRef(this.objectId, final dynamic initialSharedVersion, this.mutable)
+      : this.initialSharedVersion =
+            initialSharedVersion is String ? int.parse(initialSharedVersion) : initialSharedVersion;
 }
 
 typedef ObjectArg = dynamic;
