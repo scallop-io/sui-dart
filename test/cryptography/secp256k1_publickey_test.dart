@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:sui/sui.dart';
-import 'package:sui/utils/hex.dart';
+import 'package:sui_dart/sui.dart';
+import 'package:sui_dart/utils/hex.dart';
 
 void main() {
   // Corresponding to the secret key above.

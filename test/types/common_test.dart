@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:test/test.dart';
-import 'package:sui/types/common.dart';
+import 'package:sui_dart/types/common.dart';
 
 void main() {
   group('parseStructTag', () {

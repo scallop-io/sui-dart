@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:bcs/bcs.dart';
+import 'package:bcs_dart/bcs.dart';
 import 'package:test/test.dart';
-import 'package:sui/sui.dart';
+import 'package:sui_dart/sui.dart';
 
 void main() {
   test('can construct and serialize an empty tranaction', () {

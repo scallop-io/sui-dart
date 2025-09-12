@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:sui/http/http.dart';
-import 'package:sui/utils/error.dart';
+import 'package:sui_dart/http/http.dart';
+import 'package:sui_dart/utils/error.dart';
 
 class RequestOptions {
   Map<String, dynamic>? headers;

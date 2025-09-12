@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:bcs/index.dart';
-import 'package:sui/cryptography/signature.dart';
-import 'package:sui/zklogin/types.dart';
+import 'package:bcs_dart/index.dart';
+import 'package:sui_dart/cryptography/signature.dart';
+import 'package:sui_dart/zklogin/types.dart';
 
 import 'bcs.dart';
 

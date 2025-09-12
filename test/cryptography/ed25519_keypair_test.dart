@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:sui/cryptography/ed25519_keypair.dart';
+import 'package:sui_dart/cryptography/ed25519_keypair.dart';
 import 'package:ed25519_edwards/ed25519_edwards.dart' as ed25519;
 
 void main() {

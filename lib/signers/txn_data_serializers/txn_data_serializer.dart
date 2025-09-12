@@ -1,8 +1,8 @@
 
 import 'dart:typed_data';
 
-import 'package:sui/types/common.dart';
-import 'package:sui/types/objects.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/types/objects.dart';
 
 class TransferObjectTransaction {
   ObjectId objectId;

@@ -2,18 +2,18 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:sui/cryptography/keypair.dart';
-import 'package:sui/cryptography/signature.dart';
-import 'package:sui/multisig/multsig_publickey.dart';
-import 'package:sui/providers/json_rpc_provider.dart';
-import 'package:sui/rpc/client.dart';
-import 'package:sui/signers/txn_data_serializers/rpc_txn_data_serializer.dart';
-import 'package:sui/signers/txn_data_serializers/txn_data_serializer.dart';
-import 'package:sui/sui_account.dart';
-import 'package:sui/types/common.dart';
-import 'package:sui/types/objects.dart';
-import 'package:sui/types/transactions.dart';
-import 'package:sui/utils/sha.dart';
+import 'package:sui_dart/cryptography/keypair.dart';
+import 'package:sui_dart/cryptography/signature.dart';
+import 'package:sui_dart/multisig/multsig_publickey.dart';
+import 'package:sui_dart/providers/json_rpc_provider.dart';
+import 'package:sui_dart/rpc/client.dart';
+import 'package:sui_dart/signers/txn_data_serializers/rpc_txn_data_serializer.dart';
+import 'package:sui_dart/signers/txn_data_serializers/txn_data_serializer.dart';
+import 'package:sui_dart/sui_account.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/types/objects.dart';
+import 'package:sui_dart/types/transactions.dart';
+import 'package:sui_dart/utils/sha.dart';
 
 /// Pair of signature and corresponding public key
 class SignaturePubkeyPair {

@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:bcs/bcs.dart';
-import 'package:bcs/bcs_type.dart';
-import 'package:sui/bcs/type_tag_serializer.dart';
-import 'package:sui/types/common.dart';
+import 'package:bcs_dart/bcs.dart';
+import 'package:bcs_dart/bcs_type.dart';
+import 'package:sui_dart/bcs/type_tag_serializer.dart';
+import 'package:sui_dart/types/common.dart';
 
 class SuiBcs {
   static const SUI_ADDRESS_LENGTH = 32;

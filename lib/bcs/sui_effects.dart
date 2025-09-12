@@ -1,5 +1,5 @@
-import 'package:bcs/bcs.dart';
-import 'package:sui/bcs/sui_bcs.dart';
+import 'package:bcs_dart/bcs.dart';
+import 'package:sui_dart/bcs/sui_bcs.dart';
 
 class SuiEffects {
   static final PackageUpgradeError = Bcs.enumeration('PackageUpgradeError', {

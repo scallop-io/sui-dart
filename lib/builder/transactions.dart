@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:bcs/bcs.dart';
-import 'package:bcs/utils.dart';
-import 'package:sui/bcs/type_tag_serializer.dart';
-import 'package:sui/types/common.dart';
+import 'package:bcs_dart/bcs.dart';
+import 'package:bcs_dart/utils.dart';
+import 'package:sui_dart/bcs/type_tag_serializer.dart';
+import 'package:sui_dart/types/common.dart';
 
 /// Simple helpers used to construct transactions:
 class Transactions {

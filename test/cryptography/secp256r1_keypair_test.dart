@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:sui/cryptography/secp256.dart';
-import 'package:sui/cryptography/secp256r1_keypair.dart';
-import 'package:sui/utils/sha.dart';
+import 'package:sui_dart/cryptography/secp256.dart';
+import 'package:sui_dart/cryptography/secp256r1_keypair.dart';
+import 'package:sui_dart/utils/sha.dart';
 
 void main() {
   const VALID_SECP256R1_SECRET_KEY = [

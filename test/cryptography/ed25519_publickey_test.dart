@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:sui/cryptography/ed25519_publickey.dart';
+import 'package:sui_dart/cryptography/ed25519_publickey.dart';
 
 void main() {
   final TEST_CASES = [

@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:pointycastle/export.dart';
-import 'package:sui/cryptography/helper.dart';
-import 'package:sui/utils/hex.dart';
+import 'package:sui_dart/cryptography/helper.dart';
+import 'package:sui_dart/utils/hex.dart';
 
 final curve256k1Params = ECCurve_secp256k1();
 final curve256r1Params = ECCurve_secp256r1();

@@ -1,13 +1,13 @@
 
 import 'dart:typed_data';
 
-import 'package:sui/builder/transaction.dart';
-import 'package:sui/models/dev_inspect_results.dart';
-import 'package:sui/rpc/client.dart';
-import 'package:sui/signers/signer_with_provider.dart';
-import 'package:sui/sui_account.dart';
-import 'package:sui/types/common.dart';
-import 'package:sui/types/transactions.dart';
+import 'package:sui_dart/builder/transaction.dart';
+import 'package:sui_dart/models/dev_inspect_results.dart';
+import 'package:sui_dart/rpc/client.dart';
+import 'package:sui_dart/signers/signer_with_provider.dart';
+import 'package:sui_dart/sui_account.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/types/transactions.dart';
 
 class SuiClient extends SignerWithProvider {
   late SuiAccount? _account;

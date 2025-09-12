@@ -1,6 +1,6 @@
-import 'package:sui/types/common.dart';
-import 'package:sui/types/objects.dart';
-import 'package:sui/types/sui_bcs.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/types/objects.dart';
+import 'package:sui_dart/types/sui_bcs.dart';
 
 const SUI_DECIMALS = 9;
 const MIST_PER_SUI = 1000000000;

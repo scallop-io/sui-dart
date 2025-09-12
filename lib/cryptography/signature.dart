@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:sui/bcs/sui_bcs.dart';
-import 'package:sui/cryptography/ed25519_publickey.dart';
-import 'package:sui/cryptography/keypair.dart';
-import 'package:sui/cryptography/secp256_publickey.dart';
-import 'package:sui/multisig/multsig_publickey.dart';
-import 'package:sui/signers/signer_with_provider.dart';
-import 'package:sui/zklogin/address.dart';
-import 'package:sui/zklogin/jwt_utils.dart';
-import 'package:sui/zklogin/signature.dart';
+import 'package:sui_dart/bcs/sui_bcs.dart';
+import 'package:sui_dart/cryptography/ed25519_publickey.dart';
+import 'package:sui_dart/cryptography/keypair.dart';
+import 'package:sui_dart/cryptography/secp256_publickey.dart';
+import 'package:sui_dart/multisig/multsig_publickey.dart';
+import 'package:sui_dart/signers/signer_with_provider.dart';
+import 'package:sui_dart/zklogin/address.dart';
+import 'package:sui_dart/zklogin/jwt_utils.dart';
+import 'package:sui_dart/zklogin/signature.dart';
 
 enum SignatureScheme {
   Ed25519,

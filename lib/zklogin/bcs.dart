@@ -1,4 +1,4 @@
-import 'package:bcs/bcs.dart';
+import 'package:bcs_dart/bcs.dart';
 
 final zkLoginSignature = Bcs.struct('ZkLoginSignature', {
 	"inputs": Bcs.struct('ZkLoginSignatureInputs', {

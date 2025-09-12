@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:sui/cryptography/helper.dart';
-import 'package:sui/cryptography/keypair.dart';
-import 'package:sui/cryptography/signature.dart';
-import 'package:sui/types/common.dart';
-import 'package:sui/utils/hex.dart';
-import 'package:sui/utils/sha.dart';
+import 'package:sui_dart/cryptography/helper.dart';
+import 'package:sui_dart/cryptography/keypair.dart';
+import 'package:sui_dart/cryptography/signature.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/utils/hex.dart';
+import 'package:sui_dart/utils/sha.dart';
 import 'package:ed25519_edwards/ed25519_edwards.dart' as ed25519;
 
 const PUBLIC_KEY_SIZE = 32;

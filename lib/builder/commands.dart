@@ -1,8 +1,8 @@
 
 import 'dart:typed_data';
 
-import 'package:bcs/bcs.dart';
-import 'package:sui/types/common.dart';
+import 'package:bcs_dart/bcs.dart';
+import 'package:sui_dart/types/common.dart';
 
 enum UpgradePolicy {
   COMPATIBLE,

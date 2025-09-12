@@ -1,6 +1,6 @@
-import 'package:sui/models/sui_event.dart';
-import 'package:sui/types/common.dart';
-import 'package:sui/types/objects.dart';
+import 'package:sui_dart/models/sui_event.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/types/objects.dart';
 
 enum Ordering { Ascending, Descending }
 

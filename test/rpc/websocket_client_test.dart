@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:sui/sui.dart';
+import 'package:sui_dart/sui.dart';
 
 void main() {
   const String endpoint = SuiUrls.webSocketMainnet;

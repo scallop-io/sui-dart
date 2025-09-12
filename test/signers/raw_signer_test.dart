@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:sui/cryptography/ed25519_keypair.dart';
-import 'package:sui/cryptography/secp256k1_keypair.dart';
-import 'package:sui/cryptography/secp256r1_keypair.dart';
-import 'package:sui/signers/raw_signer.dart';
-import 'package:sui/signers/txn_data_serializers/txn_data_serializer.dart';
-import 'package:sui/sui_urls.dart';
+import 'package:sui_dart/cryptography/ed25519_keypair.dart';
+import 'package:sui_dart/cryptography/secp256k1_keypair.dart';
+import 'package:sui_dart/cryptography/secp256r1_keypair.dart';
+import 'package:sui_dart/signers/raw_signer.dart';
+import 'package:sui_dart/signers/txn_data_serializers/txn_data_serializer.dart';
+import 'package:sui_dart/sui_urls.dart';
 
 void main() {
   const validSecp256k1SecretKey = [

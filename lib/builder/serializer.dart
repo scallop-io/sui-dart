@@ -2,12 +2,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:bcs/bcs_type.dart';
-import 'package:sui/bcs/sui_bcs.dart';
-import 'package:sui/types/common.dart';
-import 'package:sui/types/framework.dart';
-import 'package:sui/types/normalized.dart';
-import 'package:sui/types/transactions.dart';
+import 'package:bcs_dart/bcs_type.dart';
+import 'package:sui_dart/bcs/sui_bcs.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/types/framework.dart';
+import 'package:sui_dart/types/normalized.dart';
+import 'package:sui_dart/types/transactions.dart';
 
 
 const STD_ASCII_MODULE_NAME = 'ascii';

@@ -1,4 +1,4 @@
-import 'package:sui/types/objects.dart';
+import 'package:sui_dart/types/objects.dart';
 
 /// A reference to a shared object.
 class SharedObjectRef {

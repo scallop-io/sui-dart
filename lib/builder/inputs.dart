@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:bcs/bcs_type.dart';
-import 'package:bcs/utils.dart';
-import 'package:sui/types/common.dart';
-import 'package:sui/types/objects.dart';
-import 'package:sui/types/sui_bcs.dart';
+import 'package:bcs_dart/bcs_type.dart';
+import 'package:bcs_dart/utils.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/types/objects.dart';
+import 'package:sui_dart/types/sui_bcs.dart';
 
 class Inputs {
   static Map<String, dynamic> pure(dynamic data, [String? type]) {

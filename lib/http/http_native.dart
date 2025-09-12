@@ -1,5 +1,5 @@
 import 'package:dio/io.dart';
-import 'package:sui/http/interceptor.dart';
+import 'package:sui_dart/http/interceptor.dart';
 
 class Http extends DioForNative {
   static Http? instance;

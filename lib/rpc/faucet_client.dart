@@ -1,6 +1,6 @@
 
-import 'package:sui/http/http.dart';
-import 'package:sui/types/faucet.dart';
+import 'package:sui_dart/http/http.dart';
+import 'package:sui_dart/types/faucet.dart';
 
 class FaucetClient {
 

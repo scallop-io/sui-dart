@@ -1,6 +1,6 @@
 
-import 'package:sui/types/common.dart';
-import 'package:sui/types/sui_bcs.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/types/sui_bcs.dart';
 
 final VECTOR_REGEX = RegExp(r"^vector<(.+)>$");
 final STRUCT_REGEX = RegExp(r"^([^:]+)::([^:]+)::([^<]+)(<(.+)>)?");

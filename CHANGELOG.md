@@ -94,3 +94,9 @@
 ## 0.3.7
 
 * Config request options
+
+## 0.3.8
+
+* Refactor: major
+* Fix: Update GetDynamicFieldObjects param
+* Fix: Remove Flutter dependency

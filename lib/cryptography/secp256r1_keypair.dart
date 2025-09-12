@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:bip32/bip32.dart';
-import 'package:sui/cryptography/keypair.dart';
-import 'package:sui/cryptography/mnemonics.dart';
-import 'package:sui/cryptography/secp256.dart';
-import 'package:sui/cryptography/secp256_publickey.dart';
-import 'package:sui/cryptography/signature.dart';
-import 'package:sui/utils/sha.dart';
+import 'package:sui_dart/cryptography/keypair.dart';
+import 'package:sui_dart/cryptography/mnemonics.dart';
+import 'package:sui_dart/cryptography/secp256.dart';
+import 'package:sui_dart/cryptography/secp256_publickey.dart';
+import 'package:sui_dart/cryptography/signature.dart';
+import 'package:sui_dart/utils/sha.dart';
 
 const DEFAULT_SECP256R1_DERIVATION_PATH = "m/74'/784'/0'/0/0";
 

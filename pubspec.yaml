@@ -1,6 +1,6 @@
-name: sui
+name: sui_dart
 description: A cross-platform SDK for Sui blockchain, supporting Mobile, Web and Desktop.
-version: 0.3.7
+version: 0.3.8
 homepage: https://github.com/mofalabs/sui
 
 environment:
@@ -11,10 +11,7 @@ dependencies:
   bip39: 1.0.6
   ed25519_edwards: 0.3.1
   pointycastle: 3.7.3
-  bcs:
-    git:
-      url: https://github.com/jovinlidan/bcs-dart.git
-      ref: feat/bump-bcs-sdk
+  bcs_dart: 0.1.2
   dio: ^5.1.2
   hex: ^0.2.0
   freezed_annotation: ^3.1.0

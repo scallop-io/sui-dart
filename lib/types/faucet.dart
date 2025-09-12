@@ -1,6 +1,6 @@
 
-import 'package:sui/types/common.dart';
-import 'package:sui/types/objects.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/types/objects.dart';
 
 class FaucetCoinInfo {
   final int amount;

@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:sui/cryptography/ed25519_publickey.dart';
-import 'package:sui/cryptography/helper.dart';
-import 'package:sui/cryptography/keypair.dart';
-import 'package:sui/cryptography/signature.dart';
-import 'package:sui/types/common.dart';
-import 'package:sui/utils/hex.dart';
-import 'package:sui/utils/sha.dart';
-import 'package:sui/zklogin/utils.dart';
+import 'package:sui_dart/cryptography/ed25519_publickey.dart';
+import 'package:sui_dart/cryptography/helper.dart';
+import 'package:sui_dart/cryptography/keypair.dart';
+import 'package:sui_dart/cryptography/signature.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/utils/hex.dart';
+import 'package:sui_dart/utils/sha.dart';
+import 'package:sui_dart/zklogin/utils.dart';
 
 class ZkLoginPublicIdentifier with PublicKey {
   late BigInt _bn;

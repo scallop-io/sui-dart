@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:sui/bcs/type_tag_serializer.dart';
+import 'package:sui_dart/bcs/type_tag_serializer.dart';
 
 void main() {
   group('parseFromStr', () {

@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:sui/models/sui_event.dart';
-import 'package:sui/types/transactions.dart';
+import 'package:sui_dart/models/sui_event.dart';
+import 'package:sui_dart/types/transactions.dart';
 
 part 'dev_inspect_results.freezed.dart';
 part 'dev_inspect_results.g.dart';

@@ -2,10 +2,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:bcs/bcs.dart';
-import 'package:sui/cryptography/intent.dart';
-import 'package:sui/cryptography/signature.dart';
-import 'package:sui/utils/sha.dart';
+import 'package:bcs_dart/bcs.dart';
+import 'package:sui_dart/cryptography/intent.dart';
+import 'package:sui_dart/cryptography/signature.dart';
+import 'package:sui_dart/utils/sha.dart';
 
 class SignatureWithBytes {
   String bytes;

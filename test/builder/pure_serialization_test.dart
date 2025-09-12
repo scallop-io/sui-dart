@@ -1,7 +1,7 @@
-import 'package:bcs/bcs.dart';
+import 'package:bcs_dart/bcs.dart';
 import 'package:test/test.dart';
-import 'package:sui/bcs/sui_bcs.dart';
-import 'package:sui/builder/transaction.dart';
+import 'package:sui_dart/bcs/sui_bcs.dart';
+import 'package:sui_dart/builder/transaction.dart';
 
 void main() {
   group('tx.pure serialization', () {

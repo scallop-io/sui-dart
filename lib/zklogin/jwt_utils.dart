@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:sui/zklogin/types.dart';
+import 'package:sui_dart/zklogin/types.dart';
 
 List<int> base64UrlCharTo6Bits(String base64UrlChar) {
   if (base64UrlChar.length != 1) {

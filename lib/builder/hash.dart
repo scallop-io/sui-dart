@@ -1,7 +1,7 @@
 
 import 'dart:typed_data';
 
-import 'package:sui/utils/sha.dart';
+import 'package:sui_dart/utils/sha.dart';
 
 /// Generates a Blake2b hash of typed data as a base64 string.
 Uint8List hashTypedData(String typeTag, Uint8List data) {

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:bcs/hex.dart';
-import 'package:sui/cryptography/signature.dart';
-import 'package:sui/types/common.dart';
-import 'package:sui/utils/sha.dart';
-import 'package:sui/zklogin/utils.dart';
+import 'package:bcs_dart/hex.dart';
+import 'package:sui_dart/cryptography/signature.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/utils/sha.dart';
+import 'package:sui_dart/zklogin/utils.dart';
 
 String computeZkLoginAddressFromSeed(BigInt addressSeed, String iss) {
 	final addressSeedBytesBigEndian = toBigEndianBytes(addressSeed, 32);

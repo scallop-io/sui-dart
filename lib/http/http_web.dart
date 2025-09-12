@@ -1,5 +1,5 @@
 import 'package:dio/browser.dart';
-import 'package:sui/http/interceptor.dart';
+import 'package:sui_dart/http/interceptor.dart';
 
 class Http extends DioForBrowser {
   static Http? instance;

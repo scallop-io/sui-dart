@@ -3,9 +3,9 @@ import 'dart:typed_data';
 import 'package:pointycastle/api.dart' show KeyParameter;
 import 'package:pointycastle/random/fortuna_random.dart';
 import 'package:pointycastle/src/utils.dart' as utils;
-import 'package:sui/cryptography/signature.dart';
-import 'package:sui/sui.dart';
-import 'package:sui/utils/bech32/bech32.dart';
+import 'package:sui_dart/cryptography/signature.dart';
+import 'package:sui_dart/sui.dart';
+import 'package:sui_dart/utils/bech32/bech32.dart';
 
 Uint8List encodeBigInt(BigInt? number) => utils.encodeBigInt(number);
 

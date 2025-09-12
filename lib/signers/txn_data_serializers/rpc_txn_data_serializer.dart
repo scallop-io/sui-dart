@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:sui/rpc/client.dart';
-import 'package:sui/signers/txn_data_serializers/txn_data_serializer.dart';
-import 'package:sui/types/common.dart';
+import 'package:sui_dart/rpc/client.dart';
+import 'package:sui_dart/signers/txn_data_serializers/txn_data_serializer.dart';
+import 'package:sui_dart/types/common.dart';
 
 /// This is a temporary implementation of the `TxnDataSerializer` class
 /// that uses the Sui Fullnode RPC API to serialize a transaction into BCS bytes. We will

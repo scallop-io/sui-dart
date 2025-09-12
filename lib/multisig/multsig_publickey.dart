@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:bcs/bcs.dart';
-import 'package:sui/sui.dart';
-import 'package:sui/utils/hex.dart';
-import 'package:sui/utils/sha.dart';
+import 'package:bcs_dart/bcs.dart';
+import 'package:sui_dart/sui.dart';
+import 'package:sui_dart/utils/hex.dart';
+import 'package:sui_dart/utils/sha.dart';
 
 class PublicKeyWeight {
   int weight;

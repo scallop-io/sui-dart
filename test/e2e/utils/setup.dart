@@ -1,5 +1,5 @@
-import 'package:sui/sui.dart';
-import 'package:sui/types/validator.dart';
+import 'package:sui_dart/sui.dart';
+import 'package:sui_dart/types/validator.dart';
 
 const DEFAULT_FAUCET_URL = SuiUrls.faucetDev;
 const DEFAULT_FULLNODE_URL = SuiUrls.devnet;

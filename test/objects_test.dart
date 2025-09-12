@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import 'package:sui/models/object_read.dart';
-import 'package:sui/sui.dart';
+import 'package:sui_dart/models/object_read.dart';
+import 'package:sui_dart/sui.dart';
 
 import 'e2e/utils/setup.dart';
 

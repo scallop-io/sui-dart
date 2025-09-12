@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:sui/utils/suins.dart';
+import 'package:sui_dart/utils/suins.dart';
 
 void main() {
   group('isValidSuiNSName', () {

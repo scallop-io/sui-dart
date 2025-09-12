@@ -1,5 +1,5 @@
 import "dart:typed_data";
-import "package:sui/utils/hex.dart";
+import "package:sui_dart/utils/hex.dart";
 
 int findFirstNonZeroIndex(Uint8List bytes) {
   for (int i = 0; i < bytes.length; i++) {

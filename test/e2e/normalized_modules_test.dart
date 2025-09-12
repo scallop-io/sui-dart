@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import 'package:sui/sui_urls.dart';
-import 'package:sui/sui_client.dart';
+import 'package:sui_dart/sui_urls.dart';
+import 'package:sui_dart/sui_client.dart';
 
 void main() {
   const defaultPackage = '0x2';

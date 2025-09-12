@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:sui/types/event_filter.dart';
+import 'package:sui_dart/types/event_filter.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebsocketClient {

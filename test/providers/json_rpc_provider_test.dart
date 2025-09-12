@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:sui/sui.dart';
+import 'package:sui_dart/sui.dart';
 
 void main() {
   const address = '0x936accb491f0facaac668baaedcf4d0cfc6da1120b66f77fa6a43af718669973';

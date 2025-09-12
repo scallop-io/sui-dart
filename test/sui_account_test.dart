@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import 'package:sui/cryptography/signature.dart';
-import 'package:sui/sui_account.dart';
+import 'package:sui_dart/cryptography/signature.dart';
+import 'package:sui_dart/sui_account.dart';
 
 void main() {
   test('test isValidAddress', () {

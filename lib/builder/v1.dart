@@ -1,9 +1,9 @@
 
 import 'dart:typed_data';
 
-import 'package:bcs/bcs.dart';
-import 'package:sui/bcs/type_tag_serializer.dart';
-import 'package:sui/builder/transaction_block_data.dart';
+import 'package:bcs_dart/bcs.dart';
+import 'package:sui_dart/bcs/type_tag_serializer.dart';
+import 'package:sui_dart/builder/transaction_block_data.dart';
 
 class TransactionDataV1 {
 	GasConfig gasConfig;

@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:sui/sui.dart';
-import 'package:sui/utils/sha.dart';
+import 'package:sui_dart/sui.dart';
+import 'package:sui_dart/utils/sha.dart';
 
 void main() {
   test('combines signature to multisig', () async {

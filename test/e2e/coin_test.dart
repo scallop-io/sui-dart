@@ -1,7 +1,7 @@
 import 'package:test/test.dart';
-import 'package:sui/types/common.dart';
-import 'package:sui/types/framework.dart';
-import 'package:sui/types/sui_bcs.dart';
+import 'package:sui_dart/types/common.dart';
+import 'package:sui_dart/types/framework.dart';
+import 'package:sui_dart/types/sui_bcs.dart';
 
 import 'utils/setup.dart';
 

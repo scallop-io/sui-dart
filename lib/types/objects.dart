@@ -1,4 +1,4 @@
-import 'package:sui/types/common.dart';
+import 'package:sui_dart/types/common.dart';
 
 class SuiObjectRef {
   /// Base64 string representing the object digest
