@@ -100,3 +100,7 @@
 * Refactor: major
 * Fix: Update GetDynamicFieldObjects param
 * Fix: Remove Flutter dependency
+
+## 0.3.9
+
+* Feat: Handle devInspect both Transaction and build result
