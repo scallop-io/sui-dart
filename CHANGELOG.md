@@ -104,3 +104,7 @@
 ## 0.3.9
 
 * Feat: Handle devInspect both Transaction and build result
+
+## 0.3.10
+
+* Fix: Only set sender if transaction input is valid
