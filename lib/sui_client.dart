@@ -1,4 +1,3 @@
-
 import 'dart:typed_data';
 
 import 'package:sui_dart/builder/transaction.dart';
@@ -12,19 +11,13 @@ import 'package:sui_dart/types/transactions.dart';
 class SuiClient extends SignerWithProvider {
   late SuiAccount? _account;
 
-  SuiClient(
-    String endpoint, {
-    SuiAccount? account,
-    RequestOptions? options
-  }): super(
-    endpoint: endpoint,
-    options: options
-  ) {
+  SuiClient(String endpoint, {SuiAccount? account, RequestOptions? options})
+    : super(endpoint: endpoint, options: options) {
     _account = account;
   }
 
   SuiAccount? get account => _account;
-  
+
   @override
   void setSigner(SuiAccount signer) {
     _account = signer;
@@ -48,46 +41,42 @@ class SuiClient extends SignerWithProvider {
 
   Future<SuiTransactionBlockResponse> signAndExecuteTransactionBlock(
     SuiAccount signer,
-    Transaction transaction,
-    {
-      BuildOptions? options,
-      SuiTransactionBlockResponseOptions? responseOptions,
-      @Deprecated('requestType will be ignored by JSON RPC in the future')
-      ExecuteTransaction requestType = ExecuteTransaction.WaitForEffectsCert
-    }
-  ) async {
+    Transaction transaction, {
+    BuildOptions? options,
+    SuiTransactionBlockResponseOptions? responseOptions,
+    @Deprecated('requestType will be ignored by JSON RPC in the future')
+    ExecuteTransaction requestType = ExecuteTransaction.WaitForEffectsCert,
+  }) async {
     options ??= BuildOptions(client: this);
     options.client ??= this;
     transaction.setSenderIfNotSet(signer.getAddress());
     final transactionBytes = await transaction.build(options);
     final signWithBytes = signer.keyPair.signTransactionBlock(transactionBytes);
     return await executeTransactionBlock(
-      signWithBytes.bytes, 
+      signWithBytes.bytes,
       [signWithBytes.signature],
       options: responseOptions,
-      requestType: requestType
+      requestType: requestType,
     );
   }
 
   Future<DevInspectResults> devInspectTransactionBlock(
     String sender,
-    Transaction transaction, {
-      BigInt? gasPrice,
-      String? epoch
+    dynamic transaction, {
+    BigInt? gasPrice,
+    String? epoch,
+  }) async {
+    if (transaction is! Transaction && transaction is! Uint8List) {
+      throw ArgumentError("transaction must be Transaction or Uint8List", "transaction");
     }
-  ) async {
     transaction.setSenderIfNotSet(sender);
-    final txBytes = await transaction.build(
-      BuildOptions(client: this, onlyTransactionKind: true)
-    );
-    final result = await devInspectTransaction(
-      sender,
-      txBytes,
-      gasPrice: gasPrice,
-      epoch: epoch
-    );
+    late Uint8List txBytes;
+    if (transaction is Transaction) {
+      txBytes = await transaction.build(BuildOptions(client: this, onlyTransactionKind: true));
+    } else {
+      txBytes = transaction;
+    }
+    final result = await devInspectTransaction(sender, txBytes, gasPrice: gasPrice, epoch: epoch);
     return result;
   }
-
-
 }
