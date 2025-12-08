@@ -9,9 +9,10 @@ import 'package:sui_dart/grpc/proto/sui/rpc/v2/transaction_execution_service.pbg
 
 class SuiGrpcClientOptions {
   final String baseUrl;
+  final int port;
   final ClientChannel? customChannel;
 
-  SuiGrpcClientOptions({required this.baseUrl, this.customChannel});
+  SuiGrpcClientOptions({required this.baseUrl, this.customChannel, required this.port});
 }
 
 class SuiGrpcClient {
@@ -30,6 +31,7 @@ class SuiGrpcClient {
         options.customChannel ??
         ClientChannel(
           options.baseUrl,
+          port: options.port,
           options: ChannelOptions(credentials: ChannelCredentials.secure()),
         );
 

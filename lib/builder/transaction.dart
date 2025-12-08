@@ -11,6 +11,7 @@ import 'package:sui_dart/builder/inputs.dart';
 import 'package:sui_dart/builder/pure.dart';
 import 'package:sui_dart/builder/serializer.dart';
 import 'package:sui_dart/builder/transaction_block_data.dart';
+import 'package:sui_dart/builder/transaction_resolver.dart';
 import 'package:sui_dart/builder/v1.dart';
 import 'package:sui_dart/cryptography/keypair.dart';
 import 'package:sui_dart/sui_client.dart';
@@ -20,6 +21,7 @@ import 'package:sui_dart/types/normalized.dart';
 import 'package:sui_dart/types/objects.dart';
 import 'package:sui_dart/types/sui_bcs.dart';
 import 'package:sui_dart/types/transactions.dart';
+import 'package:sui_dart/grpc/proto/sui/rpc/v2/transaction.pb.dart' as GrpcTransaction;
 
 class TransactionResult {
   final int index;
@@ -209,6 +211,12 @@ class Transaction {
   TransactionData getData() {
     return _blockData.snapshot();
   }
+
+  GrpcTransaction.Transaction toGrpcTransaction() {
+    return transactionDataToGrpcTransaction(_blockData.snapshot());
+  }
+
+
 
   Pure? _pure;
 

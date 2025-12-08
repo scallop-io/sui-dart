@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:meta/meta.dart';
 import 'package:sui_dart/constants.dart';
 
 class ApiInterceptor extends InterceptorsWrapper {
