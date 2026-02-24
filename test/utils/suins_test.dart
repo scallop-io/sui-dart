@@ -39,13 +39,13 @@ void main() {
       expect(isValidSuiNSName('hello-.sui'), false);
       expect(isValidSuiNSName('-hello-.sui'), false);
       expect(isValidSuiNSName('hello--world.sui'), false);
-      expect(isValidSuiNSName(String.fromCharCodes(List<int>.filled(64, 48)) + ".sui"), false);
+      expect(isValidSuiNSName("${String.fromCharCodes(List<int>.filled(64, 48))}.sui"), false);
       expect(isValidSuiNSName('hello.sui'), true);
       expect(isValidSuiNSName('hello-world.sui'), true);
-      expect(isValidSuiNSName(String.fromCharCodes(List<int>.filled(1, 48)) + ".sui"), true);
-      expect(isValidSuiNSName(String.fromCharCodes(List<int>.filled(2, 48)) + ".sui"), true);
-      expect(isValidSuiNSName(String.fromCharCodes(List<int>.filled(3, 48)) + ".sui"), true);
-      expect(isValidSuiNSName(String.fromCharCodes(List<int>.filled(63, 48)) + ".sui"), true);
+      expect(isValidSuiNSName("${String.fromCharCodes(List<int>.filled(1, 48))}.sui"), true);
+      expect(isValidSuiNSName("${String.fromCharCodes(List<int>.filled(2, 48))}.sui"), true);
+      expect(isValidSuiNSName("${String.fromCharCodes(List<int>.filled(3, 48))}.sui"), true);
+      expect(isValidSuiNSName("${String.fromCharCodes(List<int>.filled(63, 48))}.sui"), true);
 
       expect(isValidSuiNSName('example.sui'), true);
       expect(isValidSuiNSName('test.example.sui'), true);

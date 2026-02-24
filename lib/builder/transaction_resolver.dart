@@ -1,13 +1,12 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:fixnum/fixnum.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/argument.pb.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/input.pb.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/object_reference.pb.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/argument.pb.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/input.pb.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/object_reference.pb.dart';
 import 'package:sui_dart/sui.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/transaction.pb.dart' as GrpcTransaction;
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction.pb.dart' as grpc_transaction;
 
 Input callArgToGrpcInput(Map<String, dynamic> arg) {
   switch (arg['\$kind']) {
@@ -84,11 +83,11 @@ Argument argumentToGrpcArgument(Map<String, dynamic> arg) {
   throw Exception("Unknown Argument: $arg");
 }
 
-GrpcTransaction.Command commandToGrpcCommand(Map<dynamic, dynamic> cmd) {
+grpc_transaction.Command commandToGrpcCommand(Map<dynamic, dynamic> cmd) {
   switch (cmd['\$kind']) {
     case 'MoveCall':
-      return GrpcTransaction.Command(
-        moveCall: (GrpcTransaction.MoveCall(
+      return grpc_transaction.Command(
+        moveCall: (grpc_transaction.MoveCall(
           package: cmd['MoveCall']['package'],
           module: cmd['MoveCall']['module'],
           function: cmd['MoveCall']['function'],
@@ -98,32 +97,32 @@ GrpcTransaction.Command commandToGrpcCommand(Map<dynamic, dynamic> cmd) {
       );
 
     case 'TransferObjects':
-      return GrpcTransaction.Command(
-        transferObjects: GrpcTransaction.TransferObjects(
+      return grpc_transaction.Command(
+        transferObjects: grpc_transaction.TransferObjects(
           objects: toIterableGrpcArguments(cmd['TransferObjects']?['objects']),
           address: toIterableGrpcArguments([(cmd['TransferObjects']['address'])])[0],
         ),
       );
 
     case 'SplitCoins':
-      return GrpcTransaction.Command(
-        splitCoins: GrpcTransaction.SplitCoins(
+      return grpc_transaction.Command(
+        splitCoins: grpc_transaction.SplitCoins(
           coin: toIterableGrpcArguments([cmd['SplitCoins']['coin']])[0],
           amounts: toIterableGrpcArguments(cmd['SplitCoins']['amounts']),
         ),
       );
 
     case 'MergeCoins':
-      return GrpcTransaction.Command(
-        mergeCoins: GrpcTransaction.MergeCoins(
+      return grpc_transaction.Command(
+        mergeCoins: grpc_transaction.MergeCoins(
           coin: toIterableGrpcArguments([cmd['MergeCoins']['destination']])[0],
           coinsToMerge: toIterableGrpcArguments(cmd['MergeCoins']['sources']),
         ),
       );
 
     case 'Publish':
-      return GrpcTransaction.Command(
-        publish: GrpcTransaction.Publish(
+      return grpc_transaction.Command(
+        publish: grpc_transaction.Publish(
           modules: cmd['Publish']['modules']
               .map<Uint8List>((module) => base64Decode(module as String))
               .toList(),
@@ -132,16 +131,16 @@ GrpcTransaction.Command commandToGrpcCommand(Map<dynamic, dynamic> cmd) {
       );
 
     case 'MakeMoveVec':
-      return GrpcTransaction.Command(
-        makeMoveVector: (GrpcTransaction.MakeMoveVector(
+      return grpc_transaction.Command(
+        makeMoveVector: (grpc_transaction.MakeMoveVector(
           elementType: cmd['MakeMoveVec']['type'],
           elements: toIterableGrpcArguments(cmd['MakeMoveVec']['elements']),
         )),
       );
 
     case 'Upgrade':
-      return GrpcTransaction.Command(
-        upgrade: GrpcTransaction.Upgrade(
+      return grpc_transaction.Command(
+        upgrade: grpc_transaction.Upgrade(
           // modules are base64-encoded strings in internal format
           modules: cmd['Upgrade']['modules']
               .map<Uint8List>((module) => base64Decode(module as String))
@@ -157,21 +156,21 @@ GrpcTransaction.Command commandToGrpcCommand(Map<dynamic, dynamic> cmd) {
   }
 }
 
-GrpcTransaction.Transaction transactionDataToGrpcTransaction(TransactionData data) {
+grpc_transaction.Transaction transactionDataToGrpcTransaction(TransactionData data) {
   final inputs = data.inputs?.map(callArgToGrpcInput).toList();
 
   final commands = data.commands?.map(commandToGrpcCommand).toList();
 
-  final tx = GrpcTransaction.Transaction(
+  final tx = grpc_transaction.Transaction(
     version: 1,
     sender: data.sender,
-    kind: GrpcTransaction.TransactionKind(
-      kind: GrpcTransaction.TransactionKind_Kind.PROGRAMMABLE_TRANSACTION,
-      programmableTransaction: (GrpcTransaction.ProgrammableTransaction()
+    kind: grpc_transaction.TransactionKind(
+      kind: grpc_transaction.TransactionKind_Kind.PROGRAMMABLE_TRANSACTION,
+      programmableTransaction: (grpc_transaction.ProgrammableTransaction()
         ..inputs.addAll(inputs ?? [])
         ..commands.addAll(commands ?? [])),
     ),
-    gasPayment: GrpcTransaction.GasPayment(
+    gasPayment: grpc_transaction.GasPayment(
       objects: data.gasData.payment
           ?.map(
             (ref) => ObjectReference()
@@ -192,11 +191,11 @@ GrpcTransaction.Transaction transactionDataToGrpcTransaction(TransactionData dat
 
   if (data.expiration != null) {
     if (data.expiration?.epoch == null) {
-      tx.expiration = (GrpcTransaction.TransactionExpiration()
-        ..kind = GrpcTransaction.TransactionExpiration_TransactionExpirationKind.NONE);
+      tx.expiration = (grpc_transaction.TransactionExpiration()
+        ..kind = grpc_transaction.TransactionExpiration_TransactionExpirationKind.NONE);
     } else {
-      tx.expiration = (GrpcTransaction.TransactionExpiration()
-        ..kind = GrpcTransaction.TransactionExpiration_TransactionExpirationKind.EPOCH
+      tx.expiration = (grpc_transaction.TransactionExpiration()
+        ..kind = grpc_transaction.TransactionExpiration_TransactionExpirationKind.EPOCH
         ..epoch = Int64.parseRadix(data.expiration!.epoch.toString(), 10));
     }
   }

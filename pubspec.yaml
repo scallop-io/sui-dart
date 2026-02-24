@@ -18,8 +18,8 @@ dependencies:
   json_annotation: ^4.8.0
   web_socket_channel: ^2.4.0
   meta:
-  grpc: ^4.0.1
-  protobuf: ^5.0.0
+  grpc: ^5.1.0
+  protobuf: ^6.0.0
   fixnum: ^1.1.1
 
 dev_dependencies:

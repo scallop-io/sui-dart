@@ -8,7 +8,7 @@
 
 ```
 dependencies:
-  sui: ^0.3.7
+  sui: ^0.3.10
 ```
 
 ## Demo

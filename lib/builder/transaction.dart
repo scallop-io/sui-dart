@@ -21,7 +21,7 @@ import 'package:sui_dart/types/normalized.dart';
 import 'package:sui_dart/types/objects.dart';
 import 'package:sui_dart/types/sui_bcs.dart';
 import 'package:sui_dart/types/transactions.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/transaction.pb.dart' as GrpcTransaction;
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction.pb.dart' as grpc_transaction;
 
 class TransactionResult {
   final int index;
@@ -212,7 +212,7 @@ class Transaction {
     return _blockData.snapshot();
   }
 
-  GrpcTransaction.Transaction toGrpcTransaction() {
+  grpc_transaction.Transaction toGrpcTransaction() {
     return transactionDataToGrpcTransaction(_blockData.snapshot());
   }
 
@@ -656,7 +656,7 @@ class Transaction {
     }
 
     if (moveCallsToResolve.isNotEmpty) {
-      moveCallsToResolve.forEach((moveCall) {
+      for (var moveCall in moveCallsToResolve) {
         final parameters = moveFunctionParameters[
             "${moveCall["package"]}::${moveCall["module"]}::${moveCall["function"]}"];
         if (parameters != null && parameters.isNotEmpty) {
@@ -668,7 +668,7 @@ class Transaction {
 
           moveCall["_argumentTypes"] = params;
         }
-      });
+      }
     }
 
     for (var command in commands) {

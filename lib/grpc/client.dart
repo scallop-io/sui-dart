@@ -1,11 +1,12 @@
 import 'package:grpc/grpc.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/ledger_service.pbgrpc.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/move_package_service.pbgrpc.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/name_service.pbgrpc.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/signature_verification_service.pbgrpc.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/state_service.pbgrpc.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/subscription_service.pbgrpc.dart';
-import 'package:sui_dart/grpc/proto/sui/rpc/v2/transaction_execution_service.pbgrpc.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/ledger_service.pbgrpc.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/move_package_service.pbgrpc.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/name_service.pbgrpc.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/signature_verification_service.pbgrpc.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/state_service.pbgrpc.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/subscription_service.pbgrpc.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction_execution_service.pbgrpc.dart';
+
 
 class SuiGrpcClientOptions {
   final String baseUrl;
