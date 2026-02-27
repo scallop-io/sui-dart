@@ -10,6 +10,8 @@ import 'package:sui_dart/grpc/generated/sui/rpc/v2/state_service.pbgrpc.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/subscription_service.pbgrpc.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction_execution_service.pbgrpc.dart';
 
+import 'package:sui_dart/sui.dart' as sui_dart;
+
 import 'core.dart';
 import 'types.dart';
 
@@ -56,12 +58,7 @@ class SuiGrpcClient {
     core = GrpcCoreClient(this);
   }
 
-  
-
-  Future<List<GrpcObjectResult>> getObjects(
-    List<String> ids, {
-    ObjectIncludeOptions? include,
-  }) {
+  Future<List<GrpcObjectResult>> getObjects(List<String> ids, {ObjectIncludeOptions? include}) {
     return core.getObjects(ids, include: include);
   }
 
@@ -118,12 +115,12 @@ class SuiGrpcClient {
   }
 
   Future<GrpcTransactionResponse> simulateTransaction(
-    Uint8List transactionBytes, {
+    sui_dart.Transaction transactionBlock, {
     TransactionIncludeOptions? include,
     bool? doGasSelection,
   }) {
     return core.simulateTransaction(
-      transactionBytes,
+      transactionBlock,
       include: include,
       doGasSelection: doGasSelection,
     );
