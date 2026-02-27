@@ -19,9 +19,9 @@ import 'package:sui_dart/grpc/generated/sui/rpc/v2/signature.pb.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/signature_verification_service.pbgrpc.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/state_service.pbgrpc.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction_execution_service.pbgrpc.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction.pb.dart' as grpc_transaction;
 
 import 'package:sui_dart/builder/transaction.dart' show chunk;
-import 'package:sui_dart/sui.dart' as sui_dart;
 import 'package:sui_dart/types/common.dart';
 
 import 'client.dart';
@@ -109,7 +109,6 @@ class GrpcCoreClient {
             'digest',
             'object_type',
             'owner',
-            'previous_transaction',
             'balance',
           ],
         ),
@@ -120,12 +119,12 @@ class GrpcCoreClient {
     return GrpcPage(
       data: response.objects.map((obj) {
         return GrpcCoinData(
-          coinType: normalizedCoinType,
-          coinObjectId: obj.objectId,
+          objectId: obj.objectId,
           version: obj.version.toString(),
           digest: obj.digest,
+          owner: obj.hasOwner() ? _mapOwner(obj.owner) : const GrpcUnknownOwner(),
+          type: normalizedCoinType,
           balance: obj.balance.toString(),
-          previousTransaction: obj.previousTransaction,
         );
       }).toList(),
       hasNextPage: hasNext,
@@ -143,7 +142,9 @@ class GrpcCoreClient {
     final balance = response.balance;
     return GrpcBalance(
       coinType: balance.coinType,
-      totalBalance: balance.balance.toString(),
+      balance: balance.balance.toString(),
+      coinBalance: balance.balance.toString(),
+      addressBalance: balance.balance.toString(),
     );
   }
 
@@ -187,7 +188,9 @@ class GrpcCoreClient {
     return allBalances.map((balance) {
       return GrpcBalance(
         coinType: balance.coinType,
-        totalBalance: balance.balance.toString(),
+        balance: balance.balance.toString(),
+        coinBalance: balance.balance.toString(),
+        addressBalance: balance.balance.toString(),
       );
     }).toList();
   }
@@ -211,11 +214,10 @@ class GrpcCoreClient {
     TransactionIncludeOptions? include,
   }) async {
     final readMask = _transactionReadMask(include);
-    
 
     final response = await _client.transactionExecutionService.executeTransaction(
       ExecuteTransactionRequest(
-        transaction: .new(bcs: .new(value: transactionBytes)),
+        transaction: grpc_transaction.Transaction()..mergeFromBuffer(transactionBytes),
         signatures: signatures.map((sig) {
           return UserSignature(bcs: grpc_bcs.Bcs(value: base64Decode(sig)));
         }),
@@ -227,7 +229,7 @@ class GrpcCoreClient {
   }
 
   Future<GrpcTransactionResponse> simulateTransaction(
-    sui_dart.Transaction transactionBlock, {
+    Uint8List transactionBytes, {
     TransactionIncludeOptions? include,
     bool? doGasSelection,
   }) async {
@@ -235,7 +237,7 @@ class GrpcCoreClient {
 
     final response = await _client.transactionExecutionService.simulateTransaction(
       SimulateTransactionRequest(
-        transaction: transactionBlock.toGrpcTransaction(),
+        transaction: grpc_transaction.Transaction()..mergeFromBuffer(transactionBytes),
         readMask: readMask,
         doGasSelection: doGasSelection ?? true,
       ),
@@ -243,20 +245,22 @@ class GrpcCoreClient {
 
     var result = _parseTransaction(response.transaction, include);
 
-    if (include?.commandOutputs == true) {
+    if (include?.commandResults == true) {
       result = result.copyWith(
-        commandOutputs: response.commandOutputs.map((cmdResult) {
-          return GrpcCommandOutput(
+        commandResults: response.commandOutputs.map((cmdResult) {
+          return GrpcCommandResult(
             returnValues: cmdResult.returnValues.map((output) {
-              return GrpcCommandOutputValue(
-                value: output.hasValue() ? base64Encode(output.value.value) : null,
-                json: output.hasJson() ? output.json.writeToJsonMap() : null,
+              return GrpcCommandOutput(
+                bcs: output.hasValue()
+                    ? Uint8List.fromList(output.value.value)
+                    : Uint8List(0),
               );
             }).toList(),
-            mutatedByRef: cmdResult.mutatedByRef.map((output) {
-              return GrpcCommandOutputValue(
-                value: output.hasValue() ? base64Encode(output.value.value) : null,
-                json: output.hasJson() ? output.json.writeToJsonMap() : null,
+            mutatedReferences: cmdResult.mutatedByRef.map((output) {
+              return GrpcCommandOutput(
+                bcs: output.hasValue()
+                    ? Uint8List.fromList(output.value.value)
+                    : Uint8List(0),
               );
             }).toList(),
           );
@@ -313,7 +317,7 @@ class GrpcCoreClient {
         return GrpcDynamicFieldEntry(
           name: GrpcDynamicFieldName(
             type: field.hasName() ? field.name.name : null,
-            value: field.hasName() ? base64Encode(field.name.value) : null,
+            bcs: field.hasName() ? Uint8List.fromList(field.name.value) : null,
           ),
           objectType: field.valueType,
           objectId: field.childId.isNotEmpty ? field.childId : field.fieldId,
@@ -385,37 +389,29 @@ class GrpcCoreClient {
     return response.chainId;
   }
 
-  
+  // ---------------------------------------------------------------------------
+  // Private helpers
+  // ---------------------------------------------------------------------------
 
   FieldMask _objectReadMask(ObjectIncludeOptions? include) {
-    final paths = <String>['object_id', 'version', 'digest', 'object_type'];
+    final paths = <String>['object_id', 'version', 'digest', 'object_type', 'owner'];
 
-    if (include?.owner == true) paths.add('owner');
     if (include?.previousTransaction == true) paths.add('previous_transaction');
-    if (include?.content == true) {
-      paths.add('contents');
-      paths.add('json');
-    }
-    if (include?.bcs == true) paths.add('bcs');
-    if (include?.storageRebate == true) paths.add('storage_rebate');
+    if (include?.content == true) paths.add('contents');
+    if (include?.json == true) paths.add('json');
+    if (include?.objectBcs == true) paths.add('bcs');
 
     return FieldMask(paths: paths);
   }
 
   FieldMask _transactionReadMask(TransactionIncludeOptions? include) {
-    final paths = <String>['digest'];
+    final paths = <String>['digest', 'signatures', 'checkpoint', 'timestamp'];
 
-    if (include?.rawTransaction == true) paths.add('transaction');
+    if (include?.transaction == true) paths.add('transaction');
     if (include?.effects == true) paths.add('effects');
     if (include?.events == true) paths.add('events');
     if (include?.balanceChanges == true) paths.add('balance_changes');
-    if (include?.rawEffects == true) paths.add('effects.bcs');
-    if (include?.objectChanges == true) {
-      paths.add('effects.changed_objects');
-      paths.add('effects.unchanged_consensus_objects');
-    }
-    if (include?.checkpoint == true) paths.add('checkpoint');
-    if (include?.timestampMs == true) paths.add('timestamp');
+    if (include?.bcs == true) paths.add('effects.bcs');
 
     return FieldMask(paths: paths);
   }
@@ -425,18 +421,19 @@ class GrpcCoreClient {
       objectId: obj.objectId,
       version: obj.version.toString(),
       digest: obj.digest,
+      owner: obj.hasOwner() ? _mapOwner(obj.owner) : const GrpcUnknownOwner(),
       type: obj.objectType,
-      owner: (include?.owner == true && obj.hasOwner()) ? _mapOwner(obj.owner) : null,
       previousTransaction:
           include?.previousTransaction == true ? obj.previousTransaction : null,
-      content: (include?.content == true && obj.hasJson())
+      content: (include?.content == true && obj.hasContents())
+          ? Uint8List.fromList(obj.contents.value)
+          : null,
+      objectBcs: (include?.objectBcs == true && obj.hasBcs())
+          ? Uint8List.fromList(obj.bcs.value)
+          : null,
+      json: (include?.json == true && obj.hasJson())
           ? obj.json.writeToJsonMap()
           : null,
-      contentBcs: (include?.content == true && obj.hasContents())
-          ? base64Encode(obj.contents.value)
-          : null,
-      bcs: (include?.bcs == true && obj.hasBcs()) ? base64Encode(obj.bcs.value) : null,
-      storageRebate: include?.storageRebate == true ? obj.storageRebate.toString() : null,
     );
   }
 
@@ -444,56 +441,67 @@ class GrpcCoreClient {
     ExecutedTransaction tx,
     TransactionIncludeOptions? include,
   ) {
+    // Extract status from effects (always present when effects are available)
+    GrpcExecutionStatus status = const GrpcExecutionStatus(success: true);
+    if (tx.hasEffects() && tx.effects.hasStatus()) {
+      status = GrpcExecutionStatus(
+        success: tx.effects.status.success,
+        error: tx.effects.status.hasError()
+            ? _parseExecutionError(tx.effects.status.error)
+            : null,
+      );
+    }
+
+    // Extract epoch from effects
+    final epoch = (tx.hasEffects() && tx.effects.hasEpoch())
+        ? tx.effects.epoch.toString()
+        : null;
+
+    // Extract signatures
+    final signatures = tx.signatures
+        .map((sig) => base64Encode(sig.bcs.value))
+        .toList();
+
     return GrpcTransactionResponse(
       digest: tx.digest,
-      rawTransaction: (include?.rawTransaction == true && tx.hasTransaction())
+      signatures: signatures,
+      epoch: epoch,
+      status: status,
+      transaction: (include?.transaction == true && tx.hasTransaction())
           ? base64Encode(tx.transaction.writeToBuffer())
           : null,
       effects: (include?.effects == true && tx.hasEffects())
           ? _parseTransactionEffects(tx.effects)
           : null,
-      rawEffects: (include?.rawEffects == true && tx.hasEffects() && tx.effects.hasBcs())
-          ? base64Encode(tx.effects.bcs.value)
-          : null,
       events: (include?.events == true && tx.hasEvents())
           ? tx.events.events.map((event) {
               return GrpcEvent(
                 packageId: event.packageId,
-                transactionModule: event.module,
+                module: event.module,
                 sender: event.sender,
-                type: event.eventType,
-                parsedJson: event.hasJson() ? event.json.writeToJsonMap() : null,
-                bcs: event.hasContents() ? base64Encode(event.contents.value) : null,
+                eventType: event.eventType,
+                bcs: event.hasContents()
+                    ? Uint8List.fromList(event.contents.value)
+                    : Uint8List(0),
               );
             }).toList()
           : null,
       balanceChanges: include?.balanceChanges == true
           ? tx.balanceChanges.map((change) {
               return GrpcBalanceChange(
-                owner: change.address,
+                address: change.address,
                 coinType: change.coinType,
                 amount: change.amount,
               );
             }).toList()
           : null,
-      objectChanges: (include?.objectChanges == true && tx.hasEffects())
-          ? tx.effects.changedObjects.map((obj) {
-              return GrpcObjectChange(
-                objectId: obj.objectId,
-                idOperation: _mapIdOperation(obj.idOperation),
-                inputState: _mapInputObjectState(obj.inputState),
-                outputState: _mapOutputObjectState(obj.outputState),
-                version: obj.hasOutputVersion() ? obj.outputVersion.toString() : null,
-                digest: obj.hasOutputDigest() ? obj.outputDigest : null,
-                owner: obj.hasOutputOwner() ? _mapOwner(obj.outputOwner) : null,
-                objectType: obj.objectType.isNotEmpty ? obj.objectType : null,
-              );
-            }).toList()
+      bcs: (include?.bcs == true && tx.hasEffects() && tx.effects.hasBcs())
+          ? Uint8List.fromList(tx.effects.bcs.value)
           : null,
-      checkpoint: (include?.checkpoint == true && tx.hasCheckpoint())
+      checkpoint: tx.hasCheckpoint()
           ? tx.checkpoint.toString()
           : null,
-      timestampMs: (include?.timestampMs == true && tx.hasTimestamp())
+      timestampMs: tx.hasTimestamp()
           ? (tx.timestamp.seconds * Int64(1000)).toString()
           : null,
     );
@@ -501,9 +509,7 @@ class GrpcCoreClient {
 
   GrpcTransactionEffects _parseTransactionEffects(TransactionEffects effects) {
     return GrpcTransactionEffects(
-      digest: effects.hasDigest() ? effects.digest : null,
       transactionDigest: effects.hasTransactionDigest() ? effects.transactionDigest : null,
-      epoch: effects.hasEpoch() ? effects.epoch.toString() : null,
       lamportVersion: effects.hasLamportVersion() ? effects.lamportVersion.toString() : null,
       status: effects.hasStatus()
           ? GrpcExecutionStatus(
@@ -559,7 +565,7 @@ class GrpcCoreClient {
             }).toList()
           : null,
       eventsDigest: effects.hasEventsDigest() ? effects.eventsDigest : null,
-      bcs: effects.hasBcs() ? base64Encode(effects.bcs.value) : null,
+      bcs: effects.hasBcs() ? Uint8List.fromList(effects.bcs.value) : null,
     );
   }
 
@@ -617,9 +623,9 @@ class GrpcCoreClient {
     }
 
     return GrpcExecutionError(
-      description: error.description,
+      message: error.description,
       kind: _mapErrorName(error.kind),
-      command: error.hasCommand() ? error.command.toString() : null,
+      command: error.hasCommand() ? error.command.toInt() : null,
       detail: detail,
     );
   }
@@ -654,9 +660,11 @@ class GrpcCoreClient {
     );
   }
 
-  
+  // ---------------------------------------------------------------------------
+  // Enum mappers
+  // ---------------------------------------------------------------------------
 
-  static GrpcOwner? _mapOwner(Owner owner) {
+  static GrpcOwner _mapOwner(Owner owner) {
     switch (owner.kind) {
       case Owner_OwnerKind.ADDRESS:
         return GrpcAddressOwner(owner.address);
@@ -672,7 +680,7 @@ class GrpcCoreClient {
           startVersion: owner.version.toString(),
         );
       default:
-        return null;
+        return const GrpcUnknownOwner();
     }
   }
 
