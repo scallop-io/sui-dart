@@ -35,10 +35,7 @@ class GrpcCoreClient {
 
   GrpcCoreClient(this._client);
 
-  Future<List<ObjectResult>> getObjects(
-    List<String> ids, {
-    ObjectIncludeOptions? include,
-  }) async {
+  Future<List<ObjectResult>> getObjects(List<String> ids, {ObjectIncludeOptions? include}) async {
     final readMask = _objectReadMask(include);
     final chunks = chunk(ids, _MAX_OBJECTS_PER_BATCH);
 
@@ -104,14 +101,7 @@ class GrpcCoreClient {
         pageSize: limit,
         pageToken: cursor != null ? base64Decode(cursor) : null,
         readMask: FieldMask(
-          paths: [
-            'object_id',
-            'version',
-            'digest',
-            'object_type',
-            'owner',
-            'balance',
-          ],
+          paths: ['object_id', 'version', 'digest', 'object_type', 'owner', 'balance'],
         ),
       ),
     );
@@ -252,16 +242,12 @@ class GrpcCoreClient {
           return CommandResult(
             returnValues: cmdResult.returnValues.map((output) {
               return CommandOutput(
-                bcs: output.hasValue()
-                    ? Uint8List.fromList(output.value.value)
-                    : Uint8List(0),
+                bcs: output.hasValue() ? Uint8List.fromList(output.value.value) : Uint8List(0),
               );
             }).toList(),
             mutatedReferences: cmdResult.mutatedByRef.map((output) {
               return CommandOutput(
-                bcs: output.hasValue()
-                    ? Uint8List.fromList(output.value.value)
-                    : Uint8List(0),
+                bcs: output.hasValue() ? Uint8List.fromList(output.value.value) : Uint8List(0),
               );
             }).toList(),
           );
@@ -424,17 +410,14 @@ class GrpcCoreClient {
       digest: obj.digest,
       owner: obj.hasOwner() ? _mapOwner(obj.owner) : const UnknownOwner(),
       type: obj.objectType,
-      previousTransaction:
-          include?.previousTransaction == true ? obj.previousTransaction : null,
+      previousTransaction: include?.previousTransaction == true ? obj.previousTransaction : null,
       content: (include?.content == true && obj.hasContents())
           ? Uint8List.fromList(obj.contents.value)
           : null,
       objectBcs: (include?.objectBcs == true && obj.hasBcs())
           ? Uint8List.fromList(obj.bcs.value)
           : null,
-      json: (include?.json == true && obj.hasJson())
-          ? obj.json.writeToJsonMap()
-          : null,
+      json: (include?.json == true && obj.hasJson()) ? obj.json.writeToJsonMap() : null,
     );
   }
 
@@ -447,21 +430,15 @@ class GrpcCoreClient {
     if (tx.hasEffects() && tx.effects.hasStatus()) {
       status = ExecutionStatus(
         success: tx.effects.status.success,
-        error: tx.effects.status.hasError()
-            ? _parseExecutionError(tx.effects.status.error)
-            : null,
+        error: tx.effects.status.hasError() ? _parseExecutionError(tx.effects.status.error) : null,
       );
     }
 
     // Extract epoch from effects
-    final epoch = (tx.hasEffects() && tx.effects.hasEpoch())
-        ? tx.effects.epoch.toString()
-        : null;
+    final epoch = (tx.hasEffects() && tx.effects.hasEpoch()) ? tx.effects.epoch.toString() : null;
 
     // Extract signatures
-    final signatures = tx.signatures
-        .map((sig) => base64Encode(sig.bcs.value))
-        .toList();
+    final signatures = tx.signatures.map((sig) => base64Encode(sig.bcs.value)).toList();
 
     return TransactionResponse(
       digest: tx.digest,
@@ -481,9 +458,7 @@ class GrpcCoreClient {
                 module: event.module,
                 sender: event.sender,
                 eventType: event.eventType,
-                bcs: event.hasContents()
-                    ? Uint8List.fromList(event.contents.value)
-                    : Uint8List(0),
+                bcs: event.hasContents() ? Uint8List.fromList(event.contents.value) : Uint8List(0),
               );
             }).toList()
           : null,
@@ -499,12 +474,8 @@ class GrpcCoreClient {
       bcs: (include?.bcs == true && tx.hasEffects() && tx.effects.hasBcs())
           ? Uint8List.fromList(tx.effects.bcs.value)
           : null,
-      checkpoint: tx.hasCheckpoint()
-          ? tx.checkpoint.toString()
-          : null,
-      timestampMs: tx.hasTimestamp()
-          ? (tx.timestamp.seconds * Int64(1000)).toString()
-          : null,
+      checkpoint: tx.hasCheckpoint() ? tx.checkpoint.toString() : null,
+      timestampMs: tx.hasTimestamp() ? (tx.timestamp.seconds * Int64(1000)).toString() : null,
     );
   }
 
@@ -515,9 +486,7 @@ class GrpcCoreClient {
       status: effects.hasStatus()
           ? ExecutionStatus(
               success: effects.status.success,
-              error: effects.status.hasError()
-                  ? _parseExecutionError(effects.status.error)
-                  : null,
+              error: effects.status.hasError() ? _parseExecutionError(effects.status.error) : null,
             )
           : null,
       gasUsed: effects.hasGasUsed()
@@ -535,8 +504,7 @@ class GrpcCoreClient {
               outputState: _mapOutputObjectState(effects.gasObject.outputState),
             )
           : null,
-      dependencies:
-          effects.dependencies.isNotEmpty ? effects.dependencies.toList() : null,
+      dependencies: effects.dependencies.isNotEmpty ? effects.dependencies.toList() : null,
       changedObjects: effects.changedObjects.isNotEmpty
           ? effects.changedObjects.map((obj) {
               return ChangedObject(
@@ -652,8 +620,7 @@ class GrpcCoreClient {
               module: abort.location.module,
               function: abort.location.function,
               instruction: abort.location.instruction,
-              functionName:
-                  abort.location.hasFunctionName() ? abort.location.functionName : null,
+              functionName: abort.location.hasFunctionName() ? abort.location.functionName : null,
             )
           : null,
       cleverError: cleverError,
@@ -832,8 +799,7 @@ class GrpcCoreClient {
           address: parts.first,
           module: parts.length > 1 ? parts[1] : '',
           name: parts.length > 2 ? parts[2] : '',
-          typeArguments:
-              body.typeParameterInstantiation.map(_parseNormalizedMoveTypeBody).toList(),
+          typeArguments: body.typeParameterInstantiation.map(_parseNormalizedMoveTypeBody).toList(),
         );
       case OpenSignatureBody_Type.TYPE_PARAMETER:
         return MoveTypeParameter(body.typeParameter);

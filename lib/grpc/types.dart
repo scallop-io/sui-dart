@@ -123,45 +123,7 @@ class ObjectData {
     this.json,
   });
 
-  legacy_objects.SuiObject toSuiObject() {
-    return legacy_objects.SuiObject(
-      objectId,
-      digest,
-      int.parse(version),
-      type,
-      json != null ? legacy_objects.SuiMoveObject.fromJson(json!) : null,
-      content != null
-          ? legacy_objects.SuiRawMoveObject(
-              'moveObject',
-              type,
-              false,
-              int.parse(version),
-              base64Encode(content!),
-            )
-          : null,
-      _toObjectOwner(owner),
-      previousTransaction,
-      null, // storageRebate not available
-      null, // display not available
-    );
-  }
-
-  static legacy_common.ObjectOwner? _toObjectOwner(Owner owner) {
-    return switch (owner) {
-      AddressOwner(address: final addr) =>
-        legacy_common.ObjectOwner(addr, null, null, false),
-      ObjectOwner(address: final addr) =>
-        legacy_common.ObjectOwner(null, addr, null, false),
-      SharedOwner(initialSharedVersion: final v) =>
-        legacy_common.ObjectOwner(
-            null, null, legacy_common.Shared(int.parse(v)), false),
-      ImmutableOwner() =>
-        legacy_common.ObjectOwner(null, null, null, true),
-      ConsensusAddressOwner() =>
-        legacy_common.ObjectOwner(null, null, null, false),
-      UnknownOwner() => null,
-    };
-  }
+  
 }
 
 class CoinData {

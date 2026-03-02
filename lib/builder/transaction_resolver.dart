@@ -55,6 +55,21 @@ Input callArgToGrpcInput(Map<String, dynamic> arg) {
       );
     case 'UnresolvedPure':
       throw Exception("UnresolvedPure must be resolved before converting to gRPC");
+    case 'FundsWithdrawal':
+      final withdrawal = arg['FundsWithdrawal'];
+
+      return Input(
+        kind: Input_InputKind.FUNDS_WITHDRAWAL,
+        fundsWithdrawal: .new(
+          amount: withdrawal['reservation']['\$kind'] == 'MaxAmountU64'
+              ? Int64.parseRadix(withdrawal['reservation']['MaxAmountU64'], 10)
+              : null,
+          coinType: withdrawal['typeArg']['\$kind'] == 'Balance'
+              ? withdrawal['typeArg']['Balance']
+              : null,
+          source: withdrawal['withdrawFrom']['\$kind'] == 'Sponsor' ? .SPONSOR : .SENDER,
+        ),
+      );
     default:
       throw Exception("Unknown CallArg: $arg");
   }
