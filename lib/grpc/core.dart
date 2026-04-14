@@ -434,7 +434,7 @@ class GrpcCoreClient {
     if (include?.effects == true) paths.add('effects');
     if (include?.events == true) paths.add('events');
     if (include?.balanceChanges == true) paths.add('balance_changes');
-    if (include?.bcs == true) paths.add('effects.bcs');
+    if (include?.bcs == true) paths.add('transaction.bcs');
 
     return FieldMask(paths: paths);
   }
@@ -507,8 +507,8 @@ class GrpcCoreClient {
               );
             }).toList()
           : null,
-      bcs: (include?.bcs == true && tx.hasEffects() && tx.effects.hasBcs())
-          ? Uint8List.fromList(tx.effects.bcs.value)
+      bcs: (include?.bcs == true && tx.hasTransaction() && tx.transaction.hasBcs())
+          ? Uint8List.fromList(tx.transaction.bcs.value)
           : null,
       checkpoint: tx.hasCheckpoint() ? tx.checkpoint.toString() : null,
       timestampMs: tx.hasTimestamp() ? (tx.timestamp.seconds * Int64(1000)).toString() : null,
