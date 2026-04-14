@@ -106,7 +106,11 @@ grpc_transaction.Command commandToGrpcCommand(Map<dynamic, dynamic> cmd) {
           package: cmd['MoveCall']['package'],
           module: cmd['MoveCall']['module'],
           function: cmd['MoveCall']['function'],
-          typeArguments: cmd['MoveCall']['typeArguments'],
+          // Commands.moveCall stores typeArguments in an untyped list
+          // (`List<dynamic>`), so cast here to satisfy proto's
+          // `Iterable<String>?` — avoids a runtime type error for move
+          // calls that take no type parameters.
+          typeArguments: (cmd['MoveCall']['typeArguments'] as List?)?.cast<String>(),
           arguments: toIterableGrpcArguments(cmd['MoveCall']['arguments']),
         )),
       );
