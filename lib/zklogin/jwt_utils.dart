@@ -67,7 +67,7 @@ String decodeBase64URL(String s, int i) {
   } else {
     // (offset == 0)
     throw ArgumentError(
-      "Input (s = ${s}) is not tightly packed because (i + s.length - 1)%4 = 0 (i = ${i}))",
+      "Input (s = $s) is not tightly packed because (i + s.length - 1)%4 = 0 (i = $i))",
     );
   }
 

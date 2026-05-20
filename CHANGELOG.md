@@ -108,3 +108,19 @@
 ## 0.3.10
 
 * Fix: Only set sender if transaction input is valid
+
+## 0.4.0
+
+* Feat: gRPC client integration (`SuiGrpcClient` + `GrpcCoreClient`, transaction resolver, type converters, generated proto bindings)
+* Feat: Add `deriveDynamicFieldId` helper for one-shot dynamic-field UID lookup
+* Feat: Add `toSuiObject()` converter on `GrpcObjectData`
+* Feat: Support `FundsWithdrawal` case in `callArgToGrpcInput`
+* Feat: Protobuf value conversion functions for dynamic mapping in gRPC core
+* Refactor: Align gRPC types with TypeScript SDK canonical types
+* Refactor: Replace untyped `Map<String, dynamic>` / `Map<String, bool>` with typed classes in gRPC core
+* Refactor: Improved type safety in transaction handling across `GrpcCoreClient` and `SuiGrpcClient`
+* Fix: Use `transaction.bcs` instead of `effects.bcs` in `GrpcCoreClient`
+* Fix: Cast `typeArguments` to `String` for move calls in `commandToGrpcCommand`
+* Fix: Handle non-string version types in `callArgToGrpcInput`
+* Chore: Update Sui URLs to include port 443; upgrade SDK to 3.11.0
+* Chore: Upgrade `pointycastle` to 4.0.0

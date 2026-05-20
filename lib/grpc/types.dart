@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:sui_dart/types/common.dart' as legacy_common;
