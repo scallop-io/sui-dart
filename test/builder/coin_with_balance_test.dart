@@ -157,4 +157,57 @@ void main() {
       );
     });
   });
+
+  group('async serialization', () {
+    test('isPreparedForSerialization reflects unresolved intents', () {
+      final tx = Transaction();
+      tx.add(coinWithBalance(type: _fooType, balance: 100));
+
+      expect(tx.isPreparedForSerialization(), isFalse);
+      expect(
+        tx.isPreparedForSerialization(supportedIntents: ['CoinWithBalance']),
+        isTrue,
+      );
+    });
+
+    test('toJsonAsync resolves intents and round-trips', () async {
+      final tx = Transaction();
+      tx.setSender(_owner);
+      final coin = tx.add(coinWithBalance(type: _fooType, balance: 100));
+      tx.transferObjects([coin], _recipient);
+
+      final json = await tx.toJsonAsync(
+        SerializeTransactionOptions(client: _FakeClient([_coin('0x1', '500')])),
+      );
+
+      expect(json.contains('\$Intent'), isFalse);
+      expect(json.contains('SplitCoins'), isTrue);
+      // The JSON is valid and rebuildable.
+      final restored = Transaction.from(json);
+      expect(restored.isPreparedForSerialization(), isTrue);
+    });
+
+    test('supportedIntents leaves the intent for the recipient', () async {
+      final tx = Transaction();
+      tx.add(coinWithBalance(type: _fooType, balance: 100));
+
+      // No client needed: the intent is not resolved.
+      final json = await tx.toJsonAsync(
+        SerializeTransactionOptions(supportedIntents: ['CoinWithBalance']),
+      );
+
+      expect(json.contains('\$Intent'), isTrue);
+    });
+
+    test('prepareForSerialization throws when a resolver is missing', () {
+      final tx = Transaction();
+      // Raw intent command with no registered resolver.
+      tx.add(Commands.intent(name: 'SomethingCustom', data: {}));
+
+      expect(
+        () => tx.prepareForSerialization(),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+  });
 }

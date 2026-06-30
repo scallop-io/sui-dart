@@ -395,14 +395,65 @@ class Transaction {
     _intentResolvers[intent] = resolver;
   }
 
-  Future<void> _runIntentResolvers(BuildOptions options) async {
-    final resolvers = _intentResolvers.values.toList();
+  /// Runs the resolver for every intent present in the commands (skipping any in
+  /// [supportedIntents]), as a middleware chain. Throws if a present intent has
+  /// no registered resolver.
+  Future<void> _resolveIntents(
+    BuildOptions options, {
+    List<String>? supportedIntents,
+  }) async {
+    final present = <String>{};
+    for (final command in _blockData.commands) {
+      if (command['\$kind'] == '\$Intent') {
+        present.add(command['\$Intent']['name']);
+      }
+    }
+
+    final steps = <IntentResolver>[];
+    for (final name in present) {
+      if (supportedIntents != null && supportedIntents.contains(name)) continue;
+      final resolver = _intentResolvers[name];
+      if (resolver == null) {
+        throw ArgumentError('Missing intent resolver for $name');
+      }
+      steps.add(resolver);
+    }
+
     Future<void> run(int i) async {
-      if (i >= resolvers.length) return;
-      await resolvers[i](_blockData, options, () => run(i + 1));
+      if (i >= steps.length) return;
+      await steps[i](_blockData, options, () => run(i + 1));
     }
 
     await run(0);
+  }
+
+  /// Resolves intents so the transaction can be serialized to JSON, without
+  /// requiring gas/sender/object versions (unlike [build]). Intents named in
+  /// [SerializeTransactionOptions.supportedIntents] are left for the recipient.
+  Future<void> prepareForSerialization([SerializeTransactionOptions? options]) {
+    options ??= SerializeTransactionOptions();
+    return _resolveIntents(options, supportedIntents: options.supportedIntents);
+  }
+
+  /// Whether the transaction has no unresolved `$Intent` commands (other than
+  /// those in [supportedIntents]) — i.e. it can be serialized to JSON as-is.
+  bool isPreparedForSerialization({List<String>? supportedIntents}) {
+    return !_blockData.commands.any(
+      (command) =>
+          command['\$kind'] == '\$Intent' &&
+          !(supportedIntents?.contains(command['\$Intent']['name']) ?? false),
+    );
+  }
+
+  /// Resolves intents and serializes the transaction to a JSON string. Use this
+  /// instead of the synchronous [toJson] when the transaction contains intents
+  /// (e.g. `coinWithBalance`).
+  Future<String> toJsonAsync([SerializeTransactionOptions? options]) async {
+    await prepareForSerialization(options);
+    return jsonEncode(
+      _blockData.snapshot().toJson(),
+      toEncodable: (v) => v is BigInt ? v.toString() : v,
+    );
   }
 
   // Method shorthands:
@@ -1106,7 +1157,7 @@ class Transaction {
       options.protocolConfig = await client.getProtocolConfig();
     }
 
-    await _runIntentResolvers(options);
+    await _resolveIntents(options);
 
     await normalizeInputs(options);
     await resolveObjectReferences(options);
