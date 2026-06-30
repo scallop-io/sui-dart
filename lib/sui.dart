@@ -7,6 +7,7 @@ export 'builder/transaction_block_data.dart';
 export 'builder/transactions.dart';
 export 'builder/transaction.dart';
 export 'builder/commands.dart';
+export 'builder/intents/coin_with_balance.dart';
 export 'builder/inputs.dart';
 export 'builder/transaction_resolver.dart';
 export 'cryptography/ed25519_keypair.dart';

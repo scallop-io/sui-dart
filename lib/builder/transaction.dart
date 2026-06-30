@@ -24,6 +24,16 @@ import 'package:sui_dart/types/transactions.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction.pb.dart'
     as grpc_transaction;
 
+/// An async resolver for a named `$Intent` command. It may inspect and mutate
+/// [transactionData] (e.g. via `replaceCommand`) and must call [next] to run the
+/// rest of the resolver chain.
+typedef IntentResolver =
+    Future<void> Function(
+      TransactionBlockDataBuilder transactionData,
+      BuildOptions options,
+      Future<void> Function() next,
+    );
+
 class TransactionResult {
   final int index;
 
@@ -269,6 +279,11 @@ class Transaction {
       return object(value(this));
     }
 
+    // An argument produced by `add()` (e.g. a `coinWithBalance` result).
+    if (value is TransactionResult) {
+      return value.toJson();
+    }
+
     if (value is Map && value['\$kind'] != null) {
       final kind = value['\$kind'];
       if (kind == 'GasCoin' ||
@@ -358,8 +373,36 @@ class Transaction {
   }
 
   TransactionResult add(dynamic transaction) {
+    // Intent helpers (e.g. `coinWithBalance`) are passed as a function of the
+    // transaction; invoke them so they can register resolvers and add commands.
+    if (transaction is Function) {
+      return transaction(this);
+    }
     _blockData.commands.add(transaction);
     return TransactionResult(_blockData.commands.length - 1);
+  }
+
+  final Map<String, IntentResolver> _intentResolvers = {};
+
+  /// Registers an async resolver for a named intent (`$Intent` command). The
+  /// resolver runs during [build], replacing its intent commands with concrete
+  /// ones. Registering the same intent twice with a different resolver throws.
+  void addIntentResolver(String intent, IntentResolver resolver) {
+    if (_intentResolvers.containsKey(intent) &&
+        _intentResolvers[intent] != resolver) {
+      throw ArgumentError('Intent $intent already has a conflicting resolver');
+    }
+    _intentResolvers[intent] = resolver;
+  }
+
+  Future<void> _runIntentResolvers(BuildOptions options) async {
+    final resolvers = _intentResolvers.values.toList();
+    Future<void> run(int i) async {
+      if (i >= resolvers.length) return;
+      await resolvers[i](_blockData, options, () => run(i + 1));
+    }
+
+    await run(0);
   }
 
   // Method shorthands:
@@ -1062,6 +1105,8 @@ class Transaction {
         client != null) {
       options.protocolConfig = await client.getProtocolConfig();
     }
+
+    await _runIntentResolvers(options);
 
     await normalizeInputs(options);
     await resolveObjectReferences(options);

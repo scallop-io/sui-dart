@@ -107,6 +107,16 @@ String prepareSuiAddress(String address) {
   return normalizeSuiAddress(address).replaceAll('0x', '');
 }
 
+dynamic _deepClone(dynamic value) {
+  if (value is Map) {
+    return value.map((k, v) => MapEntry(k, _deepClone(v)));
+  }
+  if (value is List) {
+    return value.map(_deepClone).toList();
+  }
+  return value;
+}
+
 class TransactionBlockDataBuilder {
   static TransactionBlockDataBuilder fromKindBytes(Uint8List bytes) {
     final kind = SuiBcs.TransactionKind.parse(bytes);
@@ -246,7 +256,7 @@ class TransactionBlockDataBuilder {
   }
 
   dynamic getInputUses(int index, Function(dynamic arg, dynamic command) fn) {
-    mapArguments((arg, command) {
+    mapArguments((arg, command, _) {
       if (arg["Input"] != null && arg["Input"] == index) {
         fn(arg, command);
       }
@@ -255,59 +265,132 @@ class TransactionBlockDataBuilder {
     });
   }
 
-  void mapArguments(dynamic Function(dynamic arg, dynamic command) fn) {
-    for (final command in commands) {
+  void mapArguments(
+    dynamic Function(dynamic arg, dynamic command, int commandIndex) fn,
+  ) {
+    for (var commandIndex = 0; commandIndex < commands.length; commandIndex++) {
+      final command = commands[commandIndex];
       if (command["MoveCall"] != null) {
         command["MoveCall"]["arguments"] = command["MoveCall"]["arguments"]
-            .map((arg) => fn(arg, command))
+            .map((arg) => fn(arg, command, commandIndex))
             .toList();
       } else if (command["TransferObjects"] != null) {
         command["TransferObjects"]["objects"] =
-            command["TransferObjects"]["objects"].map(
-              (arg) => fn(arg, command),
-            );
+            command["TransferObjects"]["objects"]
+                .map((arg) => fn(arg, command, commandIndex))
+                .toList();
         command["TransferObjects"]["address"] = fn(
           command["TransferObjects"]["address"],
           command,
+          commandIndex,
         );
       } else if (command["SplitCoins"] != null) {
         command["SplitCoins"]["coin"] = fn(
           command["SplitCoins"]["coin"],
           command,
+          commandIndex,
         );
-        command["SplitCoins"]["amounts"] = command["SplitCoins"]["amounts"].map(
-          (arg) => fn(arg, command),
-        );
+        command["SplitCoins"]["amounts"] = command["SplitCoins"]["amounts"]
+            .map((arg) => fn(arg, command, commandIndex))
+            .toList();
       } else if (command["MergeCoins"] != null) {
         command["MergeCoins"]["destination"] = fn(
           command["MergeCoins"]["destination"],
           command,
+          commandIndex,
         );
-        command["MergeCoins"]["sources"] = command["MergeCoins"]["sources"].map(
-          (arg) => fn(arg, command),
-        );
+        command["MergeCoins"]["sources"] = command["MergeCoins"]["sources"]
+            .map((arg) => fn(arg, command, commandIndex))
+            .toList();
       } else if (command["MakeMoveVec"] != null) {
         command["MakeMoveVec"]["elements"] = command["MakeMoveVec"]["elements"]
-            .map((arg) => fn(arg, command));
+            .map((arg) => fn(arg, command, commandIndex))
+            .toList();
       } else if (command["Upgrade"] != null) {
         command["Upgrade"]["ticket"] = fn(
           command["Upgrade"]["ticket"],
           command,
+          commandIndex,
         );
       } else if (command["\$Intent"] != null) {
-        final inputs = command["\$Intent"]["inputs"];
-        command["\$Intent"]["inputs"] = {};
-
-        for (final [key, value] in inputs) {
-          command["\$Intent"]["inputs"][key] = value is Iterable
-              ? value.map((arg) => fn(arg, command))
-              : fn(value, command);
-        }
+        final intentInputs = command["\$Intent"]["inputs"] as Map;
+        final mapped = <String, dynamic>{};
+        intentInputs.forEach((key, value) {
+          mapped[key] = value is Iterable
+              ? value.map((arg) => fn(arg, command, commandIndex)).toList()
+              : fn(value, command, commandIndex);
+        });
+        command["\$Intent"]["inputs"] = mapped;
       } else if (command["Publish"] != null) {
       } else {
         throw ArgumentError("Unexpected transaction kind: $command");
       }
     }
+  }
+
+  /// Replaces the command at [index] with [replacement] (a single command or a
+  /// list of commands), remapping `Result`/`NestedResult` references in later
+  /// commands so they keep pointing at the right command after the splice.
+  ///
+  /// [resultIndex] is the argument that references to the replaced command's
+  /// result should resolve to. Defaults to [index]; pass a `Result`/`NestedResult`
+  /// map to redirect references to a specific command in [replacement].
+  void replaceCommand(int index, dynamic replacement, [dynamic resultIndex]) {
+    resultIndex ??= index;
+
+    if (replacement is! List) {
+      commands[index] = replacement;
+      return;
+    }
+
+    final sizeDiff = replacement.length - 1;
+    commands.replaceRange(index, index + 1, [
+      for (final command in replacement) _deepClone(command),
+    ]);
+
+    mapArguments((arg, _, commandIndex) {
+      if (commandIndex < index + replacement.length) {
+        return arg;
+      }
+
+      if (resultIndex is! int) {
+        if ((arg["\$kind"] == 'Result' && arg["Result"] == index) ||
+            (arg["\$kind"] == 'NestedResult' &&
+                arg["NestedResult"][0] == index)) {
+          if (arg["NestedResult"] == null || arg["NestedResult"][1] == 0) {
+            return _deepClone(resultIndex);
+          }
+          throw ArgumentError(
+            'Cannot replace command $index with a specific result type: '
+            'NestedResult[$index, ${arg["NestedResult"][1]}] references a nested '
+            'element that cannot be mapped to the replacement result',
+          );
+        }
+      }
+
+      switch (arg["\$kind"]) {
+        case 'Result':
+          if (arg["Result"] == index && resultIndex is int) {
+            arg["Result"] = resultIndex;
+          }
+          if (arg["Result"] > index) {
+            arg["Result"] += sizeDiff;
+          }
+          break;
+        case 'NestedResult':
+          if (arg["NestedResult"][0] == index && resultIndex is int) {
+            return {
+              "\$kind": 'NestedResult',
+              "NestedResult": [resultIndex, arg["NestedResult"][1]],
+            };
+          }
+          if (arg["NestedResult"][0] > index) {
+            arg["NestedResult"][0] += sizeDiff;
+          }
+          break;
+      }
+      return arg;
+    });
   }
 
   String getDigest() {
