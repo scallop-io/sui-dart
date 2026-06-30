@@ -15,9 +15,7 @@ void main() {
 
     test('vector / struct / type-parameter shapes', () {
       expect(
-        normalizedMoveTypeToJson(
-          const MoveTypeVector(MoveTypePrimitive('U8')),
-        ),
+        normalizedMoveTypeToJson(const MoveTypeVector(MoveTypePrimitive('U8'))),
         {'Vector': 'U8'},
       );
       expect(normalizedMoveTypeToJson(const MoveTypeParameter(2)), {

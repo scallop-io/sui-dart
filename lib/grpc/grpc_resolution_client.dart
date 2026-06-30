@@ -10,9 +10,8 @@ import 'package:sui_dart/types/normalized.dart';
 import 'package:sui_dart/types/objects.dart';
 import 'package:sui_dart/types/transactions.dart';
 
-/// [TxResolutionClient] backed by the gRPC [SuiGrpcClient]. Converts gRPC
-/// response types into the shapes the transaction builder already consumes, so
-/// transactions can be built over gRPC instead of JSON-RPC.
+/// [TxResolutionClient] over gRPC ([SuiGrpcClient]): converts gRPC responses
+/// into the shapes the builder consumes, so transactions build over gRPC.
 class GrpcResolutionClient implements TxResolutionClient {
   final SuiGrpcClient client;
 
@@ -60,7 +59,8 @@ class GrpcResolutionClient implements TxResolutionClient {
               'objectId': data.objectId,
               'version': data.version,
               'digest': data.digest,
-              if (_ownerJson(data.owner) != null) 'owner': _ownerJson(data.owner),
+              if (_ownerJson(data.owner) != null)
+                'owner': _ownerJson(data.owner),
             },
           });
         case grpc.ObjectError(:final error):
@@ -81,10 +81,8 @@ class GrpcResolutionClient implements TxResolutionClient {
     Uint8List bytes, {
     String? signerAddress,
   }) async {
-    // gRPC has no bytes dry-run; rebuild the (already-resolved) transaction and
-    // simulate it, then map the effects we need (status + gas) back. The builder
-    // dry-runs with empty gas payment to estimate a budget, so let the node
-    // select gas for the simulation.
+    // No bytes dry-run in gRPC: rebuild the tx and simulate (the node picks gas,
+    // since the builder dry-runs with empty payment to estimate a budget).
     final tx = Transaction.fromBytes(bytes);
     final response = await client.simulateTransaction(tx, doGasSelection: true);
     final effects = response.effects;

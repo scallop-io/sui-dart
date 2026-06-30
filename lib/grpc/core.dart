@@ -566,6 +566,7 @@ class GrpcCoreClient {
                 bcs: event.hasContents()
                     ? Uint8List.fromList(event.contents.value)
                     : Uint8List(0),
+                json: event.hasJson() ? _protoValueToMap(event.json) : null,
               );
             }).toList()
           : null,

@@ -17,6 +17,7 @@ class RequestOptions {
   });
 }
 
+@Deprecated('JSON-RPC is being sunset (~July 2026); use SuiGrpcClient.')
 class JsonRpcClient {
   JsonRpcClient(this.url, {this.options});
 

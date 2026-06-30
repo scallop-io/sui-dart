@@ -1,4 +1,4 @@
-// ignore_for_file: constant_identifier_names, non_constant_identifier_names
+// ignore_for_file: constant_identifier_names, non_constant_identifier_names, deprecated_member_use_from_same_package
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';

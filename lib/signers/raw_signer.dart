@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use_from_same_package
 import 'dart:typed_data';
 
 import 'package:sui_dart/cryptography/keypair.dart';
@@ -5,6 +6,7 @@ import 'package:sui_dart/signers/signer_with_provider.dart';
 import 'package:sui_dart/sui_account.dart';
 import 'package:sui_dart/types/common.dart';
 
+@Deprecated('JSON-RPC is being sunset (~July 2026); use SuiGrpcClient.')
 class RawSigner extends SignerWithProvider {
   late final Keypair _keypair;
 

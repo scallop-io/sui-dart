@@ -450,6 +450,7 @@ class Event {
   final String sender;
   final String eventType;
   final Uint8List bcs;
+  final Map<String, dynamic>? json;
 
   const Event({
     required this.packageId,
@@ -457,6 +458,7 @@ class Event {
     required this.sender,
     required this.eventType,
     required this.bcs,
+    this.json,
   });
 }
 

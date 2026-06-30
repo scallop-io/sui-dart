@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use_from_same_package
 import 'dart:typed_data';
 
 import 'package:sui_dart/sui_client.dart';
@@ -55,7 +56,8 @@ class JsonRpcResolutionClient implements TxResolutionClient {
     String? coinType,
     String? cursor,
     int? limit,
-  }) => client.getCoins(owner, coinType: coinType, cursor: cursor, limit: limit);
+  }) =>
+      client.getCoins(owner, coinType: coinType, cursor: cursor, limit: limit);
 
   @override
   Future<List<SuiObjectResponse>> multiGetObjects(

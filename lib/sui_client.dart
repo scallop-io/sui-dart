@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use_from_same_package
 import 'dart:typed_data';
 
 import 'package:sui_dart/builder/transaction.dart';
@@ -7,6 +8,7 @@ import 'package:sui_dart/sui_account.dart';
 import 'package:sui_dart/types/common.dart';
 import 'package:sui_dart/types/transactions.dart';
 
+@Deprecated('JSON-RPC is being sunset (~July 2026); use SuiGrpcClient.')
 class SuiClient extends SignerWithProvider {
   late SuiAccount? _account;
 

@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use_from_same_package
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -22,6 +23,7 @@ import 'package:sui_dart/types/transactions.dart';
 import 'package:sui_dart/types/validator.dart';
 import 'package:sui_dart/types/version.dart';
 
+@Deprecated('JSON-RPC is being sunset (~July 2026); use SuiGrpcClient.')
 mixin JsonRpcProvider {
   JsonRpcClient get client;
 

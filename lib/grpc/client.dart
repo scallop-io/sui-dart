@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:bcs_dart/bcs.dart';
 import 'package:grpc/grpc.dart';
 
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/ledger_service.pbgrpc.dart';
@@ -73,6 +75,32 @@ class SuiGrpcClient {
     ObjectIncludeOptions? include,
   }) {
     return core.getObjects(ids, include: include);
+  }
+
+  /// The `suix_getDynamicFieldObject` equivalent: derives the field UID from
+  /// [parentId] + the encoded name and fetches it (`null` if absent).
+  Future<ObjectData?> getDynamicFieldObject(
+    String parentId,
+    String nameType,
+    dynamic nameValue, {
+    ObjectIncludeOptions? include,
+  }) async {
+    final keyBcs = _encodeDynamicFieldName(nameType, nameValue);
+    if (keyBcs == null) return null;
+
+    final fieldId = sui_dart.deriveDynamicFieldId(
+      parentObjectId: parentId,
+      keyTypeTag: nameType,
+      keyBcs: keyBcs,
+    );
+
+    final objects = await getObjects([
+      fieldId,
+    ], include: include ?? const ObjectIncludeOptions(json: true));
+    if (objects.isNotEmpty && objects.first is ObjectSuccess) {
+      return (objects.first as ObjectSuccess).data;
+    }
+    return null;
   }
 
   Future<Page<ObjectData>> listOwnedObjects(
@@ -194,4 +222,76 @@ class SuiGrpcClient {
   Future<void> shutdown() async {
     await _channel.shutdown();
   }
+}
+
+/// BCS-encodes a dynamic-field name: address/ID, integer primitives,
+/// `vector<u8>`, bool/bytes wrapper structs, or a single-`String`-field key
+/// struct (`TypeName`, `ascii`/`string::String`, …). Null if it can't be encoded.
+Uint8List? _encodeDynamicFieldName(String nameType, dynamic nameValue) {
+  if (nameValue == null) return null;
+  try {
+    final t = nameType.trim();
+    final tl = t.toLowerCase();
+
+    // 32-byte address keys (also TypedID<T>, whose only field is `id: address`).
+    if (tl == 'address' ||
+        tl.endsWith('::object::id') ||
+        tl.contains('::typed_id::typedid')) {
+      if (nameValue is! String) return null;
+      return Bcs.bytes(sui_dart.SUI_ADDRESS_LENGTH)
+          .serialize(
+            Uint8List.fromList(
+              fromHEX(sui_dart.normalizeSuiAddress(nameValue)),
+            ),
+          )
+          .toBytes();
+    }
+
+    if (t == 'u8') return Bcs.u8().serialize(nameValue as int).toBytes();
+    if (t == 'u16') return Bcs.u16().serialize(nameValue as int).toBytes();
+    if (t == 'u32') return Bcs.u32().serialize(nameValue as int).toBytes();
+    if (t == 'u64') return Bcs.u64().serialize(nameValue).toBytes();
+    if (t == 'u128') return Bcs.u128().serialize(nameValue).toBytes();
+    if (t == 'u256') return Bcs.u256().serialize(nameValue).toBytes();
+
+    if (t == 'vector<u8>') {
+      List<int> bytes;
+      if (nameValue is String) {
+        bytes = utf8.encode(nameValue);
+      } else if (nameValue is List<int>) {
+        bytes = nameValue;
+      } else if (nameValue is List) {
+        bytes = nameValue.cast<int>();
+      } else {
+        return null;
+      }
+      return Bcs.vector(Bcs.u8()).serialize(bytes).toBytes();
+    }
+
+    // Single-`bool` wrapper (e.g. a `{dummy_field: bool}` key struct).
+    if (nameValue is Map && nameValue['dummy_field'] is bool) {
+      return Bcs.boolean()
+          .serialize(nameValue['dummy_field'] as bool)
+          .toBytes();
+    }
+
+    // Single-`vector<u8>` wrapper passed as `{bytes: [...]}`.
+    if (nameValue is Map && nameValue['bytes'] is List) {
+      return Bcs.vector(
+        Bcs.u8(),
+      ).serialize((nameValue['bytes'] as List).cast<int>()).toBytes();
+    }
+
+    // String fallback: ascii::String, string::String, TypeName, and any other
+    // single-String-field key struct. All BCS as ULEB128(len) + UTF-8.
+    final s = nameValue is String
+        ? nameValue
+        : (nameValue is Map ? (nameValue['name'] ?? nameValue['bytes']) : null);
+    if (s is String) {
+      return Bcs.vector(Bcs.u8()).serialize(utf8.encode(s)).toBytes();
+    }
+  } catch (_) {
+    return null;
+  }
+  return null;
 }

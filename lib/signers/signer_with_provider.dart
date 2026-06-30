@@ -1,4 +1,4 @@
-// ignore_for_file: constant_identifier_names
+// ignore_for_file: constant_identifier_names, deprecated_member_use_from_same_package
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -35,6 +35,7 @@ class SignaturePubkeyPair {
 // This is currently hardcoded with [IntentScope::TransactionData = 0, Version::V0 = 0, AppId::Sui = 0]
 const INTENT_BYTES = [0, 0, 0];
 
+@Deprecated('JSON-RPC is being sunset (~July 2026); use SuiGrpcClient.')
 abstract class SignerWithProvider with JsonRpcProvider {
   late final JsonRpcClient rpcClient;
   late final TxnDataSerializer serializer;
