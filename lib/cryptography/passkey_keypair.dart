@@ -47,7 +47,10 @@ abstract class PasskeyProvider {
   Future<PasskeyRegistration> create();
 
   /// Signs [challenge] with an existing credential, returning the assertion.
-  Future<PasskeyAuthentication> get(Uint8List challenge, [Uint8List? credentialId]);
+  Future<PasskeyAuthentication> get(
+    Uint8List challenge, [
+    Uint8List? credentialId,
+  ]);
 }
 
 /// A passkey signer (SIP-9). The private key never leaves the authenticator;
@@ -57,10 +60,13 @@ class PasskeyKeypair {
   final PasskeyProvider _provider;
   final Uint8List? _credentialId;
 
-  PasskeyKeypair(Uint8List publicKey, PasskeyProvider provider, [Uint8List? credentialId])
-      : _publicKey = Uint8List.fromList(publicKey),
-        _provider = provider,
-        _credentialId = credentialId {
+  PasskeyKeypair(
+    Uint8List publicKey,
+    PasskeyProvider provider, [
+    Uint8List? credentialId,
+  ]) : _publicKey = Uint8List.fromList(publicKey),
+       _provider = provider,
+       _credentialId = credentialId {
     if (_publicKey.length != PASSKEY_PUBLIC_KEY_SIZE) {
       throw ArgumentError(
         'Invalid public key length. Expected $PASSKEY_PUBLIC_KEY_SIZE bytes, got ${_publicKey.length}',
@@ -79,11 +85,14 @@ class PasskeyKeypair {
   /// Registers a fresh passkey via [provider] and returns a signer for it.
   /// Only call this when creating a passkey wallet for the first time; to use an
   /// existing passkey whose public key is unknown, see [signAndRecover].
-  static Future<PasskeyKeypair> getPasskeyInstance(PasskeyProvider provider) async {
+  static Future<PasskeyKeypair> getPasskeyInstance(
+    PasskeyProvider provider,
+  ) async {
     final registration = await provider.create();
     final uncompressed = parseDerSPKI(registration.publicKeyDer);
-    final compressed =
-        curve256r1Params.curve.decodePoint(uncompressed)!.getEncoded(true);
+    final compressed = curve256r1Params.curve
+        .decodePoint(uncompressed)!
+        .getEncoded(true);
     return PasskeyKeypair(
       Uint8List.fromList(compressed),
       provider,
@@ -106,9 +115,7 @@ class PasskeyKeypair {
     final normalized = SignatureData(ecSig.r, ecSig.s).toBytes();
 
     // userSignature is a serialized secp256r1 signature: flag || sig(64) || pk(33).
-    final userSignature = Uint8List(
-      1 + normalized.length + _publicKey.length,
-    );
+    final userSignature = Uint8List(1 + normalized.length + _publicKey.length);
     userSignature[0] = SIGNATURE_SCHEME_TO_FLAG.Secp256r1;
     userSignature.setAll(1, normalized);
     userSignature.setAll(1 + normalized.length, _publicKey);

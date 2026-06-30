@@ -43,7 +43,10 @@ class _SoftwareProvider extends PasskeyProvider {
     );
 
     final clientDataHash = sha256(clientDataBytes);
-    final payload = Uint8List.fromList([...authenticatorData, ...clientDataHash]);
+    final payload = Uint8List.fromList([
+      ...authenticatorData,
+      ...clientDataHash,
+    ]);
     final sig = _secp.sign(sha256(payload), _privateKey);
 
     return PasskeyAuthentication(
@@ -89,7 +92,10 @@ void main() {
     test('derives the public key from a registration credential', () async {
       final signer = await PasskeyKeypair.getPasskeyInstance(provider);
       expect(signer.getPublicKey().flag(), 0x06);
-      expect(signer.getPublicKey().toRawBytes().length, PASSKEY_PUBLIC_KEY_SIZE);
+      expect(
+        signer.getPublicKey().toRawBytes().length,
+        PASSKEY_PUBLIC_KEY_SIZE,
+      );
       expect(signer.getCredentialId(), Uint8List.fromList([1, 2, 3, 4]));
     });
 
@@ -97,10 +103,7 @@ void main() {
       final signer = await PasskeyKeypair.getPasskeyInstance(provider);
       final result = await signer.signTransaction(tx);
 
-      expect(
-        isValidTransactionSignature(tx, result.signature),
-        isTrue,
-      );
+      expect(isValidTransactionSignature(tx, result.signature), isTrue);
       expect(
         signer.getPublicKey().verifyTransaction(tx, result.signature),
         isTrue,
@@ -114,10 +117,7 @@ void main() {
     test('signs a personal message that verifies', () async {
       final signer = await PasskeyKeypair.getPasskeyInstance(provider);
       final result = await signer.signPersonalMessage(msg);
-      expect(
-        isValidPersonalMessageSignature(msg, result.signature),
-        isTrue,
-      );
+      expect(isValidPersonalMessageSignature(msg, result.signature), isTrue);
     });
 
     test('signAndRecover + findCommonPublicKey identifies the key', () async {

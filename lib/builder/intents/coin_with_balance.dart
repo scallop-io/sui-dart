@@ -62,7 +62,9 @@ CoinWithBalanceBuilder _intent({
     tx.addIntentResolver(COIN_WITH_BALANCE, resolveCoinBalance);
 
     final rawType = type ?? SUI_TYPE;
-    final coinType = rawType == 'gas' ? rawType : normalizeStructTagString(rawType);
+    final coinType = rawType == 'gas'
+        ? rawType
+        : normalizeStructTagString(rawType);
 
     cached = tx.add(
       Commands.intent(
@@ -134,9 +136,10 @@ Future<void> resolveCoinBalance(
 
     totalByType[intent.type] =
         (totalByType[intent.type] ?? BigInt.zero) + intent.balance;
-    (intentsByType[intent.type] ??= []).add(
-      (balance: intent.balance, outputKind: intent.outputKind),
-    );
+    (intentsByType[intent.type] ??= []).add((
+      balance: intent.balance,
+      outputKind: intent.outputKind,
+    ));
   }
 
   if (totalByType.isEmpty) return next();
@@ -311,7 +314,11 @@ Future<List<CoinStruct>> _loadCoins(
   String? cursor;
 
   while (true) {
-    final page = await client.getCoins(owner, coinType: coinType, cursor: cursor);
+    final page = await client.getCoins(
+      owner,
+      coinType: coinType,
+      cursor: cursor,
+    );
     for (final coin in page.data) {
       if (usedIds.contains(normalizeSuiAddress(coin.coinObjectId))) continue;
       coins.add(coin);

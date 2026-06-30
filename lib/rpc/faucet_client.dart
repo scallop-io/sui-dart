@@ -29,9 +29,7 @@ class FaucetClient {
     }
   }
 
-  @Deprecated(
-    'Use requestSuiFromFaucetV2; the /gas endpoint is deprecated.',
-  )
+  @Deprecated('Use requestSuiFromFaucetV2; the /gas endpoint is deprecated.')
   Future<FaucetResponse> requestSuiFromFaucetV0(String recipient) async {
     final data = {
       "FixedAmountRequest": {"recipient": recipient},
@@ -41,9 +39,7 @@ class FaucetClient {
     return FaucetResponse.fromJson(resp.data);
   }
 
-  @Deprecated(
-    'Use requestSuiFromFaucetV2; the /v1/gas endpoint is deprecated.',
-  )
+  @Deprecated('Use requestSuiFromFaucetV2; the /v1/gas endpoint is deprecated.')
   Future<BatchFaucetResponse> requestSuiFromFaucetV1(String recipient) async {
     final data = {
       "FixedAmountRequest": {"recipient": recipient},

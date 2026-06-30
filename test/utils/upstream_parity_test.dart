@@ -8,7 +8,10 @@ void main() {
     test('rejects malformed struct tags', () {
       expect(() => parseStructTag('::foo::Bar'), throwsArgumentError);
       expect(() => parseStructTag('0x2::coin'), throwsArgumentError);
-      expect(() => parseStructTag('0x2::coin::Coin<u8>GARBAGE'), throwsArgumentError);
+      expect(
+        () => parseStructTag('0x2::coin::Coin<u8>GARBAGE'),
+        throwsArgumentError,
+      );
     });
 
     test('parses a valid struct tag', () {
@@ -30,8 +33,10 @@ void main() {
     });
 
     test('normalizeStructTagString rejects top-level vector', () {
-      expect(() => normalizeStructTagString('vector<0x2::sui::SUI>'),
-          throwsArgumentError);
+      expect(
+        () => normalizeStructTagString('vector<0x2::sui::SUI>'),
+        throwsArgumentError,
+      );
     });
 
     test('isValidStructTag', () {
@@ -48,9 +53,11 @@ void main() {
       expect(isValidTransactionDigest('not-base58-0OIl'), false);
       // 31 bytes is wrong length
       expect(
-          isValidTransactionDigest(
-              toB58(Uint8List.fromList(List<int>.filled(31, 7)))),
-          false);
+        isValidTransactionDigest(
+          toB58(Uint8List.fromList(List<int>.filled(31, 7))),
+        ),
+        false,
+      );
     });
   });
 

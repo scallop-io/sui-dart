@@ -56,7 +56,10 @@ void main() {
         },
         'transactionDigest': 'Bfm2Z4dXysM9Vu1X5p8oR4z7mFs2pT8w9X1y2Z3a4B5c',
         'gasObject': {
-          'owner': {'AddressOwner': '0x00000000000000000000000000000000000000000000000000000000000000ab'},
+          'owner': {
+            'AddressOwner':
+                '0x00000000000000000000000000000000000000000000000000000000000000ab',
+          },
           'reference': {
             'objectId':
                 '0x00000000000000000000000000000000000000000000000000000000000000aa',

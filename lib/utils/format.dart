@@ -46,8 +46,9 @@ BigInt parseToUnits(String amount, int decimals) {
 
   final paddedFraction = fraction.padRight(decimals, '0');
   final wholePart = whole.isEmpty ? BigInt.zero : BigInt.parse(whole);
-  final fractionPart =
-      paddedFraction.isEmpty ? BigInt.zero : BigInt.parse(paddedFraction);
+  final fractionPart = paddedFraction.isEmpty
+      ? BigInt.zero
+      : BigInt.parse(paddedFraction);
   final result = wholePart * BigInt.from(10).pow(decimals) + fractionPart;
 
   return negative ? -result : result;

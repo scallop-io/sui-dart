@@ -83,7 +83,11 @@ bool isValidTransactionSignature(
 
 /// Verify [signature] over [bytes], returning the recovered [PublicKey].
 /// Throws if invalid or mismatched with [address].
-PublicKey verifySignature(Uint8List bytes, String signature, {String? address}) {
+PublicKey verifySignature(
+  Uint8List bytes,
+  String signature, {
+  String? address,
+}) {
   final publicKey = _publicKeyFromSignature(signature);
   if (!isValidSignature(bytes, signature)) {
     throw ArgumentError('Signature is not valid for the provided data');

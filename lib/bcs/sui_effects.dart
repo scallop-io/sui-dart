@@ -131,7 +131,7 @@ class SuiEffects {
       'InputObjectDeleted': null,
       'ExecutionCancelledDueToSharedObjectCongestion': Bcs.struct(
         'ExecutionCancelledDueToSharedObjectCongestion',
-      {'congested_objects': Bcs.vector(SuiBcs.Address)},
+        {'congested_objects': Bcs.vector(SuiBcs.Address)},
       ),
       'AddressDeniedForCoin': Bcs.struct('AddressDeniedForCoin', {
         'address': SuiBcs.Address,
@@ -141,19 +141,20 @@ class SuiEffects {
         'coinType': Bcs.string(),
       }),
       'ExecutionCancelledDueToRandomnessUnavailable': null,
-    'MoveVectorElemTooBig': Bcs.struct('MoveVectorElemTooBig', {
-      'valueSize': Bcs.u64(),
-      'maxScaledSize': Bcs.u64(),
-    }),
-    'MoveRawValueTooBig': Bcs.struct('MoveRawValueTooBig', {
-      'valueSize': Bcs.u64(),
-      'maxScaledSize': Bcs.u64(),
-    }),
-    'InvalidLinkage': null,
-    'InsufficientBalanceForWithdraw': null,
-    'NonExclusiveWriteInputObjectModified': Bcs.struct('NonExclusiveWriteInputObjectModified', {
-      'id': SuiBcs.Address,
-    }),
+      'MoveVectorElemTooBig': Bcs.struct('MoveVectorElemTooBig', {
+        'valueSize': Bcs.u64(),
+        'maxScaledSize': Bcs.u64(),
+      }),
+      'MoveRawValueTooBig': Bcs.struct('MoveRawValueTooBig', {
+        'valueSize': Bcs.u64(),
+        'maxScaledSize': Bcs.u64(),
+      }),
+      'InvalidLinkage': null,
+      'InsufficientBalanceForWithdraw': null,
+      'NonExclusiveWriteInputObjectModified': Bcs.struct(
+        'NonExclusiveWriteInputObjectModified',
+        {'id': SuiBcs.Address},
+      ),
     },
   );
 
@@ -239,13 +240,14 @@ class SuiEffects {
     'idOperation': IDOperation,
   });
 
-  static final UnchangedConsensusKind = Bcs.enumeration('UnchangedConsensusKind', {
-    'ReadOnlyRoot': VersionDigest,
-    'MutateConsensusStreamEnded': Bcs.u64(),
-    'ReadConsensusStreamEnded': Bcs.u64(),
-    'Cancelled': Bcs.u64(),
-    'PerEpochConfig': null,
-  });
+  static final UnchangedConsensusKind =
+      Bcs.enumeration('UnchangedConsensusKind', {
+        'ReadOnlyRoot': VersionDigest,
+        'MutateConsensusStreamEnded': Bcs.u64(),
+        'ReadConsensusStreamEnded': Bcs.u64(),
+        'Cancelled': Bcs.u64(),
+        'PerEpochConfig': null,
+      });
 
   static final TransactionEffectsV2 = Bcs.struct('TransactionEffectsV2', {
     'status': ExecutionStatus,
@@ -259,7 +261,8 @@ class SuiEffects {
     'changedObjects': Bcs.vector(
       Bcs.tuple([SuiBcs.Address, EffectsObjectChange]),
     ),
-    'unchangedConsensusObjects': Bcs.vector(Bcs.tuple([SuiBcs.Address, UnchangedConsensusKind]),
+    'unchangedConsensusObjects': Bcs.vector(
+      Bcs.tuple([SuiBcs.Address, UnchangedConsensusKind]),
     ),
     'auxDataDigest': Bcs.option(SuiBcs.ObjectDigest),
   });

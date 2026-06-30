@@ -16,7 +16,9 @@ Map<String, dynamic> jwtDecode(String token, {bool header = false}) {
   final parts = token.split('.');
 
   if (parts.length <= pos) {
-    throw InvalidTokenError('Invalid token specified: missing part #${pos + 1}');
+    throw InvalidTokenError(
+      'Invalid token specified: missing part #${pos + 1}',
+    );
   }
 
   String decoded;

@@ -196,7 +196,7 @@ Synced to `f898c13`.
 * Regenerated `lib/grpc/generated/` from the latest protobuf definitions. `AccumulatorWrite` now carries the authenticated-events shape (`value_kind` + `integer_value` / `integer_tuple` / `event_digest_value`, the `EventDigestEntry` message, and the `AccumulatorValue` enum); `object` and `transaction_execution_service` messages picked up their new fields.
 * Added the `ForkingService` (`sui/forking/v1alpha`) client and exposed it as `SuiGrpcClient.forkingService` (admin-only; for `sui-fork` instances).
 
-## Unreleased
+## 0.8.0
 
 Synced to `f898c13`.
 

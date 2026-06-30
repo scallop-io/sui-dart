@@ -70,10 +70,10 @@ void main() {
       final kinds = commands.map((c) => c['\$kind']).toList();
       expect(kinds, ['MergeCoins', 'SplitCoins', 'TransferObjects']);
       // Transfer references the split output (NestedResult of the split command).
-      expect(
-        commands[2]['TransferObjects']['objects'][0]['NestedResult'],
-        [1, 0],
-      );
+      expect(commands[2]['TransferObjects']['objects'][0]['NestedResult'], [
+        1,
+        0,
+      ]);
     });
 
     test('combines multiple intents of the same type into one split', () async {
@@ -85,23 +85,28 @@ void main() {
       final commands = await _resolve(tx, [_coin('0x1', '500')]);
 
       expect(_hasIntent(commands), isFalse);
-      final splits = commands.where((c) => c['\$kind'] == 'SplitCoins').toList();
+      final splits = commands
+          .where((c) => c['\$kind'] == 'SplitCoins')
+          .toList();
       expect(splits.length, 1);
       expect(splits[0]['SplitCoins']['amounts'].length, 2);
     });
 
-    test('zero balance resolves to coin::zero without querying coins', () async {
-      final tx = Transaction();
-      final coin = tx.add(coinWithBalance(type: _fooType, balance: 0));
-      tx.transferObjects([coin], _recipient);
+    test(
+      'zero balance resolves to coin::zero without querying coins',
+      () async {
+        final tx = Transaction();
+        final coin = tx.add(coinWithBalance(type: _fooType, balance: 0));
+        tx.transferObjects([coin], _recipient);
 
-      final commands = await _resolve(tx, []);
+        final commands = await _resolve(tx, []);
 
-      expect(_hasIntent(commands), isFalse);
-      final move = commands.firstWhere((c) => c['\$kind'] == 'MoveCall');
-      expect(move['MoveCall']['module'], 'coin');
-      expect(move['MoveCall']['function'], 'zero');
-    });
+        expect(_hasIntent(commands), isFalse);
+        final move = commands.firstWhere((c) => c['\$kind'] == 'MoveCall');
+        expect(move['MoveCall']['module'], 'coin');
+        expect(move['MoveCall']['function'], 'zero');
+      },
+    );
 
     test('createBalance wraps the split in coin::into_balance', () async {
       final tx = Transaction();
@@ -204,10 +209,7 @@ void main() {
       // Raw intent command with no registered resolver.
       tx.add(Commands.intent(name: 'SomethingCustom', data: {}));
 
-      expect(
-        () => tx.prepareForSerialization(),
-        throwsA(isA<ArgumentError>()),
-      );
+      expect(() => tx.prepareForSerialization(), throwsA(isA<ArgumentError>()));
     });
   });
 }

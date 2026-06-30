@@ -87,21 +87,27 @@ void main() {
       );
     });
 
-    test('signTransaction wraps the ephemeral signature in a zkLogin signature', () {
-      final signer = ZkLoginSigner(
-        ephemeralSigner: Ed25519Keypair(),
-        maxEpoch: 174,
-        inputs: _zkInputs,
-        legacyAddress: true,
-      );
-      final txBytes = Uint8List.fromList([5, 6, 7, 8]);
-      final sig = signer.signTransaction(txBytes).signature;
+    test(
+      'signTransaction wraps the ephemeral signature in a zkLogin signature',
+      () {
+        final signer = ZkLoginSigner(
+          ephemeralSigner: Ed25519Keypair(),
+          maxEpoch: 174,
+          inputs: _zkInputs,
+          legacyAddress: true,
+        );
+        final txBytes = Uint8List.fromList([5, 6, 7, 8]);
+        final sig = signer.signTransaction(txBytes).signature;
 
-      expect(parseSerializedSignature(sig).signatureScheme, SignatureScheme.ZkLogin);
-      final parsed = parseZkLoginSignature(fromB64(sig).sublist(1));
-      expect(parsed.maxEpoch, 174);
-      expect(parsed.inputs.addressSeed, _zkInputs.addressSeed);
-    });
+        expect(
+          parseSerializedSignature(sig).signatureScheme,
+          SignatureScheme.ZkLogin,
+        );
+        final parsed = parseZkLoginSignature(fromB64(sig).sublist(1));
+        expect(parsed.maxEpoch, 174);
+        expect(parsed.inputs.addressSeed, _zkInputs.addressSeed);
+      },
+    );
 
     test('constructor validates the provided address', () {
       expect(

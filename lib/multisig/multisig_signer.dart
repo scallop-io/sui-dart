@@ -14,7 +14,7 @@ class MultiSigSigner extends Signer {
   final List<Keypair> _signers;
 
   MultiSigSigner(this._pubkey, [List<Keypair> signers = const []])
-      : _signers = signers {
+    : _signers = signers {
     final uniqueKeys = <String>{};
     var combinedWeight = 0;
 
@@ -26,7 +26,9 @@ class MultiSigSigner extends Signer {
     for (final signer in signers) {
       final address = signer.getPublicKey().toSuiAddress();
       if (uniqueKeys.contains(address)) {
-        throw ArgumentError("Can't create MultiSigSigner with duplicate signers");
+        throw ArgumentError(
+          "Can't create MultiSigSigner with duplicate signers",
+        );
       }
       uniqueKeys.add(address);
 

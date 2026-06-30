@@ -12,7 +12,14 @@ import 'package:sui_dart/zklogin/address.dart';
 import 'package:sui_dart/zklogin/jwt_utils.dart';
 import 'package:sui_dart/zklogin/signature.dart';
 
-enum SignatureScheme { Ed25519, Secp256k1, Secp256r1, MultiSig, ZkLogin, Passkey }
+enum SignatureScheme {
+  Ed25519,
+  Secp256k1,
+  Secp256r1,
+  MultiSig,
+  ZkLogin,
+  Passkey,
+}
 
 abstract class SIGNATURE_SCHEME_TO_FLAG {
   static const int Ed25519 = 0x00;

@@ -27,3 +27,6 @@ pubspec.lock
 .dart_tool/
 .packages
 build/
+
+# Internal roadmap (not shipped to pub.dev)
+BIG_PORTS_TODO.md

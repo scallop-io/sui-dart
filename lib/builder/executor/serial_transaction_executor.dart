@@ -83,11 +83,10 @@ class SerialTransactionExecutor {
       options.showEffects = true;
 
       try {
-        final response = await client.executeTransactionBlock(
-          signed.bytes,
-          [signed.signature, ...additionalSignatures],
-          options: options,
-        );
+        final response = await client.executeTransactionBlock(signed.bytes, [
+          signed.signature,
+          ...additionalSignatures,
+        ], options: options);
         _cachedGasCoin = gasCoinFromEffects(response);
         return response;
       } catch (_) {

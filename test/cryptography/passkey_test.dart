@@ -30,13 +30,17 @@ void main() {
     });
 
     test('verifies a transaction (reference vector)', () {
-      expect(pubKeyOf(rustSig).verifyTransaction(base64Decode(rustTx), rustSig),
-          isTrue);
+      expect(
+        pubKeyOf(rustSig).verifyTransaction(base64Decode(rustTx), rustSig),
+        isTrue,
+      );
     });
 
     test('verifies a transaction (real iPhone passkey)', () {
-      expect(pubKeyOf(realSig).verifyTransaction(base64Decode(realTx), realSig),
-          isTrue);
+      expect(
+        pubKeyOf(realSig).verifyTransaction(base64Decode(realTx), realSig),
+        isTrue,
+      );
     });
 
     test('rejects a tampered transaction', () {
@@ -47,8 +51,10 @@ void main() {
 
     test('rejects a signature whose embedded key is not this key', () {
       // The real-vector signature carries a different key than the rust vector.
-      expect(pubKeyOf(rustSig).verifyTransaction(base64Decode(realTx), realSig),
-          isFalse);
+      expect(
+        pubKeyOf(rustSig).verifyTransaction(base64Decode(realTx), realSig),
+        isFalse,
+      );
     });
 
     test('flag is 0x06 and sui-bytes round-trips to the same key', () {
