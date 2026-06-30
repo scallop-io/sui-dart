@@ -7,12 +7,16 @@ import 'package:sui_dart/types/common.dart';
 import 'package:sui_dart/utils/sha.dart';
 import 'package:sui_dart/zklogin/utils.dart';
 
-String computeZkLoginAddressFromSeed(BigInt addressSeed, String iss) {
-  final addressSeedBytesBigEndian = toBigEndianBytes(addressSeed, 32);
-  if (iss == 'accounts.google.com') {
-    iss = 'https://accounts.google.com';
-  }
-  final addressParamBytes = utf8.encode(iss);
+String computeZkLoginAddressFromSeed(
+  BigInt addressSeed,
+  String iss, {
+  bool legacyAddress = false,
+}) {
+  // Legacy: unpadded big-endian seed; current: 32-byte padded. Not interchangeable.
+  final addressSeedBytesBigEndian = legacyAddress
+      ? toBigEndianBytes(addressSeed, 32)
+      : toPaddedBigEndianBytes(addressSeed, 32);
+  final addressParamBytes = utf8.encode(normalizeZkLoginIssuer(iss));
   final tmp = Uint8List(
     2 + addressSeedBytesBigEndian.length + addressParamBytes.length,
   );

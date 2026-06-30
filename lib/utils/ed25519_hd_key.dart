@@ -55,11 +55,7 @@ Uint8List getPublicKey(Uint8List privateKey, [bool withZeroByte = true]) {
   final keyPair = ed25519.newKeyFromSeed(privateKey);
   final signPk = Uint8List.fromList(keyPair.bytes.sublist(32));
   if (!withZeroByte) return signPk;
-  final zero = Uint8List.fromList([0]);
-  final data = Uint8List(zero.lengthInBytes + signPk.lengthInBytes);
-  data.addAll(zero);
-  data.addAll(signPk);
-  return data;
+  return Uint8List.fromList([0, ...signPk]);
 }
 
 bool isValidPath(String path) {

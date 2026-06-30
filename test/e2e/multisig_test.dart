@@ -15,6 +15,7 @@ void main() {
           '20794788559620669596206457022966176986688727876128223628113916380927502737911',
         ),
         'https://id.twitch.tv/oauth2',
+        legacyAddress: false,
       );
       // set up ephemeral keypair, consistent with default zklogin proof.
       final ephemeralKeypair = Ed25519Keypair.fromSecretKey(

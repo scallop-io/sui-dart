@@ -116,7 +116,7 @@
 * Feat: Add `toSuiObject()` converter on `GrpcObjectData`
 * Feat: Support `FundsWithdrawal` case in `callArgToGrpcInput`
 * Feat: Protobuf value conversion functions for dynamic mapping in gRPC core
-* Refactor: Align gRPC types with TypeScript SDK canonical types
+* Refactor: Align gRPC types with the canonical on-chain types
 * Refactor: Replace untyped `Map<String, dynamic>` / `Map<String, bool>` with typed classes in gRPC core
 * Refactor: Improved type safety in transaction handling across `GrpcCoreClient` and `SuiGrpcClient`
 * Fix: Use `transaction.bcs` instead of `effects.bcs` in `GrpcCoreClient`
@@ -140,3 +140,58 @@
 ## 0.5.1
 
 * Fix: Relax `meta` constraint to `^1.18.0` (was `^1.18.3`). `^1.18.3` cannot resolve on current Flutter stable, which pins `meta 1.18.0`; the package only uses `@immutable`.
+
+## 0.6.0
+
+Synced to `f898c13`.
+
+### Breaking
+
+* `computeZkLoginAddressFromSeed` and `toZkLoginPublicIdentifier` take a `legacyAddress` named argument (defaults to `false`). Previously the two functions disagreed on seed encoding (unpadded vs padded), so the address derived from a seed did not match the address derived from the public identifier. Pass `legacyAddress: true` for the deprecated legacy derivation.
+* `Ed25519Keypair.fromSecretKey` now validates the secret key by default (`skipValidation` defaults to `false`).
+* BCS `ExecutionStatus` variant `Failed` renamed to `Failure`; effects field `congestedObjects` renamed to `congested_objects`; `UnchangedSharedKind` (variants `MutateDeleted`/`ReadDeleted`) renamed to `UnchangedConsensusKind` (`MutateConsensusStreamEnded`/`ReadConsensusStreamEnded`); effects field `unchangedSharedObjects` renamed to `unchangedConsensusObjects`.
+
+### Fixes
+
+* BCS: `Owner.ConsensusAddressOwner` field order corrected to `{startVersion, owner}` (the previous order produced wrong bytes).
+* BCS: `TransactionEffects` is now an enum (`{V1, V2}`) instead of a struct; decoding effects as a struct read both versions back-to-back.
+* BCS: added the newer `ExecutionFailureStatus` and `CommandArgumentError` variants, plus `ObjectOut.AccumulatorWriteV1` and the accumulator types, so current chain effects decode without out-of-range-tag errors.
+* Transaction builder: `isUsedAsMutable` no longer marks nearly every shared-object input mutable (inverted `MergeCoins`/`SplitCoins` conditions); shared-object mutability now also honors an explicit `mutable` flag.
+* Transaction builder: `splitCoins`, `mergeCoins`, `transferObjects`, and `makeMoveVec` now accept string object IDs and route object-position arguments through `object()`.
+* Transaction builder: `Transaction.from` accepts base64 BCS bytes in addition to JSON; `getIdFromCallArg` normalizes unresolved object IDs.
+* Type parsing: `parseStructTag` rejects malformed tags (empty components, trailing content); `parseTypeTag` handles `vector<...>` (including `vector<struct>`); `normalizeStructTag` rejects top-level vector strings.
+* `isValidTransactionDigest` now validates Base58 (digests are Base58, not Base64).
+* zkLogin: the Google issuer is normalized consistently across address and public-identifier derivation; `ZkLoginPublicIdentifier` gains legacy/non-legacy handling (`legacyAddress`, `fromBytes({address, legacyAddress})`, `fromProof`, `verifyAddress`).
+* Crypto: secp256k1/secp256r1 verification rejects non-canonical (high-S) signatures; point recovery uses the correct per-curve field prime (was hardcoded to secp256k1).
+* `ed25519_hd_key.getPublicKey(withZeroByte: true)` no longer crashes on the fixed-length buffer.
+
+### Added
+
+* `lib/cryptography/verify.dart`: `verifySignature`/`verifyPersonalMessageSignature`/`verifyTransactionSignature`, their non-throwing `isValid*` variants, and `publicKeyFromSuiBytes`.
+* `lib/utils/format.dart`: `parseToUnits`, `parseToMist`, `formatAddress`, `formatDigest`.
+* `lib/utils/move_registry.dart`: `isValidNamedPackage`, `isValidNamedType`.
+* `common.dart`: `isValidStructTag`, `isValidTypeTag`, `isValidMoveIdentifier`.
+* BCS: `CallArg.FundsWithdrawal` (with `Reservation`/`WithdrawalType`/`WithdrawFrom`), `TransactionExpiration.ValidDuring`, and the `Object`/`ObjectInner`/`MovePackage` schema.
+* `FaucetClient.requestSuiFromFaucetV2` (`/v2/gas`) with `FaucetResponseV2`; `V0`/`V1`/status methods are deprecated.
+* `PublicKey.verifyAddress`; `MultiSigPublicKey.getThreshold`/`getPublicKeys`; `Ed25519Keypair.deriveKeypairFromSeed`; `deriveObjectId`; constants `SUI_RANDOM_OBJECT_ID`, `SUI_COIN_REGISTRY_OBJECT_ID`, `SUI_DENY_LIST_OBJECT_ID`.
+
+## 0.7.0
+
+Synced to `f898c13`.
+
+### Fixed
+
+* `Transaction.serialize()` no longer throws `Converting object to an encodable object failed`. `serializeV1TransactionData` left the per-command argument/module lists as lazy `Iterable`s (`.map(...)` without `.toList()`), which `jsonEncode` cannot encode; they are now materialized.
+
+### Added
+
+* `Signer` base class (`lib/cryptography/signer.dart`) — a transport-agnostic signing interface with `signTransaction`/`signPersonalMessage` built on `signWithIntent`.
+* `ZkLoginSigner` (`lib/zklogin/signer.dart`) — wraps an ephemeral `Keypair` and converts its signatures into zkLogin signatures using the proof `inputs` + `maxEpoch`. Optional `address` validates the derived address against the `legacyAddress` flag. Uses no Poseidon.
+* `MultiSigSigner` (`lib/multisig/multisig_signer.dart`) — wraps a `MultiSigPublicKey` and its member keypairs; `signTransaction`/`signPersonalMessage` collect and combine the members' partial signatures. Validates membership, deduplication, and that the combined weight meets the threshold.
+* `jwtDecode` (`lib/zklogin/jwt_decode.dart`) — decode a JWT's payload or header without signature verification (`InvalidTokenError` on malformed input).
+* `getExtendedEphemeralPublicKey` (`lib/zklogin/utils.dart`) — the flag-prefixed base64 ephemeral public key the zkLogin proving service expects.
+
+### gRPC
+
+* Regenerated `lib/grpc/generated/` from the latest protobuf definitions. `AccumulatorWrite` now carries the authenticated-events shape (`value_kind` + `integer_value` / `integer_tuple` / `event_digest_value`, the `EventDigestEntry` message, and the `AccumulatorValue` enum); `object` and `transaction_execution_service` messages picked up their new fields.
+* Added the `ForkingService` (`sui/forking/v1alpha`) client and exposed it as `SuiGrpcClient.forkingService` (admin-only; for `sui-fork` instances).

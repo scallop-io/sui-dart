@@ -488,18 +488,96 @@ class ChangedObject extends $pb.GeneratedMessage {
   AccumulatorWrite ensureAccumulatorWrite() => $_ensure(11);
 }
 
+/// An entry in an event digest accumulator value.
+class EventDigestEntry extends $pb.GeneratedMessage {
+  factory EventDigestEntry({
+    $fixnum.Int64? eventIndex,
+    $core.String? digest,
+  }) {
+    final result = create();
+    if (eventIndex != null) result.eventIndex = eventIndex;
+    if (digest != null) result.digest = digest;
+    return result;
+  }
+
+  EventDigestEntry._();
+
+  factory EventDigestEntry.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory EventDigestEntry.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'EventDigestEntry',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'sui.rpc.v2'),
+      createEmptyInstance: create)
+    ..a<$fixnum.Int64>(
+        1, _omitFieldNames ? '' : 'eventIndex', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aOS(2, _omitFieldNames ? '' : 'digest')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  EventDigestEntry clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  EventDigestEntry copyWith(void Function(EventDigestEntry) updates) =>
+      super.copyWith((message) => updates(message as EventDigestEntry))
+          as EventDigestEntry;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static EventDigestEntry create() => EventDigestEntry._();
+  @$core.override
+  EventDigestEntry createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static EventDigestEntry getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<EventDigestEntry>(create);
+  static EventDigestEntry? _defaultInstance;
+
+  /// Index of the event within its transaction.
+  @$pb.TagNumber(1)
+  $fixnum.Int64 get eventIndex => $_getI64(0);
+  @$pb.TagNumber(1)
+  set eventIndex($fixnum.Int64 value) => $_setInt64(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasEventIndex() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearEventIndex() => $_clearField(1);
+
+  /// Digest of the event.
+  @$pb.TagNumber(2)
+  $core.String get digest => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set digest($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasDigest() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearDigest() => $_clearField(2);
+}
+
 class AccumulatorWrite extends $pb.GeneratedMessage {
   factory AccumulatorWrite({
     $core.String? address,
     $core.String? accumulatorType,
     AccumulatorWrite_AccumulatorOperation? operation,
-    $fixnum.Int64? value,
+    AccumulatorWrite_AccumulatorValue? valueKind,
+    $fixnum.Int64? integerValue,
+    $core.Iterable<$fixnum.Int64>? integerTuple,
+    $core.Iterable<EventDigestEntry>? eventDigestValue,
   }) {
     final result = create();
     if (address != null) result.address = address;
     if (accumulatorType != null) result.accumulatorType = accumulatorType;
     if (operation != null) result.operation = operation;
-    if (value != null) result.value = value;
+    if (valueKind != null) result.valueKind = valueKind;
+    if (integerValue != null) result.integerValue = integerValue;
+    if (integerTuple != null) result.integerTuple.addAll(integerTuple);
+    if (eventDigestValue != null)
+      result.eventDigestValue.addAll(eventDigestValue);
     return result;
   }
 
@@ -521,8 +599,16 @@ class AccumulatorWrite extends $pb.GeneratedMessage {
     ..aE<AccumulatorWrite_AccumulatorOperation>(
         3, _omitFieldNames ? '' : 'operation',
         enumValues: AccumulatorWrite_AccumulatorOperation.values)
-    ..a<$fixnum.Int64>(5, _omitFieldNames ? '' : 'value', $pb.PbFieldType.OU6,
+    ..aE<AccumulatorWrite_AccumulatorValue>(
+        4, _omitFieldNames ? '' : 'valueKind',
+        enumValues: AccumulatorWrite_AccumulatorValue.values)
+    ..a<$fixnum.Int64>(
+        5, _omitFieldNames ? '' : 'integerValue', $pb.PbFieldType.OU6,
         defaultOrMaker: $fixnum.Int64.ZERO)
+    ..p<$fixnum.Int64>(
+        6, _omitFieldNames ? '' : 'integerTuple', $pb.PbFieldType.KU6)
+    ..pPM<EventDigestEntry>(7, _omitFieldNames ? '' : 'eventDigestValue',
+        subBuilder: EventDigestEntry.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -572,14 +658,36 @@ class AccumulatorWrite extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   void clearOperation() => $_clearField(3);
 
+  @$pb.TagNumber(4)
+  AccumulatorWrite_AccumulatorValue get valueKind => $_getN(3);
+  @$pb.TagNumber(4)
+  set valueKind(AccumulatorWrite_AccumulatorValue value) =>
+      $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasValueKind() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearValueKind() => $_clearField(4);
+
+  /// Set when the accumulator value is an integer (value_kind = INTEGER).
   @$pb.TagNumber(5)
-  $fixnum.Int64 get value => $_getI64(3);
+  $fixnum.Int64 get integerValue => $_getI64(4);
   @$pb.TagNumber(5)
-  set value($fixnum.Int64 value) => $_setInt64(3, value);
+  set integerValue($fixnum.Int64 value) => $_setInt64(4, value);
   @$pb.TagNumber(5)
-  $core.bool hasValue() => $_has(3);
+  $core.bool hasIntegerValue() => $_has(4);
   @$pb.TagNumber(5)
-  void clearValue() => $_clearField(5);
+  void clearIntegerValue() => $_clearField(5);
+
+  /// Set, with len 2, when the accumulator value is an integer tuple
+  /// (value_kind = INTEGER_TUPLE).
+  @$pb.TagNumber(6)
+  $pb.PbList<$fixnum.Int64> get integerTuple => $_getList(5);
+
+  /// Set when the accumulator value is an event digest list (value_kind = EVENT_DIGEST).
+  /// Contains a non-empty list of (event_index, digest) pairs representing
+  /// authenticated event stream entries within a transaction.
+  @$pb.TagNumber(7)
+  $pb.PbList<EventDigestEntry> get eventDigestValue => $_getList(6);
 }
 
 /// A consensus object that wasn't changed during execution.

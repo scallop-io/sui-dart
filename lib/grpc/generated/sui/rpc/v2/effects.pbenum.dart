@@ -125,6 +125,35 @@ class AccumulatorWrite_AccumulatorOperation extends $pb.ProtobufEnum {
   const AccumulatorWrite_AccumulatorOperation._(super.value, super.name);
 }
 
+class AccumulatorWrite_AccumulatorValue extends $pb.ProtobufEnum {
+  static const AccumulatorWrite_AccumulatorValue ACCUMULATOR_VALUE_UNKNOWN =
+      AccumulatorWrite_AccumulatorValue._(
+          0, _omitEnumNames ? '' : 'ACCUMULATOR_VALUE_UNKNOWN');
+  static const AccumulatorWrite_AccumulatorValue INTEGER =
+      AccumulatorWrite_AccumulatorValue._(1, _omitEnumNames ? '' : 'INTEGER');
+  static const AccumulatorWrite_AccumulatorValue INTEGER_TUPLE =
+      AccumulatorWrite_AccumulatorValue._(
+          2, _omitEnumNames ? '' : 'INTEGER_TUPLE');
+  static const AccumulatorWrite_AccumulatorValue EVENT_DIGEST =
+      AccumulatorWrite_AccumulatorValue._(
+          3, _omitEnumNames ? '' : 'EVENT_DIGEST');
+
+  static const $core.List<AccumulatorWrite_AccumulatorValue> values =
+      <AccumulatorWrite_AccumulatorValue>[
+    ACCUMULATOR_VALUE_UNKNOWN,
+    INTEGER,
+    INTEGER_TUPLE,
+    EVENT_DIGEST,
+  ];
+
+  static final $core.List<AccumulatorWrite_AccumulatorValue?> _byValue =
+      $pb.ProtobufEnum.$_initByValueList(values, 3);
+  static AccumulatorWrite_AccumulatorValue? valueOf($core.int value) =>
+      value < 0 || value >= _byValue.length ? null : _byValue[value];
+
+  const AccumulatorWrite_AccumulatorValue._(super.value, super.name);
+}
+
 class UnchangedConsensusObject_UnchangedConsensusObjectKind
     extends $pb.ProtobufEnum {
   static const UnchangedConsensusObject_UnchangedConsensusObjectKind

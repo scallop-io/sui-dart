@@ -117,8 +117,7 @@ mixin PublicKey {
   /// Return the byte array representation of the public key
   Uint8List toRawBytes();
 
-  /// Returns the bytes representation of the public key
-  /// prefixed with the signature scheme flag
+  /// Raw public key bytes prefixed with the signature scheme flag.
   Uint8List toSuiBytes() {
     final bytes = toRawBytes();
     final suiPublicKey = Uint8List(bytes.length + 1);
@@ -127,9 +126,7 @@ mixin PublicKey {
     return suiPublicKey;
   }
 
-  /// Return the Sui representation of the public key encoded in
-  /// base-64. A Sui public key is formed by the concatenation
-  /// of the scheme flag with the raw bytes of the public key
+  /// Base-64 Sui public key: scheme flag concatenated with raw bytes.
   String toSuiPublicKey() {
     return base64Encode(toSuiBytes());
   }
@@ -163,6 +160,11 @@ mixin PublicKey {
 
   /// Return the Sui address associated with this public key
   String toSuiAddress();
+
+  /// Verifies that the public key is associated with the provided address
+  bool verifyAddress(String address) {
+    return toSuiAddress() == address;
+  }
 
   /// Return signature scheme flag of the public key
   int flag();

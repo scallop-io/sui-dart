@@ -1,5 +1,4 @@
 import 'package:bcs_dart/bcs.dart';
-import 'package:bcs_dart/bcs_type.dart';
 import 'package:sui_dart/bcs/sui_bcs.dart';
 
 class SuiPure {

@@ -2,7 +2,6 @@
 import 'dart:typed_data';
 
 import 'package:bcs_dart/bcs.dart';
-import 'package:bcs_dart/bcs_type.dart';
 import 'package:sui_dart/bcs/type_tag_serializer.dart';
 import 'package:sui_dart/types/common.dart';
 
@@ -84,9 +83,29 @@ class SuiBcs {
     'Shared': Bcs.struct('Shared', {'initialSharedVersion': Bcs.u64()}),
     'Immutable': null,
     'ConsensusAddressOwner': Bcs.struct('ConsensusAddressOwner', {
-      'owner': Address,
+      // Field order is wire-significant (BCS serializes positionally).
       'startVersion': Bcs.u64(),
+      'owner': Address,
     }),
+  });
+
+  static final Reservation = Bcs.enumeration('Reservation', {
+    'MaxAmountU64': Bcs.u64(),
+  });
+
+  static final WithdrawalType = Bcs.enumeration('WithdrawalType', {
+    'Balance': Bcs.lazy(() => TypeTag),
+  });
+
+  static final WithdrawFrom = Bcs.enumeration('WithdrawFrom', {
+    'Sender': null,
+    'Sponsor': null,
+  });
+
+  static final FundsWithdrawal = Bcs.struct('FundsWithdrawal', {
+    'reservation': Reservation,
+    'typeArg': WithdrawalType,
+    'withdrawFrom': WithdrawFrom,
   });
 
   static final CallArg = Bcs.enumeration('CallArg', {
@@ -97,6 +116,7 @@ class SuiBcs {
       ),
     }),
     'Object': ObjectArg,
+    'FundsWithdrawal': FundsWithdrawal,
   });
 
   static final BcsType<dynamic, dynamic> InnerTypeTag =
@@ -192,9 +212,18 @@ class SuiBcs {
     'ConsensusCommitPrologue': null,
   });
 
+  static final ValidDuring = Bcs.struct('ValidDuring', {
+    'minEpoch': Bcs.option(Bcs.u64()),
+    'maxEpoch': Bcs.option(Bcs.u64()),
+    'minTimestamp': Bcs.option(Bcs.u64()),
+    'maxTimestamp': Bcs.option(Bcs.u64()),
+    'chain': ObjectDigest,
+    'nonce': Bcs.u32(),
+  });
+
   static final TransactionExpiration = Bcs.enumeration(
     'TransactionExpiration',
-    {'None': null, 'Epoch': unsafe_u64()},
+    {'None': null, 'Epoch': unsafe_u64(), 'ValidDuring': ValidDuring},
   );
 
   static final StructTag = Bcs.struct('StructTag', {
@@ -299,5 +328,52 @@ class SuiBcs {
     'authenticatorData': Bcs.vector(Bcs.u8()),
     'clientDataJson': Bcs.string(),
     'userSignature': Bcs.vector(Bcs.u8()),
+  });
+
+  // Object BCS schema.
+  static final MoveObjectType = Bcs.enumeration('MoveObjectType', {
+    'Other': StructTag,
+    'GasCoin': null,
+    'StakedSui': null,
+    'Coin': TypeTag,
+    'AccumulatorBalanceWrapper': null,
+  });
+
+  static final TypeOrigin = Bcs.struct('TypeOrigin', {
+    'moduleName': Bcs.string(),
+    'datatypeName': Bcs.string(),
+    'package': Address,
+  });
+
+  static final UpgradeInfo = Bcs.struct('UpgradeInfo', {
+    'upgradedId': Address,
+    'upgradedVersion': Bcs.u64(),
+  });
+
+  static final MovePackage = Bcs.struct('MovePackage', {
+    'id': Address,
+    'version': Bcs.u64(),
+    'moduleMap': Bcs.map(Bcs.string(), Bcs.vector(Bcs.u8())),
+    'typeOriginTable': Bcs.vector(TypeOrigin),
+    'linkageTable': Bcs.map(Address, UpgradeInfo),
+  });
+
+  static final MoveObject = Bcs.struct('MoveObject', {
+    'type': MoveObjectType,
+    'hasPublicTransfer': Bcs.boolean(),
+    'version': Bcs.u64(),
+    'contents': Bcs.vector(Bcs.u8()),
+  });
+
+  static final Data = Bcs.enumeration('Data', {
+    'Move': MoveObject,
+    'Package': MovePackage,
+  });
+
+  static final ObjectInner = Bcs.struct('ObjectInner', {
+    'data': Data,
+    'owner': Owner,
+    'previousTransaction': ObjectDigest,
+    'storageRebate': Bcs.u64(),
   });
 }

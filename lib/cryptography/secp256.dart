@@ -19,7 +19,12 @@ class Secp256 {
 
   ECDomainParametersImpl _ecDomainParams;
 
-  Secp256(this._ecDomainParams);
+  /// Curve field prime (q), used for point recovery; differs per curve.
+  late final BigInt _fieldPrime;
+
+  Secp256(this._ecDomainParams) {
+    _fieldPrime = (_ecDomainParams.curve as dynamic).q as BigInt;
+  }
 
   factory Secp256.fromSecp256k1() => Secp256(curve256k1Params);
 
@@ -64,8 +69,7 @@ class Secp256 {
     return getPublicKey(privKey, isCompressed);
   }
 
-  /// Given an arbitrary message hash and an Ethereum message signature encoded in bytes, returns
-  /// the public key that was used to sign it.
+  /// Recover the signing public key from a message hash and signature.
   /// https://github.com/web3j/web3j/blob/c0b7b9c2769a466215d416696021aa75127c2ff1/crypto/src/main/java/org/web3j/crypto/Sign.java#L241
   Uint8List ecRecover(
     int recId,
@@ -75,8 +79,7 @@ class Secp256 {
     bool isEthereum = false,
   ]) {
     var header = recId & 0xFF;
-    // The header byte: 0x1B = first key with even y, 0x1C = first key with odd y,
-    //                  0x1D = second key with even y, 0x1E = second key with odd y
+    // Header byte 0x1B..0x1E: first/second key, even/odd y.
     header = isEthereum ? header : header + magicNum;
     if (header < magicNum || header > 34) {
       throw Exception('Header byte out of range: $header');
@@ -102,6 +105,11 @@ class Secp256 {
     SignatureData signature,
     Uint8List publicKey,
   ) {
+    // Reject non-canonical (high-S) signatures; recovery would otherwise accept
+    // the malleated form (s' = n - s), which Sui validators reject.
+    if (!signature.isNormalized(_ecDomainParams)) {
+      return false;
+    }
     int recId = recoveryId(signature, messageHash, publicKey);
     final recoveredPublicKey = ecRecover(
       recId,
@@ -174,11 +182,7 @@ class Secp256 {
     final i = BigInt.from(recId ~/ 2);
     final x = sig.r + (i * n);
 
-    final prime = BigInt.parse(
-      'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f',
-      radix: 16,
-    );
-    if (x.compareTo(prime) >= 0) return null;
+    if (x.compareTo(_fieldPrime) >= 0) return null;
 
     final R = _decompressKey(x, (recId & 1) == 1);
     if (!(R * n)!.isInfinity) return null;

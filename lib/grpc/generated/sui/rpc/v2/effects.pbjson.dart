@@ -369,6 +369,33 @@ final $typed_data.Uint8List changedObjectDescriptor = $convert.base64Decode(
     'dmVyc2lvbkIQCg5fb3V0cHV0X2RpZ2VzdEIPCg1fb3V0cHV0X293bmVyQhQKEl9hY2N1bXVsYX'
     'Rvcl93cml0ZUIPCg1faWRfb3BlcmF0aW9uQg4KDF9vYmplY3RfdHlwZQ==');
 
+@$core.Deprecated('Use eventDigestEntryDescriptor instead')
+const EventDigestEntry$json = {
+  '1': 'EventDigestEntry',
+  '2': [
+    {
+      '1': 'event_index',
+      '3': 1,
+      '4': 1,
+      '5': 4,
+      '9': 0,
+      '10': 'eventIndex',
+      '17': true
+    },
+    {'1': 'digest', '3': 2, '4': 1, '5': 9, '9': 1, '10': 'digest', '17': true},
+  ],
+  '8': [
+    {'1': '_event_index'},
+    {'1': '_digest'},
+  ],
+};
+
+/// Descriptor for `EventDigestEntry`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List eventDigestEntryDescriptor = $convert.base64Decode(
+    'ChBFdmVudERpZ2VzdEVudHJ5EiQKC2V2ZW50X2luZGV4GAEgASgESABSCmV2ZW50SW5kZXiIAQ'
+    'ESGwoGZGlnZXN0GAIgASgJSAFSBmRpZ2VzdIgBAUIOCgxfZXZlbnRfaW5kZXhCCQoHX2RpZ2Vz'
+    'dA==');
+
 @$core.Deprecated('Use accumulatorWriteDescriptor instead')
 const AccumulatorWrite$json = {
   '1': 'AccumulatorWrite',
@@ -401,17 +428,45 @@ const AccumulatorWrite$json = {
       '10': 'operation',
       '17': true
     },
-    {'1': 'value', '3': 5, '4': 1, '5': 4, '9': 3, '10': 'value', '17': true},
+    {
+      '1': 'value_kind',
+      '3': 4,
+      '4': 1,
+      '5': 14,
+      '6': '.sui.rpc.v2.AccumulatorWrite.AccumulatorValue',
+      '9': 3,
+      '10': 'valueKind',
+      '17': true
+    },
+    {
+      '1': 'integer_value',
+      '3': 5,
+      '4': 1,
+      '5': 4,
+      '9': 4,
+      '10': 'integerValue',
+      '17': true
+    },
+    {'1': 'integer_tuple', '3': 6, '4': 3, '5': 4, '10': 'integerTuple'},
+    {
+      '1': 'event_digest_value',
+      '3': 7,
+      '4': 3,
+      '5': 11,
+      '6': '.sui.rpc.v2.EventDigestEntry',
+      '10': 'eventDigestValue'
+    },
   ],
-  '4': [AccumulatorWrite_AccumulatorOperation$json],
+  '4': [
+    AccumulatorWrite_AccumulatorOperation$json,
+    AccumulatorWrite_AccumulatorValue$json
+  ],
   '8': [
     {'1': '_address'},
     {'1': '_accumulator_type'},
     {'1': '_operation'},
-    {'1': '_value'},
-  ],
-  '9': [
-    {'1': 4, '2': 5},
+    {'1': '_value_kind'},
+    {'1': '_integer_value'},
   ],
 };
 
@@ -425,15 +480,32 @@ const AccumulatorWrite_AccumulatorOperation$json = {
   ],
 };
 
+@$core.Deprecated('Use accumulatorWriteDescriptor instead')
+const AccumulatorWrite_AccumulatorValue$json = {
+  '1': 'AccumulatorValue',
+  '2': [
+    {'1': 'ACCUMULATOR_VALUE_UNKNOWN', '2': 0},
+    {'1': 'INTEGER', '2': 1},
+    {'1': 'INTEGER_TUPLE', '2': 2},
+    {'1': 'EVENT_DIGEST', '2': 3},
+  ],
+};
+
 /// Descriptor for `AccumulatorWrite`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List accumulatorWriteDescriptor = $convert.base64Decode(
     'ChBBY2N1bXVsYXRvcldyaXRlEh0KB2FkZHJlc3MYASABKAlIAFIHYWRkcmVzc4gBARIuChBhY2'
     'N1bXVsYXRvcl90eXBlGAIgASgJSAFSD2FjY3VtdWxhdG9yVHlwZYgBARJUCglvcGVyYXRpb24Y'
     'AyABKA4yMS5zdWkucnBjLnYyLkFjY3VtdWxhdG9yV3JpdGUuQWNjdW11bGF0b3JPcGVyYXRpb2'
-    '5IAlIJb3BlcmF0aW9uiAEBEhkKBXZhbHVlGAUgASgESANSBXZhbHVliAEBIk8KFEFjY3VtdWxh'
-    'dG9yT3BlcmF0aW9uEiEKHUFDQ1VNVUxBVE9SX09QRVJBVElPTl9VTktOT1dOEAASCQoFTUVSR0'
-    'UQARIJCgVTUExJVBACQgoKCF9hZGRyZXNzQhMKEV9hY2N1bXVsYXRvcl90eXBlQgwKCl9vcGVy'
-    'YXRpb25CCAoGX3ZhbHVlSgQIBBAF');
+    '5IAlIJb3BlcmF0aW9uiAEBElEKCnZhbHVlX2tpbmQYBCABKA4yLS5zdWkucnBjLnYyLkFjY3Vt'
+    'dWxhdG9yV3JpdGUuQWNjdW11bGF0b3JWYWx1ZUgDUgl2YWx1ZUtpbmSIAQESKAoNaW50ZWdlcl'
+    '92YWx1ZRgFIAEoBEgEUgxpbnRlZ2VyVmFsdWWIAQESIwoNaW50ZWdlcl90dXBsZRgGIAMoBFIM'
+    'aW50ZWdlclR1cGxlEkoKEmV2ZW50X2RpZ2VzdF92YWx1ZRgHIAMoCzIcLnN1aS5ycGMudjIuRX'
+    'ZlbnREaWdlc3RFbnRyeVIQZXZlbnREaWdlc3RWYWx1ZSJPChRBY2N1bXVsYXRvck9wZXJhdGlv'
+    'bhIhCh1BQ0NVTVVMQVRPUl9PUEVSQVRJT05fVU5LTk9XThAAEgkKBU1FUkdFEAESCQoFU1BMSV'
+    'QQAiJjChBBY2N1bXVsYXRvclZhbHVlEh0KGUFDQ1VNVUxBVE9SX1ZBTFVFX1VOS05PV04QABIL'
+    'CgdJTlRFR0VSEAESEQoNSU5URUdFUl9UVVBMRRACEhAKDEVWRU5UX0RJR0VTVBADQgoKCF9hZG'
+    'RyZXNzQhMKEV9hY2N1bXVsYXRvcl90eXBlQgwKCl9vcGVyYXRpb25CDQoLX3ZhbHVlX2tpbmRC'
+    'EAoOX2ludGVnZXJfdmFsdWU=');
 
 @$core.Deprecated('Use unchangedConsensusObjectDescriptor instead')
 const UnchangedConsensusObject$json = {

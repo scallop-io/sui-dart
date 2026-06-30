@@ -51,6 +51,13 @@ class SuiEffects {
     'InvalidObjectByValue': null,
     'InvalidObjectByMutRef': null,
     'SharedObjectOperationNotAllowed': null,
+    'InvalidArgumentArity': null,
+    'InvalidTransferObject': null,
+    'InvalidMakeMoveVecNonObjectArgument': null,
+    'ArgumentWithoutValue': null,
+    'CannotMoveBorrowedValue': null,
+    'CannotWriteToExtendedReference': null,
+    'InvalidReferenceArgument': null,
   });
 
   static final TypeArgumentError = Bcs.enumeration('TypeArgumentError', {
@@ -124,7 +131,7 @@ class SuiEffects {
       'InputObjectDeleted': null,
       'ExecutionCancelledDueToSharedObjectCongestion': Bcs.struct(
         'ExecutionCancelledDueToSharedObjectCongestion',
-        {'congestedObjects': Bcs.vector(SuiBcs.Address)},
+      {'congested_objects': Bcs.vector(SuiBcs.Address)},
       ),
       'AddressDeniedForCoin': Bcs.struct('AddressDeniedForCoin', {
         'address': SuiBcs.Address,
@@ -134,12 +141,25 @@ class SuiEffects {
         'coinType': Bcs.string(),
       }),
       'ExecutionCancelledDueToRandomnessUnavailable': null,
+    'MoveVectorElemTooBig': Bcs.struct('MoveVectorElemTooBig', {
+      'valueSize': Bcs.u64(),
+      'maxScaledSize': Bcs.u64(),
+    }),
+    'MoveRawValueTooBig': Bcs.struct('MoveRawValueTooBig', {
+      'valueSize': Bcs.u64(),
+      'maxScaledSize': Bcs.u64(),
+    }),
+    'InvalidLinkage': null,
+    'InsufficientBalanceForWithdraw': null,
+    'NonExclusiveWriteInputObjectModified': Bcs.struct('NonExclusiveWriteInputObjectModified', {
+      'id': SuiBcs.Address,
+    }),
     },
   );
 
   static final ExecutionStatus = Bcs.enumeration('ExecutionStatus', {
     'Success': null,
-    'Failed': Bcs.struct('ExecutionFailed', {
+    'Failure': Bcs.struct('Failure', {
       'error': ExecutionFailureStatus,
       'command': Bcs.option(Bcs.u64()),
     }),
@@ -177,10 +197,34 @@ class SuiEffects {
     'Exist': Bcs.tuple([VersionDigest, SuiBcs.Owner]),
   });
 
+  static final AccumulatorAddress = Bcs.struct('AccumulatorAddress', {
+    'address': SuiBcs.Address,
+    'ty': SuiBcs.TypeTag,
+  });
+
+  static final AccumulatorOperation = Bcs.enumeration('AccumulatorOperation', {
+    'Merge': null,
+    'Split': null,
+  });
+
+  static final AccumulatorValue = Bcs.enumeration('AccumulatorValue', {
+    'Integer': Bcs.u64(),
+    'IntegerTuple': Bcs.tuple([Bcs.u64(), Bcs.u64()]),
+    // Non-empty: must have >=1 element.
+    'EventDigest': Bcs.vector(Bcs.tuple([Bcs.u64(), SuiBcs.ObjectDigest])),
+  });
+
+  static final AccumulatorWriteV1 = Bcs.struct('AccumulatorWriteV1', {
+    'address': AccumulatorAddress,
+    'operation': AccumulatorOperation,
+    'value': AccumulatorValue,
+  });
+
   static final ObjectOut = Bcs.enumeration('ObjectOut', {
     'NotExist': null,
     'ObjectWrite': Bcs.tuple([SuiBcs.ObjectDigest, SuiBcs.Owner]),
     'PackageWrite': VersionDigest,
+    'AccumulatorWriteV1': AccumulatorWriteV1,
   });
 
   static final IDOperation = Bcs.enumeration('IDOperation', {
@@ -195,11 +239,10 @@ class SuiEffects {
     'idOperation': IDOperation,
   });
 
-  static final UnchangedSharedKind = Bcs.enumeration('UnchangedSharedKind', {
+  static final UnchangedConsensusKind = Bcs.enumeration('UnchangedConsensusKind', {
     'ReadOnlyRoot': VersionDigest,
-    // TODO: these have been renamed to MutateConsensusStreamEnded and ReadConsensusStreamEnded
-    'MutateDeleted': Bcs.u64(),
-    'ReadDeleted': Bcs.u64(),
+    'MutateConsensusStreamEnded': Bcs.u64(),
+    'ReadConsensusStreamEnded': Bcs.u64(),
     'Cancelled': Bcs.u64(),
     'PerEpochConfig': null,
   });
@@ -216,13 +259,13 @@ class SuiEffects {
     'changedObjects': Bcs.vector(
       Bcs.tuple([SuiBcs.Address, EffectsObjectChange]),
     ),
-    'unchangedSharedObjects': Bcs.vector(
-      Bcs.tuple([SuiBcs.Address, UnchangedSharedKind]),
+    'unchangedConsensusObjects': Bcs.vector(Bcs.tuple([SuiBcs.Address, UnchangedConsensusKind]),
     ),
     'auxDataDigest': Bcs.option(SuiBcs.ObjectDigest),
   });
 
-  static final TransactionEffects = Bcs.struct('TransactionEffects', {
+  // Version-tagged enum (V1|V2), not a struct: a struct would emit both back-to-back.
+  static final TransactionEffects = Bcs.enumeration('TransactionEffects', {
     'V1': TransactionEffectsV1,
     'V2': TransactionEffectsV2,
   });

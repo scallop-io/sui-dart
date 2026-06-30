@@ -1,8 +1,9 @@
 // ignore_for_file: constant_identifier_names, non_constant_identifier_names
-import 'dart:convert';
+import 'package:bcs_dart/bcs.dart' show fromB58;
+import 'package:sui_dart/utils/move_registry.dart';
 import 'sui_bcs.dart';
 
-/// Base64 string representing the object digest
+/// Base58 string representing the object digest
 typedef TransactionDigest = String;
 typedef SuiAddress = String;
 
@@ -38,26 +39,20 @@ class ObjectOwner {
   }
 }
 
-// source of truth is
-// https://github.com/MystenLabs/sui/blob/acb2b97ae21f47600e05b0d28127d88d0725561d/crates/sui-types/src/base_types.rs#L171
+// Source: sui-types/src/base_types.rs#L171 (acb2b97).
 const TX_DIGEST_LENGTH = 32;
 
-// taken from https://rgxdb.com/r/1NUN74O6
-final VALID_BASE64_REGEX = RegExp(
-  r'^(?:[a-zA-Z0-9+/]{4})*(?:|(?:[a-zA-Z0-9+/]{3}=)|(?:[a-zA-Z0-9+/]{2}==)|(?:[a-zA-Z0-9+/]{1}===))$',
-);
-
+/// True if value is a valid tx digest (Base58-encoded 32 bytes).
 bool isValidTransactionDigest(String value) {
-  return base64Decode(value).length == TX_DIGEST_LENGTH &&
-      VALID_BASE64_REGEX.hasMatch(value);
+  try {
+    return fromB58(value).length == TX_DIGEST_LENGTH;
+  } catch (_) {
+    return false;
+  }
 }
 
 // TODO - can we automatically sync this with rust length definition?
-// Source of truth is
-// https://github.com/MystenLabs/sui/blob/acb2b97ae21f47600e05b0d28127d88d0725561d/crates/sui-types/src/base_types.rs#L67
-// which uses the Move account address length
-// https://github.com/move-language/move/blob/67ec40dc50c66c34fd73512fcc412f3b68d67235/language/move-core/types/src/account_address.rs#L23 .
-
+// Source: sui-types/src/base_types.rs#L67 (acb2b97), the Move account address length.
 const SUI_ADDRESS_LENGTH = 32;
 
 bool isValidSuiAddress(String value) {
@@ -99,25 +94,61 @@ List<String> splitGenericParameters(
 }
 
 dynamic parseTypeTag(String type) {
+  if (type.startsWith('vector<')) {
+    if (!type.endsWith('>')) {
+      throw ArgumentError('Invalid type tag: $type');
+    }
+    final inner = type.substring(7, type.length - 1);
+    if (inner.isEmpty) {
+      throw ArgumentError('Invalid type tag: $type');
+    }
+    final parsed = parseTypeTag(inner);
+    if (parsed is String) {
+      return 'vector<$parsed>';
+    }
+    return 'vector<${normalizeStructTag(parsed)}>';
+  }
+
   if (!type.contains('::')) return type;
 
   return parseStructTag(type);
 }
 
 StructTag parseStructTag(String type) {
-  final result = type.split('::');
-  final address = result[0];
-  final module = result[1];
+  final parts = type.split('::');
+
+  if (parts.length < 3) {
+    throw ArgumentError('Invalid struct tag: $type');
+  }
+
+  final address = parts[0];
+  final module = parts[1];
+
+  if (address.isEmpty || module.isEmpty) {
+    throw ArgumentError('Invalid struct tag: $type');
+  }
+
+  final isMvrPackage = isValidNamedPackage(address);
 
   final rest = type.substring(address.length + module.length + 4);
   final name = rest.contains('<') ? rest.substring(0, rest.indexOf('<')) : rest;
+
+  if (name.isEmpty || (rest.contains('<') && !rest.endsWith('>'))) {
+    throw ArgumentError('Invalid struct tag: $type');
+  }
+
   final typeParams = rest.contains('<')
       ? splitGenericParameters(
           rest.substring(rest.indexOf('<') + 1, rest.lastIndexOf('>')),
         ).map((typeParam) => parseTypeTag(typeParam.trim())).toList()
       : [];
 
-  return StructTag(normalizeSuiAddress(address), module, name, typeParams);
+  return StructTag(
+    isMvrPackage ? address : normalizeSuiAddress(address),
+    module,
+    name,
+    typeParams,
+  );
 }
 
 String normalizeStructTag(StructTag type) {
@@ -134,17 +165,17 @@ String normalizeStructTag(StructTag type) {
 }
 
 String normalizeStructTagString(String type) {
+  if (type.startsWith('vector<')) {
+    throw ArgumentError(
+      'normalizeStructTag does not support vector types. Use normalizeTypeTag instead.',
+    );
+  }
   return normalizeStructTag(parseStructTag(type));
 }
 
-/// Perform the following operations:
-/// 1. Make the address lower case
-/// 2. Prepend `0x` if the string does not start with `0x`.
-/// 3. Add more zeros if the length of the address(excluding `0x`) is less than `SUI_ADDRESS_LENGTH`
+/// Lowercases, prepends `0x`, and left-pads to `SUI_ADDRESS_LENGTH`.
 ///
-/// WARNING: if the address value itself starts with `0x`, e.g., `0x0x`, the default behavior
-/// is to treat the first `0x` not as part of the address. The default behavior can be overridden by
-/// setting `forceAdd0x` to true
+/// WARNING: a leading `0x` is stripped (e.g. `0x0x...`); pass `forceAdd0x: true` to keep it.
 String normalizeSuiAddress(String value, [bool forceAdd0x = false]) {
   String address = value.toLowerCase();
   if (!forceAdd0x && address.startsWith('0x')) {
@@ -166,4 +197,61 @@ int getHexByteLength(String value) {
   return RegExp(r'^(0x|0X)').hasMatch(value)
       ? (value.length - 2) ~/ 2
       : value.length ~/ 2;
+}
+
+final MOVE_IDENTIFIER_REGEX = RegExp(r'^[a-zA-Z][a-zA-Z0-9_]*$');
+
+bool isValidMoveIdentifier(String name) {
+  return MOVE_IDENTIFIER_REGEX.hasMatch(name);
+}
+
+const PRIMITIVE_TYPE_TAGS = [
+  'bool',
+  'u8',
+  'u16',
+  'u32',
+  'u64',
+  'u128',
+  'u256',
+  'address',
+  'signer',
+];
+
+final VECTOR_TYPE_REGEX = RegExp(r'^vector<(.+)>$');
+
+bool isValidTypeTag(String type) {
+  if (PRIMITIVE_TYPE_TAGS.contains(type)) return true;
+
+  final vectorMatch = VECTOR_TYPE_REGEX.firstMatch(type);
+  if (vectorMatch != null) return isValidTypeTag(vectorMatch.group(1)!);
+
+  if (type.contains('::')) return isValidStructTag(type);
+
+  return false;
+}
+
+bool isValidParsedStructTag(StructTag tag) {
+  if (!isValidSuiAddress(tag.address) && !isValidNamedPackage(tag.address)) {
+    return false;
+  }
+
+  if (!isValidMoveIdentifier(tag.module) || !isValidMoveIdentifier(tag.name)) {
+    return false;
+  }
+
+  return tag.typeParams.every((param) {
+    if (param is String) {
+      return isValidTypeTag(param);
+    }
+    return isValidParsedStructTag(param as StructTag);
+  });
+}
+
+bool isValidStructTag(String type) {
+  try {
+    final tag = parseStructTag(type);
+    return isValidParsedStructTag(tag);
+  } catch (_) {
+    return false;
+  }
 }

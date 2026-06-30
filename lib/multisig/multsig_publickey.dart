@@ -187,15 +187,24 @@ class MultiSigPublicKey with PublicKey {
     return _rawBytes;
   }
 
+  /// The threshold required for this multisig public key.
+  int getThreshold() {
+    return _multisigPublicKey.threshold;
+  }
+
+  /// The member public keys and their weights.
+  List<PublicKeyWeight> getPublicKeys() {
+    return publicKeys;
+  }
+
   @override
   String toSuiAddress() {
-    // max length = 1 flag byte + (max pk size + max weight size (u8)) * max signer size + 2 threshold bytes (u16)
+    // 1 flag byte + (max pk + u8 weight) * max signers + u16 threshold.
     const maxLength = 1 + (64 + 1) * MAX_SIGNER_IN_MULTISIG + 2;
     final tmp = Uint8List(maxLength);
     tmp.setAll(0, [SIGNATURE_SCHEME_TO_FLAG.MultiSig]);
-    // tmp.setAll(1, bcs.ser('u16', _multisigPublicKey.threshold).toBytes());
     tmp.setAll(1, Bcs.u16().serialize(_multisigPublicKey.threshold).toBytes());
-    // The initial value 3 ensures that following data will be after the flag byte and threshold bytes
+    // Start at 3, past the flag byte and u16 threshold.
     int i = 3;
     for (var item in publicKeys) {
       final publicKey = item.publicKey;
@@ -210,7 +219,7 @@ class MultiSigPublicKey with PublicKey {
 
   @override
   bool verify(Uint8List data, Uint8List signature) {
-    // Multisig verification only supports serialized signature
+    // Only serialized signatures are supported.
     final sig = parseSerializedSignature(base64Encode(signature));
     final signatureScheme = sig.signatureScheme;
     final multisig = sig.multisig;
@@ -246,8 +255,7 @@ class MultiSigPublicKey with PublicKey {
     return signatureWeight >= _multisigPublicKey.threshold;
   }
 
-  /// Combines multiple partial signatures into a single multisig, ensuring that each public key signs only once
-  /// and that all the public keys involved are known and valid, and then serializes multisig into the standard format
+  /// Combines partial signatures into one serialized multisig, requiring each public key to be known and to sign at most once.
   String combinePartialSignatures(List<String> signatures) {
     if (signatures.length > MAX_SIGNER_IN_MULTISIG) {
       throw ArgumentError(
@@ -266,10 +274,21 @@ class MultiSigPublicKey with PublicKey {
 
       Uint8List publicKey;
       if (parsed.signatureScheme == SignatureScheme.ZkLogin) {
-        publicKey = toZkLoginPublicIdentifier(
+        // Match whichever zkLogin encoding (legacy or current) this multisig knows.
+        final nonLegacy = toZkLoginPublicIdentifier(
           parsed.zkLogin!["addressSeed"],
           parsed.zkLogin!["iss"],
+          legacyAddress: false,
         ).toRawBytes();
+        final legacy = toZkLoginPublicIdentifier(
+          parsed.zkLogin!["addressSeed"],
+          parsed.zkLogin!["iss"],
+          legacyAddress: true,
+        ).toRawBytes();
+        publicKey =
+            publicKeys.any((p) => bytesEqual(legacy, p.publicKey.toRawBytes()))
+            ? legacy
+            : nonLegacy;
       } else {
         publicKey = parsed.pubKey!.toRawBytes();
       }
@@ -313,7 +332,7 @@ class MultiSigPublicKey with PublicKey {
   }
 }
 
-/// Parse multisig structure into an array of individual signatures: signature scheme, the actual individual signature, public key and its weight.
+/// Parses a multisig into its individual signatures (scheme, signature, public key, weight).
 List<ParsedPartialMultiSigSignature> parsePartialSignatures(
   MultiSigStruct multisig,
 ) {
@@ -361,7 +380,11 @@ Uint8List asIndices(int bitmap) {
   return Uint8List.fromList(res);
 }
 
-PublicKey publicKeyFromRawBytes(String signatureScheme, Uint8List bytes) {
+PublicKey publicKeyFromRawBytes(
+  String signatureScheme,
+  Uint8List bytes, {
+  String? address,
+}) {
   switch (signatureScheme) {
     case "Ed25519":
       return Ed25519PublicKey.fromBytes(bytes);
@@ -378,7 +401,8 @@ PublicKey publicKeyFromRawBytes(String signatureScheme, Uint8List bytes) {
     case "MultiSig":
       return MultiSigPublicKey.fromBytes(bytes);
     case "ZkLogin":
-      return ZkLoginPublicIdentifier.fromBytes(bytes);
+      // A supplied address disambiguates legacy vs current zkLogin derivation; else auto-detect.
+      return ZkLoginPublicIdentifier.fromBytes(bytes, address: address);
     default:
       throw ArgumentError("Unsupported signature scheme $signatureScheme");
   }

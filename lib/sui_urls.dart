@@ -12,6 +12,4 @@ final class SuiUrls {
   static const String faucetTest = "https://faucet.testnet.sui.io:443";
 
   static const String webSocketMainnet = 'wss://fullnode.mainnet.sui.io';
-  static const String webSocketTestnet = 'wss://fullnode.testnet.sui.io';
-  static const String webSocketDevnet = 'wss://fullnode.devnet.sui.io';
 }

@@ -366,12 +366,14 @@ void main() {
           '20794788559620669596206457022966176986688727876128223628113916380927502737911',
         ),
         'https://id.twitch.tv/oauth2',
+        legacyAddress: false,
       );
       pk5 = toZkLoginPublicIdentifier(
         BigInt.parse(
           '380704556853533152350240698167704405529973457670972223618755249929828551006',
         ),
         'https://id.twitch.tv/oauth2',
+        legacyAddress: false,
       );
 
       final secretKeyEd25519 = Uint8List.fromList([

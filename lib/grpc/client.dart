@@ -10,6 +10,7 @@ import 'package:sui_dart/grpc/generated/sui/rpc/v2/state_service.pbgrpc.dart'
     hide Balance, CoinMetadata;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/subscription_service.pbgrpc.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction_execution_service.pbgrpc.dart';
+import 'package:sui_dart/grpc/generated/sui/forking/v1alpha/forking_service.pbgrpc.dart';
 
 import 'package:sui_dart/sui.dart' as sui_dart;
 
@@ -43,6 +44,9 @@ class SuiGrpcClient {
   late final SignatureVerificationServiceClient signatureVerificationService;
   late final NameServiceClient nameService;
 
+  /// Admin-only service on `sui-fork` instances (same host/port as the regular services).
+  late final ForkingServiceClient forkingService;
+
   SuiGrpcClient(SuiGrpcClientOptions options) {
     _channel =
         options.customChannel ??
@@ -59,6 +63,7 @@ class SuiGrpcClient {
     movePackageService = MovePackageServiceClient(_channel);
     signatureVerificationService = SignatureVerificationServiceClient(_channel);
     nameService = NameServiceClient(_channel);
+    forkingService = ForkingServiceClient(_channel);
 
     core = GrpcCoreClient(this);
   }

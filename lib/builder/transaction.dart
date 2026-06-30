@@ -4,7 +4,6 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:bcs_dart/bcs.dart';
-import 'package:bcs_dart/bcs_type.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sui_dart/bcs/sui_bcs.dart';
 import 'package:sui_dart/builder/commands.dart';
@@ -156,8 +155,7 @@ class SignOptions extends BuildOptions {
 class Transaction {
   late TransactionBlockDataBuilder _blockData;
 
-  /// Converts from a serialize transaction kind (built with `build({ onlyTransactionKind: true })`) to a `Transaction` class.
-  /// Supports either a byte array, or base64-encoded bytes.
+  /// Builds a `Transaction` from a serialized transaction kind (byte array or base64).
   static Transaction fromKind(dynamic serialized) {
     final tx = Transaction();
 
@@ -168,13 +166,17 @@ class Transaction {
     return tx;
   }
 
-  /// Converts from a serialized transaction format to a `Transaction` class.
-  /// There are two supported serialized formats:
-  /// - A string returned from `Transaction_serialize`. The serialized format must be compatible, or it will throw an error.
-  /// - A byte array (or base64-encoded bytes) containing BCS transaction data.
+  /// Builds a `Transaction` from a serialized format: either a `Transaction_serialize`
+  /// string, or base64-encoded BCS transaction data.
   static Transaction from(String serialized) {
     final tx = Transaction();
-    tx._blockData = TransactionBlockDataBuilder.restore(jsonDecode(serialized));
+    final trimmed = serialized.trim();
+    if (trimmed.startsWith('{')) {
+      tx._blockData = TransactionBlockDataBuilder.restore(jsonDecode(trimmed));
+    } else {
+      // base64-encoded BCS transaction data
+      tx._blockData = TransactionBlockDataBuilder.fromBytes(fromB64(trimmed));
+    }
     return tx;
   }
 
@@ -188,8 +190,7 @@ class Transaction {
     _blockData.sender = sender;
   }
 
-  /// Sets the sender only if it has not already been set.
-  /// This is useful for sponsored transaction flows where the sender may not be the same as the signer address.
+  /// Sets the sender only if not already set. Useful for sponsored transactions.
   void setSenderIfNotSet(String sender) {
     _blockData.sender ??= sender;
   }
@@ -318,16 +319,19 @@ class Transaction {
     return object(value);
   }
 
-  /// Add a new object input to the transaction using the fully-resolved object reference.
-  /// If you only have an object ID, use `builder.object(id)` instead.
+  /// Adds an object input from a fully-resolved object reference (use `object(id)` for an ID).
   Map<String, dynamic> objectRef(SuiObjectRef args) {
     return object(Inputs.objectRef(args));
   }
 
-  /// Add a new shared object input to the transaction using the fully-resolved shared object reference.
-  /// If you only have an object ID, use `builder.object(id)` instead.
+  /// Adds a shared object input from a resolved shared object reference (use `object(id)` for an ID).
   Map<String, dynamic> sharedObjectRef(SharedObjectRef args) {
     return object(Inputs.sharedObjectRef(args));
+  }
+
+  /// Adds a receiving object input from a fully-resolved object reference.
+  Map<String, dynamic> receivingRef(SuiObjectRef args) {
+    return object(Inputs.receivingRef(args));
   }
 
   Map<String, dynamic> pureInt(int value, [String type = LegacyBCS.U64]) {
@@ -360,21 +364,21 @@ class Transaction {
 
   // Method shorthands:
 
-  TransactionResult splitCoins(
-    Map<String, dynamic> coin,
-    List<dynamic> amounts,
-  ) {
+  TransactionResult splitCoins(dynamic coin, List<dynamic> amounts) {
+    final coinArg = coin is String ? object(coin) : coin;
     final result = amounts
         .map((x) => x is! Map ? pure.u64(BigInt.parse(x.toString())) : x)
         .toList();
-    return add(Commands.splitCoins(coin, result));
+    return add(Commands.splitCoins(coinArg, result));
   }
 
-  TransactionResult mergeCoins(
-    Map<String, dynamic> destination,
-    List<Map<String, dynamic>> sources,
-  ) {
-    return add(Commands.mergeCoins(destination, sources));
+  TransactionResult mergeCoins(dynamic destination, List<dynamic> sources) {
+    return add(
+      Commands.mergeCoins(
+        object(destination),
+        sources.map((src) => object(src)).toList(),
+      ),
+    );
   }
 
   TransactionResult publish(List<dynamic> modules, List<String> dependencies) {
@@ -413,23 +417,21 @@ class Transaction {
 
   TransactionResult transferObjects(List<dynamic> objects, dynamic address) {
     final result = address is! Map ? pure.address(address) : address;
-    return add(Commands.transferObjects(objects, result));
+    return add(
+      Commands.transferObjects(
+        objects.map((obj) => object(obj)).toList(),
+        result,
+      ),
+    );
   }
 
   TransactionResult makeMoveVec({required dynamic objects, String? type}) {
-    return add(Commands.makeMoveVec(elements: objects, type: type));
+    final elements = (objects as List).map((obj) => object(obj)).toList();
+    return add(Commands.makeMoveVec(elements: elements, type: type));
   }
 
-  /// Serialize the transaction to a string so that it can be sent to a separate context.
-  /// This is different from `build` in that it does not serialize to BCS bytes, and instead
-  /// uses a separate format that is unique to the transaction builder. This allows
-  /// us to serialize partially-complete transactions, that can then be completed and
-  /// built in a separate context.
-  ///
-  /// For example, a dapp can construct a transaction, but not provide gas objects
-  /// or a gas budget. The transaction then can be sent to the wallet, where this
-  /// information is automatically filled in (e.g. by querying for coin objects
-  /// and performing a dry run).
+  /// Serializes to a JSON string (not BCS bytes), so an incomplete transaction
+  /// can be passed around and finished elsewhere.
   @Deprecated('Use toJson() instead')
   String serialize() {
     return jsonEncode(serializeV1TransactionData(_blockData.snapshot()));
@@ -440,7 +442,6 @@ class Transaction {
   }
 
   String _getConfig(String key, BuildOptions options) {
-    // Use the limits definition if that exists:
     if (options.limits != null && options.limits[key] is int) {
       return options.limits[key]!.toString();
     }
@@ -449,7 +450,6 @@ class Transaction {
       return DefaultOfflineLimits[key].toString();
     }
 
-    // Fallback to protocol config:
     final attribute = options.protocolConfig?["attributes"][LIMITS[key]];
     if (attribute == null) {
       throw ArgumentError('Missing expected protocol config: "${LIMITS[key]}"');
@@ -462,7 +462,6 @@ class Transaction {
       );
     }
 
-    // NOTE: Technically this is not a safe conversion, but we know all of the values in protocol config are safe
     return value.toString();
   }
 
@@ -489,7 +488,6 @@ class Transaction {
     final maxPureArgumentSize = int.parse(
       _getConfig('maxPureArgumentSize', options),
     );
-    // Validate all inputs are the correct size:
     for (var i = 0; i < _blockData.inputs.length; i++) {
       final input = _blockData.inputs[i];
       if (input["value"] is Map && input["value"].containsKey("Pure")) {
@@ -521,8 +519,7 @@ class Transaction {
   }
 
   Future<void> resolveObjectReferences(BuildOptions options) async {
-    // Keep track of the object references that will need to be resolved at the end of the transaction.
-    // We keep the input by-reference to avoid needing to re-resolve it:
+    // Unresolved object inputs (kept by-reference to avoid re-resolving).
     final objectsToResolve = _blockData.inputs.where((input) {
       return (input["UnresolvedObject"] != null &&
           (input["UnresolvedObject"]["version"] == null &&
@@ -612,7 +609,9 @@ class Transaction {
           "initialSharedVersion":
               input["UnresolvedObject"]["initialSharedVersion"] ??
               object?["initialSharedVersion"],
-          "mutable": isUsedAsMutable(_blockData, index),
+          "mutable":
+              (input["UnresolvedObject"]?["mutable"] ?? false) ||
+              isUsedAsMutable(_blockData, index),
         });
       } else if (isUsedAsReceiving(_blockData, index)) {
         updated = Inputs.receivingRef(
@@ -644,11 +643,7 @@ class Transaction {
 
     for (var command in commands) {
       if (command["MoveCall"] != null) {
-        // Determine if any of the arguments require encoding.
-        // - If they don't, then this is good to go.
-        // - If they do, then we need to fetch the normalized move module.
-
-        // If we already know the argument types, we don't need to resolve them again
+        // Args needing encoding require the normalized move module; skip if types are known.
         if (command["MoveCall"]?["_argumentTypes"] != null) {
           continue;
         }
@@ -676,8 +671,7 @@ class Transaction {
         }
       }
 
-      // Special handling for values that where previously encoded using the wellKnownEncoding pattern.
-      // This should only happen when transaction data was hydrated from an old version of the SDK
+      // Legacy wellKnownEncoding values (data hydrated from an old SDK version).
       if (command["SplitCoins"] != null) {
         command["SplitCoins"]["amounts"].forEach((amount) {
           normalizeRawArgument(amount, SuiBcs.U64);
@@ -714,9 +708,7 @@ class Transaction {
         final parameters =
             moveFunctionParameters["${moveCall["package"]}::${moveCall["module"]}::${moveCall["function"]}"];
         if (parameters != null && parameters.isNotEmpty) {
-          // Entry functions can have a mutable reference to an instance of the TxContext
-          // struct defined in the TxContext module as the last parameter. The caller of
-          // the function does not need to pass it in as an argument.
+          // Entry functions may take a trailing &mut TxContext that the caller omits.
           final hasTxContext = isTxContext(parameters.last!);
           final params = hasTxContext
               ? parameters.sublist(0, parameters.length - 1)
@@ -752,7 +744,7 @@ class Transaction {
         if (arg["Input"] == null) continue;
         final input = inputs[arg["Input"]];
 
-        // Skip if the input is already resolved
+        // Skip already-resolved inputs.
         if (input["UnresolvedPure"] == null &&
             input["UnresolvedObject"] == null) {
           continue;
@@ -789,7 +781,6 @@ class Transaction {
     }
   }
 
-  // The current default is just picking _all_ coins we can which may not be ideal.
   Future<void> _prepareGasPayment(BuildOptions options) async {
     if (_blockData.gasData.payment != null) {
       final maxGasObjects = int.parse(_getConfig('maxGasObjects', options));
@@ -800,7 +791,6 @@ class Transaction {
       }
     }
 
-    // Early return if the payment is already set:
     if ((options.onlyTransactionKind) || _blockData.gasData.payment != null) {
       return;
     }
@@ -812,7 +802,7 @@ class Transaction {
     ).getCoins(gasOwner!, coinType: SUI_TYPE_ARG);
 
     final paymentCoins = coins.data
-        // Filter out coins that are also used as input:
+        // Exclude coins already used as input.
         .where((coin) {
           final matchingInput = _blockData.inputs.indexWhere((input) {
             if (input["Object"]?["ImmOrOwnedObject"] != null) {
@@ -866,13 +856,12 @@ class Transaction {
 
     final moveModulesToResolve = [];
 
-    // Keep track of the object references that will need to be resolved at the end of the transaction.
-    // We keep the input by-reference to avoid needing to re-resolve it:
+    // Unresolved object inputs (kept by-reference to avoid re-resolving).
     final objectsToResolve = [];
 
     for (var input in inputs) {
       if (input['type'] == 'object' && input['value'] is String) {
-        // The input is a string that we need to resolve to an object reference:
+        // String input to resolve into an object reference.
         objectsToResolve.add({
           "id": normalizeSuiAddress(input['value']),
           "input": input,
@@ -894,8 +883,7 @@ class Transaction {
         }
       }
 
-      // Special handling for values that where previously encoded using the wellKnownEncoding pattern.
-      // This should only happen when transaction block data was hydrated from an old version of the SDK
+      // Legacy wellKnownEncoding values (data hydrated from an old SDK version).
       if (transaction["kind"] == 'SplitCoins') {
         for (var amount in (transaction["amounts"] as List)) {
           if (amount["kind"] == 'Input') {
@@ -932,9 +920,7 @@ class Transaction {
                 functionName,
               );
 
-          // Entry functions can have a mutable reference to an instance of the TxContext
-          // struct defined in the TxContext module as the last parameter. The caller of
-          // the function does not need to pass it in as an argument.
+          // Entry functions may take a trailing &mut TxContext that the caller omits.
           final hasTxContext =
               normalized.parameters.isNotEmpty &&
               isTxContext(normalized.parameters.last);
@@ -958,7 +944,7 @@ class Transaction {
             final arg = callArgs[i];
             if (arg["kind"] != 'Input') continue;
             final input = inputs[arg["index"]];
-            // Skip if the input is already resolved
+            // Skip already-resolved inputs.
             if (isBuilderCallArg(input["value"])) continue;
 
             final inputValue = input["value"];
@@ -1038,9 +1024,7 @@ class Transaction {
         final initialSharedVersion = owner?.shared?.initialSharedVersion;
 
         if (initialSharedVersion != null) {
-          // There could be multiple transactions that reference the same shared object.
-          // If one of them is a mutable reference, then we should mark the input
-          // as mutable.
+          // Mark shared input mutable if any referencing command needs it mutable.
           final isByValue =
               normalizedType != null &&
               extractMutableReference(normalizedType) == null &&
@@ -1065,8 +1049,7 @@ class Transaction {
     }
   }
 
-  /// Prepare the transaction by valdiating the transaction data and resolving all inputs
-  /// so that it can be built into bytes.
+  /// Validates the transaction data and resolves all inputs so it can be built into bytes.
   Future<void> _prepare(BuildOptions options) async {
     if (!options.onlyTransactionKind && _blockData.sender == null) {
       throw ArgumentError('Missing transaction sender');
@@ -1129,7 +1112,6 @@ class Transaction {
       }
     }
 
-    // Perform final validation on the transaction:
     _validate(options);
   }
 
@@ -1148,8 +1130,8 @@ class Transaction {
               usedAsMutable;
         }
       } else if (tx["MakeMoveVec"] != null ||
-          tx["MergeCoins"] == null ||
-          tx["SplitCoins"] == null) {
+          tx["MergeCoins"] != null ||
+          tx["SplitCoins"] != null) {
         usedAsMutable = true;
       }
     });

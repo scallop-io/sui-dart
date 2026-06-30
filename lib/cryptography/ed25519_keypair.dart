@@ -14,8 +14,7 @@ const DEFAULT_ED25519_DERIVATION_PATH = "m/44'/784'/0'/0'/0'";
 class Ed25519Keypair with Keypair {
   late ed25519.KeyPair _signingKeypair;
 
-  /// Create a new Ed25519 keypair instance.
-  /// Generate random keypair if no [Ed25519Keypair] is provided.
+  /// Create an Ed25519 keypair; random if [secretKey] is omitted.
   Ed25519Keypair([Uint8List? secretKey]) {
     if (secretKey != null) {
       final privateKey = ed25519.PrivateKey(secretKey);
@@ -44,12 +43,11 @@ class Ed25519Keypair with Keypair {
     return _signingKeypair;
   }
 
-  /// Create a Ed25519 keypair from a raw secret key byte array.
-  ///
-  /// throws error if the provided secret key is invalid and validation is not skipped.
+  /// Create an Ed25519 keypair from a raw secret key; throws on invalid key
+  /// unless [skipValidation].
   factory Ed25519Keypair.fromSecretKey(
     Uint8List secretKey, {
-    bool skipValidation = true,
+    bool skipValidation = false,
   }) {
     if (secretKey.length == 32) {
       return Ed25519Keypair.fromSeed(secretKey);
@@ -109,11 +107,8 @@ class Ed25519Keypair with Keypair {
     return signature;
   }
 
-  /// Derive Ed25519 keypair from mnemonics and path. The mnemonics must be normalized
-  /// and validated against the english wordlist.
-  ///
-  /// If path is none, it will default to m/44'/784'/0'/0'/0', otherwise the path must
-  /// be compliant to SLIP-0010 in form m/44'/784'/{account_index}'/{change_index}'/{address_index}'.
+  /// Derive an Ed25519 keypair from mnemonics and a SLIP-0010 hardened [path]
+  /// (m/44'/784'/{account}'/{change}'/{address}').
   static Ed25519Keypair deriveKeypair(String path, String mnemonics) {
     if (!isValidHardenedPath(path)) {
       throw ArgumentError('Invalid derivation path');
@@ -132,6 +127,24 @@ class Ed25519Keypair with Keypair {
     final key = ed25519_hd_key_lib
         .derivePath(path, mnemonicToSeedHex(normalizeMnemonics))
         .key!;
+    final pubkey = ed25519_hd_key_lib.getPublicKey(key, false);
+
+    final fullPrivateKey = Uint8List(64);
+    fullPrivateKey.setAll(0, key);
+    fullPrivateKey.setAll(32, pubkey);
+
+    return Ed25519Keypair(Uint8List.fromList(fullPrivateKey));
+  }
+
+  /// Derive an Ed25519 keypair from hex [seedHex] and SLIP-0010 hardened [path]
+  /// (defaults to [DEFAULT_ED25519_DERIVATION_PATH]).
+  static Ed25519Keypair deriveKeypairFromSeed(String seedHex, [String? path]) {
+    path ??= DEFAULT_ED25519_DERIVATION_PATH;
+    if (!isValidHardenedPath(path)) {
+      throw ArgumentError('Invalid derivation path');
+    }
+
+    final key = ed25519_hd_key_lib.derivePath(path, seedHex).key!;
     final pubkey = ed25519_hd_key_lib.getPublicKey(key, false);
 
     final fullPrivateKey = Uint8List(64);

@@ -8,6 +8,7 @@ void main() {
         '13322897930163218532266430409510394316985274769125667290600321564259466511711',
       ),
       'https://accounts.google.com',
+      legacyAddress: true,
     );
     final isValid =
         result ==
@@ -23,6 +24,7 @@ void main() {
           '380704556853533152350240698167704405529973457670972223618755249929828551006',
         ),
         'https://accounts.google.com',
+        legacyAddress: true,
       );
       final isValid =
           result ==

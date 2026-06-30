@@ -38,6 +38,7 @@ class Object extends $pb.GeneratedMessage {
     $fixnum.Int64? storageRebate,
     $3.Value? json,
     $fixnum.Int64? balance,
+    Display? display,
   }) {
     final result = create();
     if (bcs != null) result.bcs = bcs;
@@ -54,6 +55,7 @@ class Object extends $pb.GeneratedMessage {
     if (storageRebate != null) result.storageRebate = storageRebate;
     if (json != null) result.json = json;
     if (balance != null) result.balance = balance;
+    if (display != null) result.display = display;
     return result;
   }
 
@@ -92,6 +94,8 @@ class Object extends $pb.GeneratedMessage {
     ..a<$fixnum.Int64>(
         101, _omitFieldNames ? '' : 'balance', $pb.PbFieldType.OU6,
         defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aOM<Display>(102, _omitFieldNames ? '' : 'display',
+        subBuilder: Display.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -260,6 +264,19 @@ class Object extends $pb.GeneratedMessage {
   $core.bool hasBalance() => $_has(12);
   @$pb.TagNumber(101)
   void clearBalance() => $_clearField(101);
+
+  /// JSON rendering of the object based on an on-chain template.
+  /// This will not be set if the value's type does not have an associated `Display` template.
+  @$pb.TagNumber(102)
+  Display get display => $_getN(13);
+  @$pb.TagNumber(102)
+  set display(Display value) => $_setField(102, value);
+  @$pb.TagNumber(102)
+  $core.bool hasDisplay() => $_has(13);
+  @$pb.TagNumber(102)
+  void clearDisplay() => $_clearField(102);
+  @$pb.TagNumber(102)
+  Display ensureDisplay() => $_ensure(13);
 }
 
 /// Set of Objects
@@ -310,6 +327,84 @@ class ObjectSet extends $pb.GeneratedMessage {
   /// Objects are sorted by the key `(object_id, version)`.
   @$pb.TagNumber(1)
   $pb.PbList<Object> get objects => $_getList(0);
+}
+
+/// A rendered JSON blob based on an on-chain template.
+class Display extends $pb.GeneratedMessage {
+  factory Display({
+    $3.Value? output,
+    $3.Value? errors,
+  }) {
+    final result = create();
+    if (output != null) result.output = output;
+    if (errors != null) result.errors = errors;
+    return result;
+  }
+
+  Display._();
+
+  factory Display.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory Display.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Display',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'sui.rpc.v2'),
+      createEmptyInstance: create)
+    ..aOM<$3.Value>(1, _omitFieldNames ? '' : 'output',
+        subBuilder: $3.Value.create)
+    ..aOM<$3.Value>(2, _omitFieldNames ? '' : 'errors',
+        subBuilder: $3.Value.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Display clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Display copyWith(void Function(Display) updates) =>
+      super.copyWith((message) => updates(message as Display)) as Display;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Display create() => Display._();
+  @$core.override
+  Display createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static Display getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Display>(create);
+  static Display? _defaultInstance;
+
+  /// Output for all successfully substituted display fields. Unsuccessful
+  /// fields will be `null`, and will be accompanied by a field in `errors`,
+  /// explaining the error.
+  @$pb.TagNumber(1)
+  $3.Value get output => $_getN(0);
+  @$pb.TagNumber(1)
+  set output($3.Value value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasOutput() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearOutput() => $_clearField(1);
+  @$pb.TagNumber(1)
+  $3.Value ensureOutput() => $_ensure(0);
+
+  /// If any fields failed to render, this will contain a mapping from failed
+  /// field names to error messages. If all fields succeed, this will either be
+  /// `null` or not set.
+  @$pb.TagNumber(2)
+  $3.Value get errors => $_getN(1);
+  @$pb.TagNumber(2)
+  set errors($3.Value value) => $_setField(2, value);
+  @$pb.TagNumber(2)
+  $core.bool hasErrors() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearErrors() => $_clearField(2);
+  @$pb.TagNumber(2)
+  $3.Value ensureErrors() => $_ensure(1);
 }
 
 const $core.bool _omitFieldNames =

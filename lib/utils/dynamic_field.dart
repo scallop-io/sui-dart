@@ -8,10 +8,8 @@ import 'package:sui_dart/utils/sha.dart';
 /// `HashingIntentScope::ChildObjectId` domain separator.
 const int _kHashingIntentChildObjectId = 0xf0;
 
-/// Deterministic UID of a dynamic field. Lets callers `getObject(uid)`
-/// directly instead of paginating `listDynamicFields`.
-///
-/// BLAKE2b-256 of: `0xf0 || parent (32) || keyLen (u64 LE) || keyBcs || typeTagBcs`.
+/// Deterministic UID of a dynamic field, for direct `getObject(uid)`.
+/// BLAKE2b-256 of `0xf0 || parent (32) || keyLen (u64 LE) || keyBcs || typeTagBcs` (order is wire-significant).
 String deriveDynamicFieldId({
   required String parentObjectId,
   required String keyTypeTag,
@@ -30,4 +28,17 @@ String deriveDynamicFieldId({
     ..add(keyTypeTagBcs);
 
   return normalizeSuiAddress('0x${Hex.encode(blake2b(input.toBytes()))}');
+}
+
+/// Derive the ID of a `derived_object`. [key] is BCS-encoded key bytes; [typeTag] is its Move type.
+String deriveObjectId({
+  required String parentObjectId,
+  required String typeTag,
+  required Uint8List key,
+}) {
+  return deriveDynamicFieldId(
+    parentObjectId: parentObjectId,
+    keyTypeTag: '0x2::derived_object::DerivedObjectKey<$typeTag>',
+    keyBcs: key,
+  );
 }

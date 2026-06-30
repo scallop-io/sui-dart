@@ -12,6 +12,7 @@
 
 import 'dart:core' as $core;
 
+import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 import 'package:protobuf/well_known_types/google/protobuf/field_mask.pb.dart'
     as $3;
@@ -284,10 +285,12 @@ class SimulateTransactionResponse extends $pb.GeneratedMessage {
   factory SimulateTransactionResponse({
     $4.ExecutedTransaction? transaction,
     $core.Iterable<CommandResult>? commandOutputs,
+    $fixnum.Int64? suggestedGasPrice,
   }) {
     final result = create();
     if (transaction != null) result.transaction = transaction;
     if (commandOutputs != null) result.commandOutputs.addAll(commandOutputs);
+    if (suggestedGasPrice != null) result.suggestedGasPrice = suggestedGasPrice;
     return result;
   }
 
@@ -308,6 +311,9 @@ class SimulateTransactionResponse extends $pb.GeneratedMessage {
         subBuilder: $4.ExecutedTransaction.create)
     ..pPM<CommandResult>(2, _omitFieldNames ? '' : 'commandOutputs',
         subBuilder: CommandResult.create)
+    ..a<$fixnum.Int64>(
+        3, _omitFieldNames ? '' : 'suggestedGasPrice', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -345,6 +351,18 @@ class SimulateTransactionResponse extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(2)
   $pb.PbList<CommandResult> get commandOutputs => $_getList(1);
+
+  /// A suggested gas price to use, that is above RGP, in order to provide a
+  /// better chance of the transaction being included in the presence of
+  /// congested objects.
+  @$pb.TagNumber(3)
+  $fixnum.Int64 get suggestedGasPrice => $_getI64(2);
+  @$pb.TagNumber(3)
+  set suggestedGasPrice($fixnum.Int64 value) => $_setInt64(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasSuggestedGasPrice() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSuggestedGasPrice() => $_clearField(3);
 }
 
 /// An intermediate result/output from the execution of a single command

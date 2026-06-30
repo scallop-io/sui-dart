@@ -95,7 +95,7 @@ dynamic getIdFromCallArg(dynamic arg) {
   }
 
   if (arg["UnresolvedObject"] != null) {
-    return arg["UnresolvedObject"]["objectId"];
+    return normalizeSuiAddress(arg["UnresolvedObject"]["objectId"]);
   }
 
   return null;

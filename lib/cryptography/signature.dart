@@ -87,7 +87,11 @@ SignaturePubkeyPair parseSerializedSignature(String serializedSignature) {
       'iss',
     );
     final addressSeed = BigInt.parse(signature.inputs.addressSeed);
-    final address = computeZkLoginAddressFromSeed(addressSeed, iss);
+    final address = computeZkLoginAddressFromSeed(
+      addressSeed,
+      iss,
+      legacyAddress: false,
+    );
     final zkLgoin = {
       "inputs": signature.inputs,
       "maxEpoch": signature.maxEpoch,

@@ -133,6 +133,16 @@ const Object$json = {
       '10': 'balance',
       '17': true
     },
+    {
+      '1': 'display',
+      '3': 102,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.Display',
+      '9': 13,
+      '10': 'display',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_bcs'},
@@ -148,6 +158,7 @@ const Object$json = {
     {'1': '_storage_rebate'},
     {'1': '_json'},
     {'1': '_balance'},
+    {'1': '_display'},
   ],
 };
 
@@ -163,10 +174,11 @@ final $typed_data.Uint8List objectDescriptor = $convert.base64Decode(
     'Zpb3VzX3RyYW5zYWN0aW9uGAogASgJSAlSE3ByZXZpb3VzVHJhbnNhY3Rpb26IAQESKgoOc3Rv'
     'cmFnZV9yZWJhdGUYCyABKARIClINc3RvcmFnZVJlYmF0ZYgBARIvCgRqc29uGGQgASgLMhYuZ2'
     '9vZ2xlLnByb3RvYnVmLlZhbHVlSAtSBGpzb26IAQESHQoHYmFsYW5jZRhlIAEoBEgMUgdiYWxh'
-    'bmNliAEBQgYKBF9iY3NCDAoKX29iamVjdF9pZEIKCghfdmVyc2lvbkIJCgdfZGlnZXN0QggKBl'
-    '9vd25lckIOCgxfb2JqZWN0X3R5cGVCFgoUX2hhc19wdWJsaWNfdHJhbnNmZXJCCwoJX2NvbnRl'
-    'bnRzQgoKCF9wYWNrYWdlQhcKFV9wcmV2aW91c190cmFuc2FjdGlvbkIRCg9fc3RvcmFnZV9yZW'
-    'JhdGVCBwoFX2pzb25CCgoIX2JhbGFuY2U=');
+    'bmNliAEBEjIKB2Rpc3BsYXkYZiABKAsyEy5zdWkucnBjLnYyLkRpc3BsYXlIDVIHZGlzcGxheY'
+    'gBAUIGCgRfYmNzQgwKCl9vYmplY3RfaWRCCgoIX3ZlcnNpb25CCQoHX2RpZ2VzdEIICgZfb3du'
+    'ZXJCDgoMX29iamVjdF90eXBlQhYKFF9oYXNfcHVibGljX3RyYW5zZmVyQgsKCV9jb250ZW50c0'
+    'IKCghfcGFja2FnZUIXChVfcHJldmlvdXNfdHJhbnNhY3Rpb25CEQoPX3N0b3JhZ2VfcmViYXRl'
+    'QgcKBV9qc29uQgoKCF9iYWxhbmNlQgoKCF9kaXNwbGF5');
 
 @$core.Deprecated('Use objectSetDescriptor instead')
 const ObjectSet$json = {
@@ -187,3 +199,40 @@ const ObjectSet$json = {
 final $typed_data.Uint8List objectSetDescriptor = $convert.base64Decode(
     'CglPYmplY3RTZXQSLAoHb2JqZWN0cxgBIAMoCzISLnN1aS5ycGMudjIuT2JqZWN0UgdvYmplY3'
     'Rz');
+
+@$core.Deprecated('Use displayDescriptor instead')
+const Display$json = {
+  '1': 'Display',
+  '2': [
+    {
+      '1': 'output',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Value',
+      '9': 0,
+      '10': 'output',
+      '17': true
+    },
+    {
+      '1': 'errors',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Value',
+      '9': 1,
+      '10': 'errors',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_output'},
+    {'1': '_errors'},
+  ],
+};
+
+/// Descriptor for `Display`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List displayDescriptor = $convert.base64Decode(
+    'CgdEaXNwbGF5EjMKBm91dHB1dBgBIAEoCzIWLmdvb2dsZS5wcm90b2J1Zi5WYWx1ZUgAUgZvdX'
+    'RwdXSIAQESMwoGZXJyb3JzGAIgASgLMhYuZ29vZ2xlLnByb3RvYnVmLlZhbHVlSAFSBmVycm9y'
+    'c4gBAUIJCgdfb3V0cHV0QgkKB19lcnJvcnM=');

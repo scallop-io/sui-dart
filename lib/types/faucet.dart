@@ -14,6 +14,33 @@ class FaucetCoinInfo {
   }
 }
 
+/// Response from `/v2/gas`. [status] is `'Success'` or a `{Failure: {internal}}` map.
+class FaucetResponseV2 {
+  final dynamic status;
+  final List<FaucetCoinInfo>? coinsSent;
+
+  FaucetResponseV2(this.status, this.coinsSent);
+
+  bool get isSuccess => status == 'Success';
+
+  String? get failureInternal {
+    if (status is Map && status['Failure'] != null) {
+      return status['Failure']['internal']?.toString();
+    }
+    return null;
+  }
+
+  factory FaucetResponseV2.fromJson(dynamic data) {
+    final sent = data['coins_sent'];
+    return FaucetResponseV2(
+      data['status'],
+      sent == null
+          ? null
+          : (sent as List).map((x) => FaucetCoinInfo.fromJson(x)).toList(),
+    );
+  }
+}
+
 class FaucetResponse {
   final List<FaucetCoinInfo> transferredGasObjects;
   final String? error;

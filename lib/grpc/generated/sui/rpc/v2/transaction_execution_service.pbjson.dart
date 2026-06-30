@@ -184,9 +184,19 @@ const SimulateTransactionResponse$json = {
       '6': '.sui.rpc.v2.CommandResult',
       '10': 'commandOutputs'
     },
+    {
+      '1': 'suggested_gas_price',
+      '3': 3,
+      '4': 1,
+      '5': 4,
+      '9': 1,
+      '10': 'suggestedGasPrice',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_transaction'},
+    {'1': '_suggested_gas_price'},
   ],
 };
 
@@ -195,7 +205,8 @@ final $typed_data.Uint8List simulateTransactionResponseDescriptor = $convert.bas
     'ChtTaW11bGF0ZVRyYW5zYWN0aW9uUmVzcG9uc2USRgoLdHJhbnNhY3Rpb24YASABKAsyHy5zdW'
     'kucnBjLnYyLkV4ZWN1dGVkVHJhbnNhY3Rpb25IAFILdHJhbnNhY3Rpb26IAQESQgoPY29tbWFu'
     'ZF9vdXRwdXRzGAIgAygLMhkuc3VpLnJwYy52Mi5Db21tYW5kUmVzdWx0Ug5jb21tYW5kT3V0cH'
-    'V0c0IOCgxfdHJhbnNhY3Rpb24=');
+    'V0cxIzChNzdWdnZXN0ZWRfZ2FzX3ByaWNlGAMgASgESAFSEXN1Z2dlc3RlZEdhc1ByaWNliAEB'
+    'Qg4KDF90cmFuc2FjdGlvbkIWChRfc3VnZ2VzdGVkX2dhc19wcmljZQ==');
 
 @$core.Deprecated('Use commandResultDescriptor instead')
 const CommandResult$json = {
