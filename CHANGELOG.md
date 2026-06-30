@@ -223,3 +223,9 @@ Synced to `f898c13`.
 ### Deprecated
 
 * JSON-RPC layer (`SuiClient`, `JsonRpcClient`, `JsonRpcProvider`, `SignerWithProvider`, `RawSigner`) in favor of `SuiGrpcClient`; JSON-RPC sunsets ~July 2026. Still functional; removed in a future major.
+
+## 0.8.2
+
+### Fixed
+
+* gRPC `simulateTransaction(events: true)` / devInspect now return emitted events — the read mask requested `events` instead of `transaction.events` (events are nested under `transaction`), so the server returned none.

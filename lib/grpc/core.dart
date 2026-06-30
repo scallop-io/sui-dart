@@ -487,7 +487,7 @@ class GrpcCoreClient {
 
     if (include?.transaction == true) paths.add('transaction');
     if (include?.effects == true) paths.add('effects');
-    if (include?.events == true) paths.add('events');
+    if (include?.events == true) paths.add('transaction.events');
     if (include?.balanceChanges == true) paths.add('balance_changes');
     if (include?.bcs == true) paths.add('transaction.bcs');
     if (include?.commandResults == true) paths.add('command_outputs');
