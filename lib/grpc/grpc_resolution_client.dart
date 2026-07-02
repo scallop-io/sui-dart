@@ -84,7 +84,11 @@ class GrpcResolutionClient implements TxResolutionClient {
     // No bytes dry-run in gRPC: rebuild the tx and simulate (the node picks gas,
     // since the builder dry-runs with empty payment to estimate a budget).
     final tx = Transaction.fromBytes(bytes);
-    final response = await client.simulateTransaction(tx, doGasSelection: true);
+    final response = await client.simulateTransaction(
+      tx,
+      doGasSelection: true,
+      include: const TransactionIncludeOptions(effects: true),
+    );
     final effects = response.effects;
     final success = effects?.status?.success ?? response.status.success;
     final gas = effects?.gasUsed;
