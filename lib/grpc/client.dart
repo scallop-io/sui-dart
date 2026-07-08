@@ -171,11 +171,13 @@ class SuiGrpcClient {
     sui_dart.Transaction transactionBlock, {
     TransactionIncludeOptions? include,
     bool? doGasSelection,
+    bool? checksEnabled,
   }) {
     return core.simulateTransaction(
       transactionBlock,
       include: include,
       doGasSelection: doGasSelection,
+      checksEnabled: checksEnabled,
     );
   }
 

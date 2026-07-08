@@ -249,3 +249,9 @@ Synced to `f898c13`.
 
 * Bump `bcs_dart` to `^0.2.1`.
 * Rewrite the README transaction-building guide.
+
+## 0.8.6
+
+### Added
+
+* `simulateTransaction` accepts `checksEnabled`. Pass `false` to run the transaction checks as DISABLED (maps to the gRPC `SimulateTransactionRequest.checks` field). When disabled, the node ignores `doGasSelection`, so an unfunded sender can simulate without gas.

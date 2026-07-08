@@ -280,6 +280,7 @@ class GrpcCoreClient {
     sui_dart.Transaction transactionBlock, {
     TransactionIncludeOptions? include,
     bool? doGasSelection,
+    bool? checksEnabled,
   }) async {
     final readMask = _transactionReadMask(include);
 
@@ -289,6 +290,12 @@ class GrpcCoreClient {
             transaction: transactionBlock.toGrpcTransaction(),
             readMask: readMask,
             doGasSelection: doGasSelection ?? true,
+            // doGasSelection is ignored by the node when checks are DISABLED.
+            checks: checksEnabled == null
+                ? null
+                : checksEnabled
+                ? SimulateTransactionRequest_TransactionChecks.ENABLED
+                : SimulateTransactionRequest_TransactionChecks.DISABLED,
           ),
         );
 
