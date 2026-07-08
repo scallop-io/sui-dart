@@ -2,8 +2,6 @@
 
 [![Pub](https://img.shields.io/pub/v/sui_dart.svg)](https://pub.dev/packages/sui_dart)
 
-> Note: This branch is in active development and may introduce breaking changes. If you don’t need Transaction v2 feature, use the `v1` branch.
-
 ## Installation
 
 ```
@@ -80,84 +78,214 @@ final secp256k1 = SuiAccount.fromMnemonics(mnemonics, SignatureScheme.Secp256k1)
 final secp256r1 = SuiAccount.fromMnemonics(mnemonics, SignatureScheme.Secp256r1);
 ```
 
-### Writing APIs
+### Building Transactions
 
-#### Transfer Object
+Transactions are programmable transaction blocks (PTBs): a sequence of commands
+that run atomically. Build one with the `Transaction` class.
 
 ```dart
-final account = SuiAccount.fromMnemonics(mnemonics, SignatureScheme.Ed25519);
-final client = SuiClient(SuiUrls.devnet);
-
 final tx = Transaction();
-tx.transferObjects(
-    [tx.objectId('0x2619f581cb1864d07c89453a69611202669fdc4784fb59b9cb4278ec60756011')],
-    account.getAddress()
-);
-
-final result = await client.signAndExecuteTransactionBlock(account, tx);
-print(result.digest);
 ```
 
-#### Split and Transfer Coins
+#### Inputs
+
+Add objects and pure (BCS-encoded) values as inputs:
+
+```dart
+// Object inputs, by id
+tx.object('0x2619f581cb1864d07c89453a69611202669fdc4784fb59b9cb4278ec60756011');
+
+// Pure values (u64/u128/u256 take a BigInt)
+tx.pure.u64(BigInt.from(1000));
+tx.pure.address('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
+tx.pure.string('hello');
+tx.pure.boolean(true);
+tx.pure.vector('u64', [1, 2, 3]);
+tx.pure.option('u64', BigInt.from(5));
+```
+
+#### Commands
+
+Split coins off the gas coin and transfer them:
+
+```dart
+final tx = Transaction();
+final coin = tx.splitCoins(tx.gas, [1000]);
+tx.transferObjects([coin], recipient);
+```
+
+Transfer objects:
+
+```dart
+tx.transferObjects(
+    [tx.object('0x2619f581cb1864d07c89453a69611202669fdc4784fb59b9cb4278ec60756011')],
+    recipient,
+);
+```
+
+Merge coins:
+
+```dart
+tx.mergeCoins('0x922ec73939b3288f6da39ebefb0cb88c6c54817441254d448bd2491ac4dd0cbd', [
+    '0x8dafc96dec7f8d635e052a6da9a4153e37bc4d59ed44c45006e4e9d17d07f80d',
+]);
+```
+
+Call a Move function. The `target` is `packageId::module::function`; pass generic
+type parameters with `typeArguments`:
+
+```dart
+tx.moveCall(
+    '0x...::nft::mint',
+    arguments: [tx.pure.string('Example NFT')],
+);
+
+final newCoin = tx.moveCall(
+    '0x2::coin::split',
+    typeArguments: ['0x2::sui::SUI'],
+    arguments: [tx.object('0xCoinId'), tx.pure.u64(BigInt.from(1000))],
+);
+```
+
+Build a `vector` of objects, publish, or upgrade a package:
+
+```dart
+tx.makeMoveVec(objects: [tx.object('0x1'), tx.object('0x2')]);
+
+final upgradeCap = tx.publish(modules, dependencies);
+tx.transferObjects([upgradeCap], recipient);
+
+tx.upgrade(
+    modules: modules,
+    dependencies: dependencies,
+    packageId: '0x...',
+    ticket: upgradeTicket,
+);
+```
+
+#### Using results
+
+Every command returns a `TransactionResult` you can chain into later commands.
+Index into it for a specific output:
+
+```dart
+final coins = tx.splitCoins(tx.gas, [1000, 2000]);
+tx.transferObjects([coins[0]], alice);
+tx.transferObjects([coins[1]], bob);
+```
+
+A single return value can be passed straight through:
+
+```dart
+final nft = tx.moveCall('0x...::nft::mint', arguments: [tx.pure.string('My NFT')]);
+tx.transferObjects([nft], recipient);
+```
+
+#### coinWithBalance
+
+`coinWithBalance` selects and merges the sender's coins at build time to produce
+a coin of an exact amount (using the gas coin for SUI). Add it with `tx.add`:
+
+```dart
+final tx = Transaction();
+
+// 1 SUI
+final coin = tx.add(coinWithBalance(balance: 1000000000));
+tx.transferObjects([coin], recipient);
+
+// A custom coin type
+final usdc = tx.add(coinWithBalance(
+    type: '0x...::usdc::USDC',
+    balance: 1000000,
+));
+```
+
+Use `createBalance(...)` for a `Balance<T>` instead of a `Coin<T>`. Both require a
+sender and a client at build time.
+
+#### Gas and sender
+
+The client sets the sender, gas price, budget, and payment automatically. Override
+any of them when needed:
+
+```dart
+tx.setSender(account.getAddress());
+tx.setGasBudget(BigInt.from(50000000));
+tx.setGasPrice(BigInt.from(1000));
+```
+
+### Signing and Executing
+
+JSON-RPC is deprecated; execute transactions over gRPC with `SuiGrpcClient`. The
+gRPC client and its transaction helpers are separate imports:
+
+```dart
+import 'package:sui_dart/sui.dart';
+import 'package:sui_dart/grpc/client.dart';
+import 'package:sui_dart/grpc/grpc_resolution_client.dart';
+
+final client = SuiGrpcClient(SuiGrpcClientOptions(
+    baseUrl: 'fullnode.mainnet.sui.io',
+    port: 443,
+));
+```
+
+Build, sign, and execute in one call. Inputs (coins, objects, gas) resolve over
+gRPC, and the sender defaults to the account's address:
 
 ```dart
 final account = SuiAccount.fromMnemonics(mnemonics, SignatureScheme.Ed25519);
-final client = SuiClient(SuiUrls.devnet);
 
 final tx = Transaction();
 final coin = tx.splitCoins(tx.gas, [1000]);
-tx.transferObjects(
-    [coin],
-    account.getAddress()
+tx.transferObjects([coin], account.getAddress());
+
+final result = await client.signAndExecuteTransaction(
+    account,
+    tx,
+    include: const TransactionIncludeOptions(effects: true),
+);
+print(result.digest);
+```
+
+Simulate (dry-run) a transaction without executing it:
+
+```dart
+tx.setSender(account.getAddress());
+final sim = await client.simulateTransaction(
+    tx,
+    include: const TransactionIncludeOptions(effects: true, events: true),
+);
+```
+
+Sign and execute manually (for multisig, sponsored, or delayed execution):
+
+```dart
+tx.setSender(account.getAddress());
+final bytes = await client.buildTransaction(tx);
+final signed = account.keyPair.signTransactionBlock(bytes);
+
+final result = await client.executeTransaction(
+    bytes,
+    [signed.signature],
+    include: const TransactionIncludeOptions(effects: true),
+);
+```
+
+#### Serializing
+
+Pass an in-progress transaction between processes as JSON, then rebuild it:
+
+```dart
+// Async: resolves intents like coinWithBalance first
+final json = await tx.toJsonAsync(
+    SerializeTransactionOptions(resolutionClient: GrpcResolutionClient(client)),
 );
 
-final result = await client.signAndExecuteTransactionBlock(account, tx);
-print(result.digest);
-```
+// Sync: for a transaction with no unresolved intents
+final json = tx.toJson();
 
-#### Merge Coins
-
-```dart
-final account = SuiAccount.fromMnemonics(mnemonics, SignatureScheme.Ed25519);
-final client = SuiClient(SuiUrls.devnet);
-
-final tx = Transaction();
-tx.mergeCoins(tx.objectId('0x922ec73939b3288f6da39ebefb0cb88c6c54817441254d448bd2491ac4dd0cbd'),
-    [tx.objectId('0x8dafc96dec7f8d635e052a6da9a4153e37bc4d59ed44c45006e4e9d17d07f80d')]
-);
-
-final result = await client.signAndExecuteTransactionBlock(account, tx);
-print(result.digest);
-```
-
-#### Move Call
-
-```dart
-final account = SuiAccount.fromMnemonics(mnemonics, SignatureScheme.Ed25519);
-final client = SuiClient(SuiUrls.devnet);
-
-const packageObjectId = '0x...';
-final tx = Transaction();
-tx.moveCall('$packageObjectId::nft::mint', arguments: [tx.pureString('Example NFT')]);
-
-final result = await client.signAndExecuteTransactionBlock(account, tx);
-print(result.digest);
-```
-
-#### Publish Modules
-
-```dart
-final account = SuiAccount.fromMnemonics(mnemonics, SignatureScheme.Ed25519);
-final client = SuiClient(SuiUrls.devnet);
-
-const moduels = <String>[];
-const dependencies = <String>[];
-final tx = Transaction();
-final upgradeCap = tx.publish(moduels, dependencies);
-tx.transferObjects([upgradeCap], account.getAddress());
-
-final result = await client.signAndExecuteTransactionBlock(account, tx);
-print(result.digest);
+final restored = Transaction.from(json);
 ```
 
 ### Reading APIs
