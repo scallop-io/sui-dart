@@ -297,7 +297,11 @@ class MultiSigPublicKey with PublicKey {
 
       int? publicKeyIndex;
       for (int j = 0; j < publicKeys.length; j++) {
-        if (bytesEqual(publicKey, publicKeys[j].publicKey.toRawBytes())) {
+        if (parsed.signatureScheme ==
+                SIGNATURE_SCHEME_TO_FLAG.flagToScheme(
+                  publicKeys[j].publicKey.flag(),
+                ) &&
+            bytesEqual(publicKey, publicKeys[j].publicKey.toRawBytes())) {
           if (bitmap & (1 << j) != 0) {
             throw ArgumentError(
               "Received multiple signatures from the same public key",
@@ -338,21 +342,33 @@ List<ParsedPartialMultiSigSignature> parsePartialSignatures(
 ) {
   final sigs = multisig.sigs;
   final len = sigs.length;
+  final indices = asIndices(multisig.bitmap);
+  if (indices.length != len) {
+    throw ArgumentError('Signature count does not match bitmap');
+  }
   final res = <ParsedPartialMultiSigSignature>[];
   for (int i = 0; i < len; i++) {
     final sss = sigs[i].entries.first;
     final signatureScheme = sss.key;
     final signature = sss.value.cast<int>();
-    final pkIndex = asIndices(multisig.bitmap)[i];
+    final pkIndex = indices[i];
+    if (pkIndex >= multisig.multisigPK.pks.length) {
+      throw ArgumentError('Bitmap references an unknown public key');
+    }
     final pair = multisig.multisigPK.pks[pkIndex];
-    final pkBytes = pair.pubKey.entries.first.value.cast<int>();
+    final publicKeyEntry = pair.pubKey.entries.first;
+    final publicKeyScheme = publicKeyEntry.key;
+    final pkBytes = publicKeyEntry.value.cast<int>();
 
     if (signatureScheme == SignatureScheme.MultiSig.name) {
       throw ArgumentError("MultiSig is not supported inside MultiSig");
     }
+    if (signatureScheme != publicKeyScheme) {
+      throw const FormatException('Signature scheme does not match public key');
+    }
 
     final publicKey = publicKeyFromRawBytes(
-      signatureScheme,
+      publicKeyScheme,
       Uint8List.fromList(pkBytes),
     );
 
@@ -368,7 +384,7 @@ List<ParsedPartialMultiSigSignature> parsePartialSignatures(
 }
 
 Uint8List asIndices(int bitmap) {
-  if (bitmap < 0 || bitmap > 1024) {
+  if (bitmap < 0 || bitmap >= 1 << MAX_SIGNER_IN_MULTISIG) {
     throw ArgumentError('Invalid bitmap');
   }
   final res = <int>[];

@@ -50,7 +50,7 @@ class Secp256 {
 
   Uint8List generatePrivateKeyBytes([SecureRandom? random]) {
     final privateKey = generatePrivateKey(random);
-    return encodeBigIntAsUnsigned(privateKey);
+    return padLeftUint8List(encodeBigIntAsUnsigned(privateKey));
   }
 
   /// If [isCompressed] is `true`, return public key length is 33 (flag + x),

@@ -91,7 +91,9 @@ class PasskeyPublicKey with PublicKey {
       }
 
       // WebAuthn carries the message to sign in the base64url `challenge` field.
-      final challenge = _fromBase64Url(clientData['challenge'] as String);
+      final challenge = base64Url.decode(
+        base64Url.normalize(clientData['challenge'] as String),
+      );
       if (!bytesEqual(data, challenge)) return false;
 
       // The key embedded in the signature must be the one this object represents.
@@ -160,6 +162,12 @@ ParsedPasskeySignature parseSerializedPasskeySignature(dynamic signature) {
   final userSignature = Uint8List.fromList(
     (dec['userSignature'] as List).cast<int>(),
   );
+  const userSignatureSize =
+      1 + PASSKEY_SIGNATURE_SIZE + PASSKEY_PUBLIC_KEY_SIZE;
+  if (userSignature.length != userSignatureSize ||
+      userSignature[0] != SIGNATURE_SCHEME_TO_FLAG.Secp256r1) {
+    throw ArgumentError('Invalid passkey user signature');
+  }
 
   return ParsedPasskeySignature(
     signatureScheme: SignatureScheme.Passkey,
@@ -176,17 +184,4 @@ ParsedPasskeySignature parseSerializedPasskeySignature(dynamic signature) {
     ),
     publicKey: Uint8List.sublistView(userSignature, 1 + PASSKEY_SIGNATURE_SIZE),
   );
-}
-
-Uint8List _fromBase64Url(String input) {
-  var s = input.replaceAll('-', '+').replaceAll('_', '/');
-  switch (s.length % 4) {
-    case 2:
-      s += '==';
-      break;
-    case 3:
-      s += '=';
-      break;
-  }
-  return base64Decode(s);
 }

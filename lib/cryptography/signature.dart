@@ -84,6 +84,9 @@ String toSerializedSignature(
 
 SignaturePubkeyPair parseSerializedSignature(String serializedSignature) {
   final bytes = base64Decode(serializedSignature);
+  if (bytes.isEmpty) {
+    throw ArgumentError('Invalid serialized signature');
+  }
   final signatureScheme = SIGNATURE_SCHEME_TO_FLAG.flagToScheme(bytes[0]);
 
   if (signatureScheme == SignatureScheme.MultiSig) {
@@ -157,6 +160,10 @@ SignaturePubkeyPair parseSerializedSignature(String serializedSignature) {
   }
 
   final publicKeySize = getPublicKeySize(signatureScheme);
+  const signatureSize = 64;
+  if (bytes.length != 1 + signatureSize + publicKeySize) {
+    throw ArgumentError('Invalid serialized signature length');
+  }
   final signature = bytes.sublist(1, bytes.length - publicKeySize);
   final pubkeyBytes = bytes.sublist(1 + signature.length);
   final pubKey = getPublicKey(signatureScheme, pubkeyBytes);

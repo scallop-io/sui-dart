@@ -18,7 +18,9 @@ BigInt decodeBigIntToUnsigned(List<int> magnitude) =>
     utils.decodeBigIntWithSign(1, magnitude);
 
 Uint8List padLeftUint8List(Uint8List data, [int len = 32]) {
-  assert(data.length <= len);
+  if (data.length > len) {
+    throw ArgumentError('Input is longer than the requested length');
+  }
   if (data.length == len) return data;
 
   return Uint8List(len)..setRange(len - data.length, len, data);
@@ -47,6 +49,9 @@ const SUI_PRIVATE_KEY_PREFIX = 'suiprivkey';
     throw ArgumentError('Invalid private key prefix');
   }
   final extendedSecretKey = bech32.fromWords(result.data);
+  if (extendedSecretKey.length != PRIVATE_KEY_SIZE + 1) {
+    throw ArgumentError('Invalid private key length');
+  }
   final signatureScheme = SIGNATURE_SCHEME_TO_FLAG.flagToScheme(
     extendedSecretKey[0],
   );

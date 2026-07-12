@@ -106,8 +106,23 @@ class PasskeyKeypair {
   Future<Uint8List> sign(Uint8List data) async {
     final credential = await _provider.get(data, _credentialId);
     final clientDataJsonString = utf8.decode(credential.clientDataJson);
+    final clientData = jsonDecode(clientDataJsonString);
+    if (clientData is! Map ||
+        clientData['type'] != 'webauthn.get' ||
+        clientData['challenge'] is! String ||
+        !bytesEqual(
+          base64Url.decode(
+            base64Url.normalize(clientData['challenge'] as String),
+          ),
+          data,
+        )) {
+      throw ArgumentError('Authenticator returned invalid client data');
+    }
 
     final (r, s) = _decodeDerEcdsaSignature(credential.signature);
+    if (r >= curve256r1Params.n || s >= curve256r1Params.n) {
+      throw ArgumentError('Invalid ECDSA signature values');
+    }
     var ecSig = ECSignature(r, s);
     if (!ecSig.isNormalized(curve256r1Params)) {
       ecSig = ecSig.normalize(curve256r1Params);
@@ -207,18 +222,41 @@ PasskeyPublicKey findCommonPublicKey(
 }
 
 (BigInt, BigInt) _decodeDerEcdsaSignature(Uint8List der) {
-  // SEQUENCE { INTEGER r, INTEGER s }; P-256 signatures use short-form lengths.
   var i = 0;
-  if (der.isEmpty || der[i++] != 0x30) {
+
+  int readByte() {
+    if (i >= der.length) throw ArgumentError('Invalid DER signature');
+    return der[i++];
+  }
+
+  int readLength() {
+    final length = readByte();
+    if (length >= 0x80) throw ArgumentError('Invalid DER signature');
+    return length;
+  }
+
+  BigInt readInteger() {
+    if (readByte() != 0x02) throw ArgumentError('Invalid DER signature');
+    final length = readLength();
+    if (length == 0 || i + length > der.length) {
+      throw ArgumentError('Invalid DER signature');
+    }
+    final bytes = Uint8List.sublistView(der, i, i + length);
+    i += length;
+    if (bytes[0] & 0x80 != 0 ||
+        (bytes.length > 1 && bytes[0] == 0 && bytes[1] & 0x80 == 0)) {
+      throw ArgumentError('Invalid DER signature');
+    }
+    final value = decodeBigIntToUnsigned(bytes);
+    if (value == BigInt.zero) throw ArgumentError('Invalid DER signature');
+    return value;
+  }
+
+  if (readByte() != 0x30 || readLength() != der.length - i) {
     throw ArgumentError('Invalid DER signature');
   }
-  i++; // sequence length
-  if (der[i++] != 0x02) throw ArgumentError('Invalid DER signature');
-  final rLen = der[i++];
-  final r = decodeBigIntToUnsigned(der.sublist(i, i + rLen));
-  i += rLen;
-  if (der[i++] != 0x02) throw ArgumentError('Invalid DER signature');
-  final sLen = der[i++];
-  final s = decodeBigIntToUnsigned(der.sublist(i, i + sLen));
+  final r = readInteger();
+  final s = readInteger();
+  if (i != der.length) throw ArgumentError('Invalid DER signature');
   return (r, s);
 }
