@@ -1,6 +1,6 @@
 name: sui_dart
 description: A cross-platform SDK for Sui blockchain, supporting Mobile, Web and Desktop.
-version: 0.8.6
+version: 0.8.7
 homepage: https://github.com/scallop-io/sui-dart
 repository: https://github.com/scallop-io/sui-dart
 issue_tracker: https://github.com/scallop-io/sui-dart/issues

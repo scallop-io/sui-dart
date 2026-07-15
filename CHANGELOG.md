@@ -255,3 +255,13 @@ Synced to `f898c13`.
 ### Added
 
 * `simulateTransaction` accepts `checksEnabled`. Pass `false` to run the transaction checks as DISABLED (maps to the gRPC `SimulateTransactionRequest.checks` field). When disabled, the node ignores `doGasSelection`, so an unfunded sender can simulate without gas.
+
+## 0.8.7
+
+### Fixed
+
+* gRPC `simulateTransaction(events: true)` returned no events, so event-driven read queries came back empty. `SimulateTransactionResponse` nests the executed transaction under `transaction`, so simulate now builds its own `transaction.`-prefixed read mask (`_simulateReadMask`), naming the derived per-event JSON explicitly, while `getTransaction` / `executeTransaction` keep the top-level `events` mask. This resolves the 0.8.2/0.8.4 flip-flop, where one shared mask could not satisfy both response shapes: 0.8.2 switched it to `transaction.events` and broke get/execute; 0.8.4 reverted to `events` and re-broke simulate.
+
+### Changed
+
+* `simulateTransaction` disables transaction checks by default when `doGasSelection` is `false` — a read-only simulate has no gas to satisfy gas checks. Gas-selecting simulations keep the node default so real gas/validity errors still surface; pass `checksEnabled` to override.

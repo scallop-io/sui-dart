@@ -282,18 +282,20 @@ class GrpcCoreClient {
     bool? doGasSelection,
     bool? checksEnabled,
   }) async {
-    final readMask = _transactionReadMask(include);
+    final readMask = _simulateReadMask(include);
+
+    final gasSelection = doGasSelection ?? true;
+    final effectiveChecks = checksEnabled ?? (gasSelection ? null : false);
 
     final response = await _client.transactionExecutionService
         .simulateTransaction(
           SimulateTransactionRequest(
             transaction: transactionBlock.toGrpcTransaction(),
             readMask: readMask,
-            doGasSelection: doGasSelection ?? true,
-            // doGasSelection is ignored by the node when checks are DISABLED.
-            checks: checksEnabled == null
+            doGasSelection: gasSelection,
+            checks: effectiveChecks == null
                 ? null
-                : checksEnabled
+                : effectiveChecks
                 ? SimulateTransactionRequest_TransactionChecks.ENABLED
                 : SimulateTransactionRequest_TransactionChecks.DISABLED,
           ),
@@ -498,6 +500,24 @@ class GrpcCoreClient {
     if (include?.events == true) paths.add('events');
     if (include?.balanceChanges == true) paths.add('balance_changes');
     if (include?.bcs == true) paths.add('transaction.bcs');
+    if (include?.commandResults == true) paths.add('command_outputs');
+
+    return FieldMask(paths: paths);
+  }
+
+  FieldMask _simulateReadMask(TransactionIncludeOptions? include) {
+    final paths = <String>['transaction.digest', 'transaction.signatures'];
+
+    if (include?.transaction == true) paths.add('transaction.transaction');
+    if (include?.effects == true) paths.add('transaction.effects');
+    if (include?.events == true) {
+      paths.add('transaction.events');
+      paths.add('transaction.events.events.json');
+    }
+    if (include?.balanceChanges == true) {
+      paths.add('transaction.balance_changes');
+    }
+    if (include?.bcs == true) paths.add('transaction.transaction.bcs');
     if (include?.commandResults == true) paths.add('command_outputs');
 
     return FieldMask(paths: paths);
