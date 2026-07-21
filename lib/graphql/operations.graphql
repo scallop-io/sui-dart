@@ -1,0 +1,235 @@
+query ChainIdentifier {
+  chainIdentifier
+}
+
+fragment TransactionHistoryFields on Transaction {
+  digest
+  sender {
+    address
+  }
+  kind {
+    __typename
+    ... on ProgrammableTransaction {
+      commands(first: 50) {
+        pageInfo {
+          hasNextPage
+        }
+        nodes {
+          __typename
+        }
+      }
+    }
+  }
+  effects {
+    timestamp
+    status
+    gasEffects {
+      gasSummary {
+        computationCost
+        storageCost
+        storageRebate
+      }
+    }
+    balanceChanges(first: 50) @include(if: $showBalanceChanges) {
+      pageInfo {
+        hasNextPage
+      }
+      nodes {
+        amount
+        coinType {
+          repr
+        }
+        owner {
+          address
+        }
+      }
+    }
+    objectChanges(first: 50) @include(if: $showObjectChanges) {
+      pageInfo {
+        hasNextPage
+      }
+      nodes {
+        address
+        idCreated
+        idDeleted
+        inputState {
+          owner {
+            __typename
+            ... on AddressOwner {
+              address {
+                address
+              }
+            }
+          }
+        }
+        outputState {
+          owner {
+            __typename
+            ... on AddressOwner {
+              address {
+                address
+              }
+            }
+          }
+          asMoveObject {
+            contents {
+              type {
+                repr
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query TransactionGasSummary($digest: String!) {
+  transaction(digest: $digest) {
+    effects {
+      gasEffects {
+        gasSummary {
+          computationCost
+          storageCost
+          storageRebate
+        }
+      }
+    }
+  }
+}
+
+query TransactionHistoryByAddress(
+  $address: SuiAddress!
+  $first: Int!
+  $before: String
+  $showBalanceChanges: Boolean!
+  $showObjectChanges: Boolean!
+) {
+  transactions(
+    last: $first
+    before: $before
+    filter: { affectedAddress: $address }
+  ) {
+    pageInfo {
+      hasPreviousPage
+      startCursor
+    }
+    nodes {
+      ...TransactionHistoryFields
+    }
+  }
+}
+
+query TransactionHistoryBySender(
+  $sender: SuiAddress!
+  $first: Int!
+  $before: String
+  $showBalanceChanges: Boolean!
+  $showObjectChanges: Boolean!
+) {
+  transactions(
+    last: $first
+    before: $before
+    filter: { sentAddress: $sender }
+  ) {
+    pageInfo {
+      hasPreviousPage
+      startCursor
+    }
+    nodes {
+      ...TransactionHistoryFields
+    }
+  }
+}
+
+query TransactionsByObject(
+  $object: SuiAddress!
+  $first: Int!
+  $after: String
+) {
+  transactions(
+    first: $first
+    after: $after
+    filter: { affectedObject: $object }
+  ) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      digest
+    }
+  }
+}
+
+query EpochSummary($epochId: UInt53) {
+  epoch(epochId: $epochId) {
+    epochId
+    referenceGasPrice
+    totalTransactions
+    startTimestamp
+    endTimestamp
+  }
+}
+
+query ActiveValidators($epochId: UInt53, $first: Int!, $after: String) {
+  epoch(epochId: $epochId) {
+    validatorSet {
+      activeValidators(first: $first, after: $after) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          contents {
+            json
+          }
+        }
+      }
+    }
+  }
+}
+
+query StakedSui($owner: SuiAddress!, $first: Int!, $after: String) {
+  address(address: $owner) {
+    objects(
+      first: $first
+      after: $after
+      filter: { type: "0x3::staking_pool::StakedSui" }
+    ) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        address
+        contents {
+          json
+        }
+      }
+    }
+  }
+}
+
+query EventsByModule($module: String!, $first: Int!, $after: String) {
+  events(first: $first, after: $after, filter: { module: $module }) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      transactionModule {
+        name
+      }
+      sender {
+        address
+      }
+      contents {
+        type {
+          repr
+        }
+        json
+      }
+    }
+  }
+}

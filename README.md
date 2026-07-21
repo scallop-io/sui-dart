@@ -258,6 +258,86 @@ final sim = await client.simulateTransaction(
 );
 ```
 
+### GraphQL Queries
+
+Use `SuiGraphQLClient` for indexer-backed queries such as transaction history,
+events, validators, and stakes:
+
+```dart
+import 'package:sui_dart/sui.dart';
+
+final graphql = SuiGraphQLClient.forNetwork(SuiNetwork.mainnet);
+
+final history = await graphql.queryTransactionsByAddress(address, first: 20);
+final gas = history.transactions.isEmpty
+    ? null
+    : await graphql.getTransactionGasSummary(history.transactions.first.digest);
+final eventPage = await graphql.queryEventsByModule('0x2', 'coin');
+final validators = await graphql.getActiveValidators();
+final stakePage = await graphql.getStakes(address);
+
+// Continue connections without losing the cursor.
+if (eventPage.hasNextPage) {
+  await graphql.queryEventsByModule(
+    '0x2',
+    'coin',
+    after: eventPage.endCursor,
+  );
+}
+```
+
+Use `SuiGraphQLClient(endpoint: ..., headers: ...)` for a hosted or self-hosted
+GraphQL endpoint.
+
+Custom queries preserve partial data, structured errors, and extensions:
+
+```dart
+final response = await graphql.query('{ chainIdentifier }');
+if (response.hasErrors) {
+  print(response.errors.first.message);
+}
+```
+
+The built-in helpers use generated variables and response models. When adding
+another SDK operation, declare it in `lib/graphql/operations.graphql` and run:
+
+```shell
+dart run build_runner build
+```
+
+Application-specific operations can use the same pattern after configuring
+`graphql_codegen` against the checked-in schema. Wrap the generated document
+and serializers once, then execute it through the same transport:
+
+```dart
+final getObject = GraphQLOperation<Query$GetObject, Variables$Query$GetObject>(
+  document: documentNodeQueryGetObject,
+  operationName: 'GetObject',
+  decodeData: Query$GetObject.fromJson,
+  encodeVariables: (variables) => variables.toJson(),
+);
+
+final result = await graphql.execute(
+  getObject,
+  Variables$Query$GetObject(address: objectId),
+);
+final object = result.data?.object;
+```
+
+The checked-in schema matches Mysten's TypeScript SDK snapshot. Refresh and
+regenerate it after a Sui GraphQL schema release:
+
+```shell
+dart run tool/update_graphql_schema.dart
+dart run build_runner build
+```
+
+The live schema test is opt-in:
+
+```shell
+SUI_DART_LIVE_TESTS=true dart test test/graphql/graphql_live_test.dart
+```
+
 Sign and execute manually (for multisig, sponsored, or delayed execution):
 
 ```dart

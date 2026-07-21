@@ -5,3 +5,24 @@ targets:
         options:
           copy_with: false
           equal: false
+      graphql_codegen:
+        options:
+          assetsPath: "lib/graphql/**.graphql"
+          addTypename: false
+          disableCopyWithGeneration: true
+          generatedFileHeader: "// GENERATED CODE - DO NOT MODIFY BY HAND\n// ignore_for_file: type=lint\n"
+          scalars:
+            Base64:
+              type: String
+            BigInt:
+              type: String
+            DateTime:
+              type: String
+            JSON:
+              type: "Map<String, dynamic>"
+            ObjectID:
+              type: String
+            SuiAddress:
+              type: String
+            UInt53:
+              type: int

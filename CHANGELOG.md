@@ -265,3 +265,13 @@ Synced to `f898c13`.
 ### Changed
 
 * `simulateTransaction` disables transaction checks by default when `doGasSelection` is `false` — a read-only simulate has no gas to satisfy gas checks. Gas-selecting simulations keep the node default so real gas/validity errors still surface; pass `checksEnabled` to override.
+
+## 0.8.8
+
+### Added
+
+* Add `SuiGraphQLClient` and `GraphQLTransport` with custom queries, structured
+  errors, partial data, cancellation, and cursor pagination.
+* Add generated typed operations for transaction and object history, gas
+  summaries, events, epochs, validators, and stakes.
+* Add a checked-in Sui GraphQL schema and schema-refresh tooling.
