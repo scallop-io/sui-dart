@@ -4,6 +4,15 @@ import 'dart:typed_data';
 
 import 'package:bcs_dart/bcs_type.dart';
 import 'package:sui_dart/bcs/sui_bcs.dart';
+import 'package:sui_dart/grpc/types.dart'
+    show
+        MoveTypeMutableReference,
+        MoveTypeParameter,
+        MoveTypePrimitive,
+        MoveTypeReference,
+        MoveTypeStruct,
+        MoveTypeVector,
+        NormalizedMoveType;
 import 'package:sui_dart/types/common.dart';
 import 'package:sui_dart/types/framework.dart';
 import 'package:sui_dart/types/normalized.dart';
@@ -220,6 +229,39 @@ String? getPureSerializationType(
   }
 
   return null;
+}
+
+/// Converts a gRPC [NormalizedMoveType] into the JSON `SuiMoveNormalizedType`
+/// shape [normalizedTypeToMoveTypeSignature] consumes. Both sides are
+/// structured, so this is a 1:1 recursion.
+dynamic normalizedMoveTypeToJson(NormalizedMoveType type) {
+  return switch (type) {
+    MoveTypePrimitive(:final typeName) => typeName,
+    MoveTypeVector(:final element) => {
+      'Vector': element == null ? null : normalizedMoveTypeToJson(element),
+    },
+    MoveTypeStruct(
+      :final address,
+      :final module,
+      :final name,
+      :final typeArguments,
+    ) =>
+      {
+        'Struct': {
+          'address': address,
+          'module': module,
+          'name': name,
+          'typeArguments': typeArguments.map(normalizedMoveTypeToJson).toList(),
+        },
+      },
+    MoveTypeParameter(:final index) => {'TypeParameter': index},
+    MoveTypeReference(:final body) => {
+      'Reference': normalizedMoveTypeToJson(body),
+    },
+    MoveTypeMutableReference(:final body) => {
+      'MutableReference': normalizedMoveTypeToJson(body),
+    },
+  };
 }
 
 dynamic normalizedTypeToMoveTypeSignature(SuiMoveNormalizedType type) {

@@ -1,4 +1,7 @@
-import 'package:sui_dart/sui.dart';
+import 'dart:typed_data';
+
+import 'package:sui_dart/grpc/types.dart';
+import 'package:sui_dart/sui.dart' hide AddressOwner, ObjectData;
 import 'package:test/test.dart';
 
 const _owner =
@@ -8,38 +11,125 @@ const _recipient =
 const _fooType =
     '0x00000000000000000000000000000000000000000000000000000000000000ab::foo::FOO';
 
-CoinStruct _coin(String id, String balance, [String type = _fooType]) {
-  return CoinStruct.fromJson({
-    'coinType': type,
-    'coinObjectId': id,
-    'version': '1',
-    'digest': 'Bfm2Z4dXysM9Vu1X5p8oR4z7mFs2pT8w9X1y2Z3a4B5c',
-    'balance': balance,
-    'previousTransaction': 'Bfm2Z4dXysM9Vu1X5p8oR4z7mFs2pT8w9X1y2Z3a4B5c',
-  });
+CoinData _coin(String id, String balance, [String type = _fooType]) {
+  return CoinData(
+    objectId: id,
+    version: '1',
+    digest: 'Bfm2Z4dXysM9Vu1X5p8oR4z7mFs2pT8w9X1y2Z3a4B5c',
+    owner: const AddressOwner(_owner),
+    type: type,
+    balance: balance,
+  );
 }
 
 /// Returns coins from a fixed pool; no network.
-class _FakeClient extends SuiClient {
-  final List<CoinStruct> pool;
-  _FakeClient(this.pool) : super('https://fullnode.testnet.sui.io:443');
+class _FakeClient implements SuiCoreClient {
+  final List<CoinData> pool;
+  _FakeClient(this.pool);
 
   @override
-  Future<PaginatedCoins> getCoins(
-    String owner, {
-    String? coinType,
+  Future<Page<CoinData>> getCoins(
+    String address, {
+    String coinType = '0x2::sui::SUI',
     String? cursor,
     int? limit,
   }) async {
-    final normalized = normalizeStructTagString(coinType!);
+    final normalized = normalizeStructTagString(coinType);
     final data = pool
-        .where((c) => normalizeStructTagString(c.coinType) == normalized)
+        .where((c) => normalizeStructTagString(c.type) == normalized)
         .toList();
-    return PaginatedCoins(data, null, false);
+    return Page(data: data, hasNextPage: false);
   }
+
+  @override
+  Future<List<ObjectResult>> getObjects(
+    List<String> objectIds, {
+    ObjectIncludeOptions? include,
+  }) => throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<Page<ObjectData>> getOwnedObjects(
+    String address, {
+    String? type,
+    String? cursor,
+    int? limit,
+    ObjectIncludeOptions? include,
+  }) => throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<Balance> getBalance(
+    String address, {
+    String coinType = '0x2::sui::SUI',
+  }) => throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<CoinMetadata?> getCoinMetadata(String coinType) =>
+      throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<List<Balance>> getAllBalances(String address) =>
+      throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<TransactionResponse> getTransaction(
+    String digest, {
+    TransactionIncludeOptions? include,
+  }) => throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<TransactionResponse> executeTransaction(
+    Uint8List transactionBytes,
+    List<String> signatures, {
+    TransactionIncludeOptions? include,
+  }) => throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<TransactionResponse> simulateTransaction(
+    Transaction transactionBlock, {
+    TransactionIncludeOptions? include,
+    bool? doGasSelection,
+    bool? checksEnabled,
+  }) => throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<String> getReferenceGasPrice() =>
+      throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<SystemState> getCurrentSystemState() =>
+      throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<Page<DynamicFieldEntry>> getDynamicFields(
+    String parentId, {
+    String? cursor,
+    int? limit,
+  }) => throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<VerifySignatureResult> verifyZkLoginSignature(
+    Uint8List bytes,
+    String signature, {
+    String? address,
+  }) => throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<String?> defaultNameServiceName(String address) =>
+      throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<MoveFunction> getMoveFunction(
+    String packageId,
+    String moduleName,
+    String functionName,
+  ) => throw UnimplementedError('not needed by this fixture');
+
+  @override
+  Future<String> getChainIdentifier() =>
+      throw UnimplementedError('not needed by this fixture');
 }
 
-Future<List<dynamic>> _resolve(Transaction tx, List<CoinStruct> pool) async {
+Future<List<dynamic>> _resolve(Transaction tx, List<CoinData> pool) async {
   tx.setSender(_owner);
   await tx.build(
     BuildOptions(

@@ -1,5 +1,4 @@
 import 'package:sui_dart/builder/serializer.dart';
-import 'package:sui_dart/grpc/grpc_resolution_client.dart';
 import 'package:sui_dart/grpc/types.dart';
 import 'package:test/test.dart';
 

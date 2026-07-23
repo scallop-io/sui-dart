@@ -6,8 +6,8 @@ import 'package:sui_dart/builder/commands.dart';
 import 'package:sui_dart/builder/inputs.dart';
 import 'package:sui_dart/builder/transaction.dart';
 import 'package:sui_dart/builder/transaction_block_data.dart';
-import 'package:sui_dart/builder/tx_resolution_client.dart';
-import 'package:sui_dart/types/coins.dart';
+import 'package:sui_dart/core/sui_core_client.dart';
+import 'package:sui_dart/grpc/types.dart' show CoinData;
 import 'package:sui_dart/types/common.dart';
 import 'package:sui_dart/types/objects.dart';
 
@@ -151,11 +151,6 @@ Future<void> resolveCoinBalance(
     );
   }
 
-  if (options.client == null && options.resolutionClient == null) {
-    throw ArgumentError(
-      'Client must be provided to build transactions with CoinWithBalance intents',
-    );
-  }
   final client = expectClient(options);
 
   final usedIds = <String>{};
@@ -167,7 +162,7 @@ Future<void> resolveCoinBalance(
   }
 
   // Load coins for every non-gas type up front.
-  final coinsByType = <String, List<CoinStruct>>{};
+  final coinsByType = <String, List<CoinData>>{};
   for (final entry in totalByType.entries) {
     if (entry.key == 'gas') continue;
     coinsByType[entry.key] = await _loadCoins(
@@ -216,7 +211,7 @@ Future<void> resolveCoinBalance(
             transactionData.addInput(
               'object',
               Inputs.objectRef(
-                SuiObjectRef(coin.digest, coin.coinObjectId, coin.version),
+                SuiObjectRef(coin.digest, coin.objectId, coin.version),
               ),
             ),
           );
@@ -302,14 +297,14 @@ Future<void> resolveCoinBalance(
   return next();
 }
 
-Future<List<CoinStruct>> _loadCoins(
-  TxResolutionClient client,
+Future<List<CoinData>> _loadCoins(
+  SuiCoreClient client,
   String owner,
   String coinType,
   BigInt needed,
   Set<String> usedIds,
 ) async {
-  final coins = <CoinStruct>[];
+  final coins = <CoinData>[];
   var loaded = BigInt.zero;
   String? cursor;
 
@@ -320,7 +315,7 @@ Future<List<CoinStruct>> _loadCoins(
       cursor: cursor,
     );
     for (final coin in page.data) {
-      if (usedIds.contains(normalizeSuiAddress(coin.coinObjectId))) continue;
+      if (usedIds.contains(normalizeSuiAddress(coin.objectId))) continue;
       coins.add(coin);
       loaded += BigInt.parse(coin.balance);
     }

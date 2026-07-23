@@ -12,16 +12,22 @@ import 'package:sui_dart/builder/pure.dart';
 import 'package:sui_dart/builder/serializer.dart';
 import 'package:sui_dart/builder/transaction_block_data.dart';
 import 'package:sui_dart/builder/transaction_resolver.dart';
-import 'package:sui_dart/builder/tx_resolution_client.dart';
 import 'package:sui_dart/builder/v1.dart';
+import 'package:sui_dart/core/sui_core_client.dart';
 import 'package:sui_dart/cryptography/keypair.dart';
-import 'package:sui_dart/sui_client.dart';
+import 'package:sui_dart/grpc/types.dart'
+    show
+        ObjectData,
+        ObjectError,
+        ObjectResult,
+        ObjectSuccess,
+        SharedOwner,
+        TransactionIncludeOptions;
 import 'package:sui_dart/types/common.dart';
-import 'package:sui_dart/types/framework.dart';
+import 'package:sui_dart/types/framework.dart' hide ObjectData;
 import 'package:sui_dart/types/normalized.dart';
 import 'package:sui_dart/types/objects.dart';
 import 'package:sui_dart/types/sui_bcs.dart';
-import 'package:sui_dart/types/transactions.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction.pb.dart'
     as grpc_transaction;
 
@@ -81,18 +87,18 @@ const DefaultOfflineLimits = {
   "maxTxSizeBytes": 128 * 1024,
 };
 
-TxResolutionClient expectClient(BuildOptions options) {
-  if (options.resolutionClient != null) {
-    return options.resolutionClient!;
-  }
+SuiCoreClient expectClient(BuildOptions options) {
   if (options.client == null) {
     throw ArgumentError(
       "No provider passed to Transaction#build, but transaction data was not sufficient to build offline.",
     );
   }
 
-  return JsonRpcResolutionClient(options.client!);
+  return options.client!;
 }
+
+SuiObjectRef _objectRefFromData(ObjectData data) =>
+    SuiObjectRef(data.digest, data.objectId, data.version);
 
 const LIMITS = {
   // The maximum gas that is allowed.
@@ -125,13 +131,10 @@ List<List<T>> chunk<T>(List<T> arr, int size) {
 }
 
 class BuildOptions {
-  /// JSON-RPC client used for build-time chain reads. For gRPC, pass
-  /// [resolutionClient] instead (e.g. a `GrpcResolutionClient`).
-  SuiClient? client;
-
-  /// Transport-agnostic resolution client. When set, it is used instead of
-  /// [client] for all build-time reads (coins, objects, gas price, dry run, …).
-  TxResolutionClient? resolutionClient;
+  /// Transport-agnostic client used for all build-time reads (coins, objects,
+  /// gas price, dry run, move-function signatures). Pass `suiGrpcClient.core`
+  /// or `suiGraphQLClient.core`.
+  SuiCoreClient? client;
 
   bool onlyTransactionKind;
 
@@ -143,7 +146,6 @@ class BuildOptions {
 
   BuildOptions({
     this.client,
-    this.resolutionClient,
     this.onlyTransactionKind = false,
     this.protocolConfig,
     this.limits,
@@ -156,7 +158,6 @@ class SerializeTransactionOptions extends BuildOptions {
   SerializeTransactionOptions({
     this.supportedIntents,
     super.client,
-    super.resolutionClient,
     super.onlyTransactionKind,
     super.protocolConfig,
     super.limits,
@@ -169,7 +170,6 @@ class SignOptions extends BuildOptions {
   SignOptions({
     required this.signer,
     super.client,
-    super.resolutionClient,
     super.onlyTransactionKind,
     super.protocolConfig,
     super.limits,
@@ -644,13 +644,10 @@ class Transaction {
         ? chunk(dedupedIds, MAX_OBJECTS_PER_FETCH)
         : [];
 
-    final resolved = <SuiObjectResponse>[];
+    final resolved = <ObjectResult>[];
     final objectsResult = (await Future.wait(
       objectChunks.map(
-        (chunk) => expectClient(options).multiGetObjects(
-          chunk.cast<String>(),
-          options: SuiObjectDataOptions(showOwner: true),
-        ),
+        (chunk) => expectClient(options).getObjects(chunk.cast<String>()),
       ),
     ));
     for (var item in objectsResult) {
@@ -666,8 +663,8 @@ class Transaction {
     );
 
     final invalidObjects = responsesById.entries
-        .where((entry) => entry.value.error != null)
-        .map((entry) => entry.value.error?.toJson())
+        .where((entry) => entry.value is ObjectError)
+        .map((entry) => (entry.value as ObjectError).error)
         .toList();
 
     if (invalidObjects.isNotEmpty) {
@@ -676,17 +673,22 @@ class Transaction {
       );
     }
 
-    final objects = resolved.map((object) {
-      if (object.error != null || object.data == null) {
-        throw ArgumentError("Failed to fetch object: ${object.error}");
+    final objects = resolved.map((result) {
+      if (result is! ObjectSuccess) {
+        throw ArgumentError(
+          "Failed to fetch object: ${(result as ObjectError).error}",
+        );
       }
-      final owner = object.data?.owner;
-      final initialSharedVersion = owner?.shared?.initialSharedVersion;
+      final data = result.data;
+      final owner = data.owner;
+      final initialSharedVersion = owner is SharedOwner
+          ? int.parse(owner.initialSharedVersion)
+          : null;
 
       return {
-        "objectId": object.data?.objectId,
-        "digest": object.data?.digest,
-        "version": object.data?.version,
+        "objectId": data.objectId,
+        "digest": data.digest,
+        "version": data.version,
         "initialSharedVersion": initialSharedVersion,
       };
     }).toList();
@@ -798,13 +800,14 @@ class Transaction {
       await Future.wait(
         [...moveFunctionsToResolve].map((functionName) async {
           final [packageId, moduleId, functionId] = functionName.split('::');
-          final def = await client.getNormalizedMoveFunction(
+          final def = await client.getMoveFunction(
             packageId,
             moduleId,
             functionId,
           );
 
           moveFunctionParameters[functionName] = def.parameters
+              .map(normalizedMoveTypeToJson)
               .map((param) => normalizedTypeToMoveTypeSignature(param))
               .toList();
         }),
@@ -914,7 +917,7 @@ class Transaction {
         .where((coin) {
           final matchingInput = _blockData.inputs.indexWhere((input) {
             if (input["Object"]?["ImmOrOwnedObject"] != null) {
-              return coin.coinObjectId ==
+              return coin.objectId ==
                   input["Object"]["ImmOrOwnedObject"]["objectId"];
             }
 
@@ -932,9 +935,7 @@ class Transaction {
 
     final usePaymentCoins = paymentCoins
         .sublist(0, end)
-        .map(
-          (coin) => SuiObjectRef(coin.digest, coin.coinObjectId, coin.version),
-        )
+        .map((coin) => SuiObjectRef(coin.digest, coin.objectId, coin.version))
         .toList();
 
     if (paymentCoins.isEmpty) {
@@ -950,7 +951,7 @@ class Transaction {
     }
 
     final gasPrice = await expectClient(options).getReferenceGasPrice();
-    setGasPrice(gasPrice);
+    setGasPrice(BigInt.parse(gasPrice));
   }
 
   bool isBuilderCallArg(dynamic arg) {
@@ -1021,24 +1022,23 @@ class Transaction {
           final moduleName = target[1];
           final functionName = target[2];
 
-          final normalized = await expectClient(options)
-              .getNormalizedMoveFunction(
-                normalizeSuiObjectId(packageId),
-                moduleName,
-                functionName,
-              );
+          final normalized = await expectClient(options).getMoveFunction(
+            normalizeSuiObjectId(packageId),
+            moduleName,
+            functionName,
+          );
+          final normalizedParameters = normalized.parameters
+              .map(normalizedMoveTypeToJson)
+              .toList();
 
           // Entry functions may take a trailing &mut TxContext that the caller omits.
           final hasTxContext =
-              normalized.parameters.isNotEmpty &&
-              isTxContext(normalized.parameters.last);
+              normalizedParameters.isNotEmpty &&
+              isTxContext(normalizedParameters.last);
 
           final params = hasTxContext
-              ? normalized.parameters.sublist(
-                  0,
-                  normalized.parameters.length - 1,
-                )
-              : normalized.parameters;
+              ? normalizedParameters.sublist(0, normalizedParameters.length - 1)
+              : normalizedParameters;
 
           final callArgs = moveCall["arguments"].toList();
           if (params.length != callArgs.length) {
@@ -1099,21 +1099,16 @@ class Transaction {
       ).toList();
       final objectChunks = chunk(dedupedIds, MAX_OBJECTS_PER_FETCH);
       final objects = (await Future.wait(
-        objectChunks.map(
-          (chunk) => expectClient(options).multiGetObjects(
-            chunk,
-            options: SuiObjectDataOptions(showOwner: true),
-          ),
-        ),
+        objectChunks.map((chunk) => expectClient(options).getObjects(chunk)),
       )).expand((element) => element).toList();
 
-      final objectsById = <String, SuiObjectResponse>{};
+      final objectsById = <String, ObjectResult>{};
       for (int index = 0; index < dedupedIds.length; index++) {
         objectsById[dedupedIds[index]] = objects[index];
       }
 
       final invalidObjects = objectsById.entries
-          .where((entry) => entry.value.error != null)
+          .where((entry) => entry.value is ObjectError)
           .map((entry) => entry.key)
           .toList();
       if (invalidObjects.isNotEmpty) {
@@ -1127,9 +1122,11 @@ class Transaction {
         final input = item["input"];
         final normalizedType = item["normalizedType"];
 
-        final object = objectsById[id];
-        final owner = object?.data?.owner;
-        final initialSharedVersion = owner?.shared?.initialSharedVersion;
+        final data = (objectsById[id] as ObjectSuccess).data;
+        final owner = data.owner;
+        final initialSharedVersion = owner is SharedOwner
+            ? int.parse(owner.initialSharedVersion)
+            : null;
 
         if (initialSharedVersion != null) {
           // Mark shared input mutable if any referencing command needs it mutable.
@@ -1149,9 +1146,9 @@ class Transaction {
             "mutable": mutable,
           });
         } else if (normalizedType != null && isReceivingType(normalizedType)) {
-          input["value"] = Inputs.receivingRef(getObjectReference(object!)!);
+          input["value"] = Inputs.receivingRef(_objectRefFromData(data));
         } else {
-          input["value"] = Inputs.objectRef(getObjectReference(object!)!);
+          input["value"] = Inputs.objectRef(_objectRefFromData(data));
         }
       }
     }
@@ -1161,15 +1158,6 @@ class Transaction {
   Future<void> _prepare(BuildOptions options) async {
     if (!options.onlyTransactionKind && _blockData.sender == null) {
       throw ArgumentError('Missing transaction sender');
-    }
-
-    final hasClient =
-        options.client != null || options.resolutionClient != null;
-
-    if (options.protocolConfig == null && options.limits == null && hasClient) {
-      // gRPC has no protocol-config read and returns null here; the build then
-      // falls back to DefaultOfflineLimits (or an explicit `limits`).
-      options.protocolConfig = await expectClient(options).getProtocolConfig();
     }
 
     await _resolveIntents(options);
@@ -1186,33 +1174,44 @@ class Transaction {
       await _prepareGasPayment(options);
 
       if (_blockData.gasData.budget == null) {
-        final dryRunResult = await expectClient(options).dryRunTransaction(
-          _blockData.build(
-            gasConfig: GasConfig(
-              budget: BigInt.tryParse(_getConfig('maxTxGas', options)),
-              payment: [],
-            ),
+        final bytes = _blockData.build(
+          gasConfig: GasConfig(
+            budget: BigInt.tryParse(_getConfig('maxTxGas', options)),
+            payment: [],
           ),
-          signerAddress: _blockData.sender,
+        );
+        // No bytes-based dry-run over gRPC: rebuild the tx and simulate. The
+        // node picks gas itself since we dry-run with empty payment above.
+        final dryRunResult = await expectClient(options).simulateTransaction(
+          Transaction.fromBytes(bytes),
+          doGasSelection: true,
+          include: const TransactionIncludeOptions(effects: true),
         );
 
-        if (dryRunResult.effects.status.status != ExecutionStatusType.success) {
+        final effects = dryRunResult.effects;
+        final success = effects?.status?.success ?? dryRunResult.status.success;
+
+        if (!success) {
+          final error =
+              effects?.status?.error?.message ??
+              dryRunResult.status.error?.message;
           throw ArgumentError(
-            "Dry run failed, could not automatically determine a budget: ${dryRunResult.effects.status.error}",
+            "Dry run failed, could not automatically determine a budget: $error",
           );
         }
+
+        final gasUsed = effects?.gasUsed;
 
         final safeOverhead =
             GAS_SAFE_OVERHEAD * (_blockData.gasData.price ?? BigInt.one);
 
         final baseComputationCostWithOverhead =
-            BigInt.from(dryRunResult.effects.gasUsed.computationCost) +
-            safeOverhead;
+            BigInt.parse(gasUsed?.computationCost ?? '0') + safeOverhead;
 
         final gasBudget =
             baseComputationCostWithOverhead +
-            BigInt.from(dryRunResult.effects.gasUsed.storageCost) -
-            BigInt.from(dryRunResult.effects.gasUsed.storageRebate);
+            BigInt.parse(gasUsed?.storageCost ?? '0') -
+            BigInt.parse(gasUsed?.storageRebate ?? '0');
 
         // Set the budget to max(computation, computation + storage - rebate)
         setGasBudget(

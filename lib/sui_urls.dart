@@ -13,8 +13,6 @@ final class SuiUrls {
   static const String faucetDev = "https://faucet.devnet.sui.io:443";
   static const String faucetTest = "https://faucet.testnet.sui.io:443";
 
-  static const String webSocketMainnet = 'wss://fullnode.mainnet.sui.io';
-
   static const String graphqlMainnet = 'https://graphql.mainnet.sui.io/graphql';
   static const String graphqlTestnet = 'https://graphql.testnet.sui.io/graphql';
   static const String graphqlDevnet = 'https://graphql.devnet.sui.io/graphql';

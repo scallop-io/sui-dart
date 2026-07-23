@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../sui_urls.dart';
+import 'graphql_core_client.dart';
 import 'graphql_operation.dart';
 import 'graphql_transport.dart';
 import 'operations.graphql.dart' as generated;
@@ -100,7 +101,9 @@ class SuiGraphQLClient {
     required String endpoint,
     Dio? dio,
     Map<String, String> headers = const {},
-  }) : transport = GraphQLTransport(endpoint, dio: dio, headers: headers);
+  }) : transport = GraphQLTransport(endpoint, dio: dio, headers: headers) {
+    core = GraphQLCoreClient(this);
+  }
 
   SuiGraphQLClient.forNetwork(
     SuiNetwork network, {
@@ -110,9 +113,13 @@ class SuiGraphQLClient {
          SuiUrls.graphql(network),
          dio: dio,
          headers: headers,
-       );
+       ) {
+    core = GraphQLCoreClient(this);
+  }
 
   final GraphQLTransport transport;
+
+  late final GraphQLCoreClient core;
 
   /// Executes a custom query and preserves partial data and structured errors.
   Future<GraphQLResponse> query(

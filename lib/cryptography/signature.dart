@@ -7,10 +7,26 @@ import 'package:sui_dart/cryptography/keypair.dart';
 import 'package:sui_dart/cryptography/passkey_publickey.dart';
 import 'package:sui_dart/cryptography/secp256_publickey.dart';
 import 'package:sui_dart/multisig/multsig_publickey.dart';
-import 'package:sui_dart/signers/signer_with_provider.dart';
 import 'package:sui_dart/zklogin/address.dart';
 import 'package:sui_dart/zklogin/jwt_utils.dart';
 import 'package:sui_dart/zklogin/signature.dart';
+
+/// Pair of signature and corresponding public key
+class SignaturePubkeyPair {
+  SignatureScheme signatureScheme;
+  Uint8List signature;
+  PublicKey? pubKey;
+  Map<String, dynamic>? zkLogin;
+  MultiSigStruct? multisig;
+
+  SignaturePubkeyPair(
+    this.signatureScheme,
+    this.signature, {
+    this.pubKey,
+    this.zkLogin,
+    this.multisig,
+  });
+}
 
 enum SignatureScheme {
   Ed25519,

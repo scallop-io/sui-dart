@@ -7,7 +7,6 @@ import 'package:sui_dart/cryptography/secp256k1_keypair.dart';
 import 'package:sui_dart/cryptography/secp256r1_keypair.dart';
 import 'package:sui_dart/cryptography/mnemonics.dart' as mnemonic;
 import 'package:sui_dart/cryptography/signature.dart';
-import 'package:sui_dart/signers/signer_with_provider.dart';
 import 'package:sui_dart/types/common.dart';
 import 'package:sui_dart/utils/hex.dart';
 import 'package:sui_dart/utils/suins.dart';

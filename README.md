@@ -1,12 +1,31 @@
-## Sui Dart SDK
+# Sui Dart SDK
 
 [![Pub](https://img.shields.io/pub/v/sui_dart.svg)](https://pub.dev/packages/sui_dart)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+A cross-platform Dart SDK for the [Sui](https://sui.io) blockchain. Pure
+Dart with no Flutter dependency, so it runs on mobile, web, desktop, and
+server alike.
+
+**Features**
+
+- Native gRPC and GraphQL transports behind a single `SuiCoreClient` contract
+- Transaction building (programmable transaction blocks), signing, and execution
+- Ed25519, Secp256k1, Secp256r1, and Passkey (SIP-9) accounts
+- Multisig and zkLogin support
+- Faucet and Sui Name Service helpers
 
 ## Installation
 
+```shell
+dart pub add sui_dart
 ```
+
+Or add it to `pubspec.yaml` directly:
+
+```yaml
 dependencies:
-  sui_dart: ^0.5.0
+  sui_dart: ^0.8.8
 ```
 
 ## Demo
@@ -15,34 +34,48 @@ https://sui-dart.pages.dev/
 
 ## Usage
 
-### Connecting to Sui Network
+### Choosing a Transport
+
+Two transports, both implementing the same `SuiCoreClient` contract:
+
+| Capability | `SuiGrpcClient` | `SuiGraphQLClient` |
+|---|---|---|
+| Reads (objects, coins, balances, dynamic fields, move functions) | ✅ | ✅ |
+| Pagination | ✅ | ✅ |
+| Simulate / dry-run | ✅ | ✅ |
+| Execute (sign & submit) | ✅ | ❌ (not implemented) |
+| zkLogin signature verification | ✅ | ❌ (not implemented) |
+| Name service lookup | ✅ | ✅ |
+
+Use gRPC by default, and for anything that signs or executes. Use GraphQL when
+the deployment target is a GraphQL indexer, or the workload is read-only.
 
 ```dart
-/// connect to devnet
-final devnetClient = SuiClient(SuiUrls.devnet);
+import 'package:sui_dart/grpc/sui_grpc_client.dart';
 
-/// connect to testnet
-final testnetClient = SuiClient(SuiUrls.testnet);
+final client = SuiGrpcClient(SuiGrpcClientOptions(
+    baseUrl: 'fullnode.mainnet.sui.io',
+    port: 443,
+));
+final balance = await client.getBalance('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
+```
 
-/// connect to mainnet
-final mainnetClient = SuiClient(SuiUrls.mainnet);
+```dart
+import 'package:sui_dart/sui.dart';
+
+final client = SuiGraphQLClient.forNetwork(SuiNetwork.mainnet);
+final balance = await client.core.getBalance('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
 ```
 
 ### Getting coins from the faucet
 
-#### Faucet V0
-
 ```dart
 final faucet = FaucetClient(SuiUrls.faucetDev);
-await faucet.requestSuiFromFaucetV0('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
+await faucet.requestSuiFromFaucetV2('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
 ```
 
-#### Faucet V1
-
-```dart
-final faucet = FaucetClient(SuiUrls.faucetDev);
-await faucet.requestSuiFromFaucetV1('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
-```
+`requestSuiFromFaucetV0`/`V1` and `getFaucetRequestStatus` still exist but are
+deprecated; use V2.
 
 ### Sui Account
 
@@ -216,12 +249,12 @@ tx.setGasPrice(BigInt.from(1000));
 
 ### Signing and Executing
 
-JSON-RPC is deprecated; execute transactions over gRPC with `SuiGrpcClient`. The
-gRPC client and its transaction helpers are separate imports:
+Execute transactions over gRPC with `SuiGrpcClient`. The gRPC client and its
+transaction helpers are separate imports:
 
 ```dart
 import 'package:sui_dart/sui.dart';
-import 'package:sui_dart/grpc/client.dart';
+import 'package:sui_dart/grpc/sui_grpc_client.dart';
 import 'package:sui_dart/grpc/grpc_resolution_client.dart';
 
 final client = SuiGrpcClient(SuiGrpcClientOptions(
@@ -359,7 +392,7 @@ Pass an in-progress transaction between processes as JSON, then rebuild it:
 ```dart
 // Async: resolves intents like coinWithBalance first
 final json = await tx.toJsonAsync(
-    SerializeTransactionOptions(resolutionClient: GrpcResolutionClient(client)),
+    SerializeTransactionOptions(client: client.core),
 );
 
 // Sync: for a transaction with no unresolved intents
@@ -370,97 +403,51 @@ final restored = Transaction.from(json);
 
 ### Reading APIs
 
+These use the `SuiGrpcClient` from [Choosing a Transport](#choosing-a-transport);
+`GraphQLCoreClient` covers most of the same reads through `client.core`.
+
 #### Get Owned Objects
 
 ```dart
-final client = SuiClient(SuiUrls.devnet);
-
 final objects = await client.getOwnedObjects('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
 ```
 
 #### Get Objects
 
 ```dart
-final client = SuiClient(SuiUrls.devnet);
-
-final obj = await client.getObject('0x0d49dbda185cd0941b71315edb594276731f21b2232d8713f319b02c462a2da7',
-    options: SuiObjectDataOptions(showContent: true)
-);
-
-final objs = await client.multiGetObjects([
+final objs = await client.getObjects([
     '0x0d49dbda185cd0941b71315edb594276731f21b2232d8713f319b02c462a2da7',
-    '0x922ec73939b3288f6da39ebefb0cb88c6c54817441254d448bd2491ac4dd0cbd'
-], options: SuiObjectDataOptions(showType: true));
+    '0x922ec73939b3288f6da39ebefb0cb88c6c54817441254d448bd2491ac4dd0cbd',
+], include: const ObjectIncludeOptions(json: true));
 ```
 
 #### Get Transaction
 
 ```dart
-final client = SuiClient(SuiUrls.devnet);
-
-final txn = await client.getTransactionBlock('6oH779AUs2WpwW77xCVGbYqK1FYVamRqHjV6A5wCV8Qj',
-    options: SuiTransactionBlockResponseOptions(showEffects: true)
+final txn = await client.getTransaction('6oH779AUs2WpwW77xCVGbYqK1FYVamRqHjV6A5wCV8Qj',
+    include: const TransactionIncludeOptions(effects: true)
 );
-
-final txns = await client.multiGetTransactionBlocks([
-    '9znMGToLRRa8yZvjCUfj1FJmq4gpb8QwpibFAUffuto1',
-    '4CEFMajEtM62MthwY1xR3Bcddoh2h5wc7jeKEy7WWsbv'
-], options: SuiTransactionBlockResponseOptions(showInput: true, showEffects: true));
-```
-
-#### Get Checkpoints
-
-```dart
-final client = SuiClient(SuiUrls.devnet);
-
-final checkpoint = await client.getCheckpoint('338000');
-
-final checkpoints = await client.getCheckpoints(descendingOrder: true);
 ```
 
 #### Get Coins
 
 ```dart
-final client = SuiClient(SuiUrls.devnet);
-
 final coins = await client.getCoins(
     '0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2',
     coinType: '0x2::sui::SUI');
 
-final allCoins = await client.getAllCoins('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
+final allBalances = await client.getAllBalances('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
 
 final suiBalance = await client.getBalance('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
 ```
 
-### Events APIs
+### Events
 
-#### Querying events
+Standalone event queries (`queryEventsByModule`) are a GraphQL capability; see
+[GraphQL Queries](#graphql-queries). Neither transport's client wrapper exposes
+checkpoint reads or live event subscriptions today (the raw gRPC subscription
+service exists in `lib/grpc/generated/`, but isn't wrapped by `SuiGrpcClient`).
 
-```dart
-final client = SuiClient(SuiUrls.devnet);
+## License
 
-final events = await client.queryEvents(
-    {"Sender": "0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2"},
-    limit: 2
-);
-
-/// Or with EventFilter
-
-final events = await client.queryEventsByFilter(
-    EventFilter(sender: "0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2"),
-    limit: 2
-);
-```
-
-#### WebsocketClient subscribeEvent
-
-```dart
-final client = WebsocketClient(SuiUrls.webSocketDevnet);
-
-final subscription = client.subscribeEvent({"Sender": "0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2"})
-.listen((event) {
-    print(event);
-}, onError: (e) {
-    print(e.toString());
-});
-```
+[MIT](LICENSE)

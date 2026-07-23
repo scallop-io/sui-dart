@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:sui_dart/graphql/operations.graphql.dart' as generated;
-import 'package:sui_dart/sui.dart' hide RequestOptions;
+import 'package:sui_dart/sui.dart';
 import 'package:test/test.dart';
 
 class _MockAdapter implements HttpClientAdapter {

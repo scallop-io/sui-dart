@@ -2,6 +2,229 @@ query ChainIdentifier {
   chainIdentifier
 }
 
+query GetDefaultNameServiceName($address: SuiAddress!) {
+  address(address: $address) {
+    defaultNameRecord {
+      domain
+    }
+  }
+}
+
+query GetTransaction($digest: String!) {
+  transaction(digest: $digest) {
+    digest
+    effects {
+      status
+      timestamp
+    }
+  }
+}
+
+query GetMoveFunction($package: SuiAddress!, $module: String!, $function: String!) {
+  package(address: $package) {
+    module(name: $module) {
+      function(name: $function) {
+        name
+        isEntry
+        visibility
+        typeParameters {
+          constraints
+        }
+      }
+    }
+  }
+}
+
+query SimulateTransaction($tx: JSON!, $checksEnabled: Boolean, $doGasSelection: Boolean) {
+  simulateTransaction(transaction: $tx, checksEnabled: $checksEnabled, doGasSelection: $doGasSelection) {
+    effects {
+      status
+      events(first: 50) {
+        nodes {
+          transactionModule {
+            name
+          }
+          sender {
+            address
+          }
+          contents {
+            type {
+              repr
+            }
+            json
+            bcs
+          }
+        }
+      }
+    }
+    outputs {
+      returnValues {
+        value {
+          bcs
+        }
+      }
+      mutatedReferences {
+        value {
+          bcs
+        }
+      }
+    }
+  }
+}
+
+query GetCoinMetadata($coinType: String!) {
+  coinMetadata(coinType: $coinType) {
+    address
+    decimals
+    name
+    symbol
+    description
+    iconUrl
+  }
+}
+
+query GetEpoch {
+  epoch {
+    epochId
+    referenceGasPrice
+    startTimestamp
+  }
+}
+
+query GetDynamicFields($parentId: SuiAddress!, $first: Int, $after: String) {
+  object(address: $parentId) {
+    dynamicFields(first: $first, after: $after) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        address
+        name {
+          type {
+            repr
+          }
+          bcs
+        }
+        value {
+          __typename
+          ... on MoveObject {
+            address
+            contents {
+              type {
+                repr
+              }
+            }
+          }
+          ... on MoveValue {
+            type {
+              repr
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+fragment CoreOwnerFields on Owner {
+  __typename
+  ... on AddressOwner {
+    address {
+      address
+    }
+  }
+  ... on ObjectOwner {
+    address {
+      address
+    }
+  }
+  ... on Shared {
+    initialSharedVersion
+  }
+  ... on ConsensusAddressOwner {
+    address {
+      address
+    }
+    startVersion
+  }
+}
+
+query GetOwnedObjects($address: SuiAddress!, $type: String, $first: Int, $after: String) {
+  address(address: $address) {
+    objects(first: $first, after: $after, filter: {type: $type}) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        address
+        version
+        digest
+        owner {
+          ...CoreOwnerFields
+        }
+        contents {
+          type {
+            repr
+          }
+          json
+        }
+      }
+    }
+  }
+}
+
+query MultiGetObjects($keys: [ObjectKey!]!) {
+  multiGetObjects(keys: $keys) {
+    address
+    version
+    digest
+    owner {
+      ...CoreOwnerFields
+    }
+    asMoveObject {
+      contents {
+        type {
+          repr
+        }
+        json
+      }
+    }
+  }
+}
+
+fragment CoreBalanceFields on Balance {
+  coinType {
+    repr
+  }
+  totalBalance
+  coinBalance
+  addressBalance
+}
+
+query GetBalance($address: SuiAddress!, $coinType: String!) {
+  address(address: $address) {
+    balance(coinType: $coinType) {
+      ...CoreBalanceFields
+    }
+  }
+}
+
+query GetAllBalances($address: SuiAddress!, $first: Int, $after: String) {
+  address(address: $address) {
+    balances(first: $first, after: $after) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        ...CoreBalanceFields
+      }
+    }
+  }
+}
+
 fragment TransactionHistoryFields on Transaction {
   digest
   sender {

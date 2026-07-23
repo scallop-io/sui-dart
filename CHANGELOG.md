@@ -1,3 +1,38 @@
+## 0.9.0
+
+This release is breaking throughout: the JSON-RPC surface is gone and the
+transport layer is unified behind `SuiCoreClient`.
+
+### Added
+
+* `SuiCoreClient`, a transport-agnostic contract for reads, simulate, and
+  execute, with `GrpcCoreClient` and `GraphQLCoreClient` implementations
+  reachable via `client.core` on `SuiGrpcClient` and `SuiGraphQLClient`.
+* README "Choosing a Transport" comparison table.
+
+### Changed
+
+* `SuiGrpcClient` read methods renamed to match `SuiCoreClient`:
+  `listCoins`/`listOwnedObjects`/`listBalances`/`listDynamicFields` are now
+  `getCoins`/`getOwnedObjects`/`getAllBalances`/`getDynamicFields`.
+* `BuildOptions`/`SerializeTransactionOptions`/`SignOptions` take
+  `client: SuiCoreClient` (pass `client.core`) instead of `resolutionClient`.
+  GraphQL building is read-only: move-call arguments aren't resolved.
+* Renamed `grpc/client.dart` to `grpc/sui_grpc_client.dart` and
+  `grpc/core.dart` to `grpc/grpc_core_client.dart`.
+
+### Removed
+
+* JSON-RPC surface: `SuiClient`, `JsonRpcProvider`, `JsonRpcClient`,
+  `WebsocketClient`, `RawSigner`, `SignerWithProvider`,
+  `SerialTransactionExecutor`, `TxnDataSerializer`. Use `SuiGrpcClient` or
+  `SuiGraphQLClient`.
+* `TxResolutionClient` / `GrpcResolutionClient` and the deprecated `list*`
+  aliases on `GrpcCoreClient`.
+* Unused `MultiSig` / `PubkeyWeightPair` (`cryptography/multisig.dart`) and
+  `SuiPure` (`bcs/sui_pure.dart`). Use `MultiSigPublicKey` and `schemaFromName`
+  (`builder/pure.dart`).
+
 ## 0.0.1
 
 * Initial version, created by Mofa Labs.

@@ -16,10 +16,10 @@ import 'package:sui_dart/grpc/generated/sui/forking/v1alpha/forking_service.pbgr
 
 import 'package:sui_dart/sui.dart' as sui_dart;
 
-import 'core.dart';
+import 'grpc_core_client.dart';
 import 'types.dart';
 
-export 'core.dart' show GrpcCoreClient;
+export 'grpc_core_client.dart' show GrpcCoreClient;
 export 'types.dart';
 
 class SuiGrpcClientOptions {
@@ -46,7 +46,7 @@ class SuiGrpcClient {
   late final SignatureVerificationServiceClient signatureVerificationService;
   late final NameServiceClient nameService;
 
-  /// Admin-only service on `sui-fork` instances (same host/port as the regular services).
+  /// Admin-only service on `sui-fork` instances.
   late final ForkingServiceClient forkingService;
 
   SuiGrpcClient(SuiGrpcClientOptions options) {
@@ -77,8 +77,8 @@ class SuiGrpcClient {
     return core.getObjects(ids, include: include);
   }
 
-  /// The `suix_getDynamicFieldObject` equivalent: derives the field UID from
-  /// [parentId] + the encoded name and fetches it (`null` if absent).
+  /// Derives the field UID from [parentId] + the encoded name and fetches it
+  /// (`null` if absent).
   Future<ObjectData?> getDynamicFieldObject(
     String parentId,
     String nameType,
@@ -103,29 +103,29 @@ class SuiGrpcClient {
     return null;
   }
 
-  Future<Page<ObjectData>> listOwnedObjects(
+  Future<Page<ObjectData>> getOwnedObjects(
     String owner, {
     String? objectType,
     String? cursor,
     int? limit,
     ObjectIncludeOptions? include,
   }) {
-    return core.listOwnedObjects(
+    return core.getOwnedObjects(
       owner,
-      objectType: objectType,
+      type: objectType,
       cursor: cursor,
       limit: limit,
       include: include,
     );
   }
 
-  Future<Page<CoinData>> listCoins(
+  Future<Page<CoinData>> getCoins(
     String owner, {
     String coinType = '0x2::sui::SUI',
     String? cursor,
     int? limit,
   }) {
-    return core.listCoins(
+    return core.getCoins(
       owner,
       coinType: coinType,
       cursor: cursor,
@@ -140,8 +140,8 @@ class SuiGrpcClient {
     return core.getBalance(owner, coinType: coinType);
   }
 
-  Future<List<Balance>> listBalances(String owner) {
-    return core.listBalances(owner);
+  Future<List<Balance>> getAllBalances(String owner) {
+    return core.getAllBalances(owner);
   }
 
   Future<CoinMetadata?> getCoinMetadata(String coinType) {
@@ -189,12 +189,12 @@ class SuiGrpcClient {
     return core.getCurrentSystemState();
   }
 
-  Future<Page<DynamicFieldEntry>> listDynamicFields(
+  Future<Page<DynamicFieldEntry>> getDynamicFields(
     String parentId, {
     String? cursor,
     int? limit,
   }) {
-    return core.listDynamicFields(parentId, cursor: cursor, limit: limit);
+    return core.getDynamicFields(parentId, cursor: cursor, limit: limit);
   }
 
   Future<VerifySignatureResult> verifyZkLoginSignature(
@@ -226,16 +226,15 @@ class SuiGrpcClient {
   }
 }
 
-/// BCS-encodes a dynamic-field name: address/ID, integer primitives,
-/// `vector<u8>`, bool/bytes wrapper structs, or a single-`String`-field key
-/// struct (`TypeName`, `ascii`/`string::String`, …). Null if it can't be encoded.
+/// BCS-encodes a dynamic-field name (address/ID, integers, `vector<u8>`,
+/// or a single-field wrapper struct). Null if it can't be encoded.
 Uint8List? _encodeDynamicFieldName(String nameType, dynamic nameValue) {
   if (nameValue == null) return null;
   try {
     final t = nameType.trim();
     final tl = t.toLowerCase();
 
-    // 32-byte address keys (also TypedID<T>, whose only field is `id: address`).
+    // 32-byte address keys, incl. TypedID<T>.
     if (tl == 'address' ||
         tl.endsWith('::object::id') ||
         tl.contains('::typed_id::typedid')) {
@@ -270,22 +269,21 @@ Uint8List? _encodeDynamicFieldName(String nameType, dynamic nameValue) {
       return Bcs.vector(Bcs.u8()).serialize(bytes).toBytes();
     }
 
-    // Single-`bool` wrapper (e.g. a `{dummy_field: bool}` key struct).
+    // Single-bool wrapper struct.
     if (nameValue is Map && nameValue['dummy_field'] is bool) {
       return Bcs.boolean()
           .serialize(nameValue['dummy_field'] as bool)
           .toBytes();
     }
 
-    // Single-`vector<u8>` wrapper passed as `{bytes: [...]}`.
+    // Single-bytes wrapper struct.
     if (nameValue is Map && nameValue['bytes'] is List) {
       return Bcs.vector(
         Bcs.u8(),
       ).serialize((nameValue['bytes'] as List).cast<int>()).toBytes();
     }
 
-    // String fallback: ascii::String, string::String, TypeName, and any other
-    // single-String-field key struct. All BCS as ULEB128(len) + UTF-8.
+    // String fallback: ascii/string::String, TypeName, or similar.
     final s = nameValue is String
         ? nameValue
         : (nameValue is Map ? (nameValue['name'] ?? nameValue['bytes']) : null);

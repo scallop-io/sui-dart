@@ -32,7 +32,9 @@ import 'package:sui_dart/types/common.dart' hide ObjectOwner;
 import 'package:protobuf/well_known_types/google/protobuf/struct.pb.dart'
     as pb_struct;
 
-import 'client.dart';
+import 'package:sui_dart/core/sui_core_client.dart';
+
+import 'sui_grpc_client.dart';
 
 // ignore: constant_identifier_names
 const _MAX_OBJECTS_PER_BATCH = 50;
@@ -71,11 +73,12 @@ Map<String, dynamic>? _protoValueToMap(pb_struct.Value value) {
   return null;
 }
 
-class GrpcCoreClient {
+class GrpcCoreClient implements SuiCoreClient {
   final SuiGrpcClient _client;
 
   GrpcCoreClient(this._client);
 
+  @override
   Future<List<ObjectResult>> getObjects(
     List<String> ids, {
     ObjectIncludeOptions? include,
@@ -102,9 +105,10 @@ class GrpcCoreClient {
     }).toList();
   }
 
-  Future<Page<ObjectData>> listOwnedObjects(
+  @override
+  Future<Page<ObjectData>> getOwnedObjects(
     String owner, {
-    String? objectType,
+    String? type,
     String? cursor,
     int? limit,
     ObjectIncludeOptions? include,
@@ -114,7 +118,7 @@ class GrpcCoreClient {
     final response = await _client.stateService.listOwnedObjects(
       ListOwnedObjectsRequest(
         owner: owner,
-        objectType: objectType,
+        objectType: type,
         pageSize: limit,
         pageToken: cursor != null ? base64Decode(cursor) : null,
         readMask: readMask,
@@ -130,7 +134,8 @@ class GrpcCoreClient {
     );
   }
 
-  Future<Page<CoinData>> listCoins(
+  @override
+  Future<Page<CoinData>> getCoins(
     String owner, {
     String coinType = '0x2::sui::SUI',
     String? cursor,
@@ -176,6 +181,7 @@ class GrpcCoreClient {
     );
   }
 
+  @override
   Future<Balance> getBalance(
     String owner, {
     String coinType = '0x2::sui::SUI',
@@ -195,6 +201,7 @@ class GrpcCoreClient {
     );
   }
 
+  @override
   Future<CoinMetadata?> getCoinMetadata(String coinType) async {
     final normalizedCoinType = normalizeStructTagString(coinType);
 
@@ -215,7 +222,8 @@ class GrpcCoreClient {
     );
   }
 
-  Future<List<Balance>> listBalances(String owner) async {
+  @override
+  Future<List<Balance>> getAllBalances(String owner) async {
     final allBalances = [];
     List<int>? pageToken;
 
@@ -242,6 +250,7 @@ class GrpcCoreClient {
     }).toList();
   }
 
+  @override
   Future<TransactionResponse> getTransaction(
     String digest, {
     TransactionIncludeOptions? include,
@@ -255,6 +264,7 @@ class GrpcCoreClient {
     return _parseTransaction(response.transaction, include);
   }
 
+  @override
   Future<TransactionResponse> executeTransaction(
     Uint8List transactionBytes,
     List<String> signatures, {
@@ -276,6 +286,7 @@ class GrpcCoreClient {
     return _parseTransaction(response.transaction, include);
   }
 
+  @override
   Future<TransactionResponse> simulateTransaction(
     sui_dart.Transaction transactionBlock, {
     TransactionIncludeOptions? include,
@@ -329,6 +340,7 @@ class GrpcCoreClient {
     return result;
   }
 
+  @override
   Future<String> getReferenceGasPrice() async {
     final response = await _client.ledgerService.getEpoch(
       GetEpochRequest(readMask: FieldMask(paths: ['reference_gas_price'])),
@@ -337,6 +349,7 @@ class GrpcCoreClient {
     return response.epoch.referenceGasPrice.toString();
   }
 
+  @override
   Future<SystemState> getCurrentSystemState() async {
     final response = await _client.ledgerService.getEpoch(
       GetEpochRequest(
@@ -365,7 +378,8 @@ class GrpcCoreClient {
     );
   }
 
-  Future<Page<DynamicFieldEntry>> listDynamicFields(
+  @override
+  Future<Page<DynamicFieldEntry>> getDynamicFields(
     String parentId, {
     String? cursor,
     int? limit,
@@ -400,6 +414,7 @@ class GrpcCoreClient {
     );
   }
 
+  @override
   Future<VerifySignatureResult> verifyZkLoginSignature(
     Uint8List bytes,
     String signature, {
@@ -421,6 +436,7 @@ class GrpcCoreClient {
     );
   }
 
+  @override
   Future<String?> defaultNameServiceName(String address) async {
     try {
       final response = await _client.nameService.reverseLookupName(
@@ -435,6 +451,7 @@ class GrpcCoreClient {
     }
   }
 
+  @override
   Future<MoveFunction> getMoveFunction(
     String packageId,
     String moduleName,
@@ -463,6 +480,7 @@ class GrpcCoreClient {
     );
   }
 
+  @override
   Future<String> getChainIdentifier() async {
     final response = await _client.ledgerService.getServiceInfo(
       GetServiceInfoRequest(),
