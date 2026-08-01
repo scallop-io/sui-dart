@@ -48,6 +48,27 @@ void main() {
     expect(serialized, equals(tx2.serialize()));
   });
 
+  test('can be cloned through toJson', () {
+    final tx = Transaction();
+    final coin = tx.add(
+      Commands.splitCoins(tx.gas, [tx.pure.u64(BigInt.from(100))]),
+    );
+    tx.add(Commands.transferObjects([coin], tx.object('0x2')));
+
+    final json = tx.toJson();
+    expect(Transaction.from(json).toJson(), equals(json));
+  });
+
+  test('does not resolve an object argument onto an existing pure input', () {
+    final tx = Transaction();
+    tx.pure.u64(BigInt.from(100));
+    final arg = tx.object({'nonsense': true});
+
+    // Both a pure input and an unrecognised value have no id, so matching on the
+    // null would hand back the pure argument where an object is wanted.
+    expect(arg['Input'], 1, reason: 'a new input, not the pure at index 0');
+  });
+
   test('allows transfer with the result of split Commands', () {
     final tx = Transaction();
     final coin = tx.add(

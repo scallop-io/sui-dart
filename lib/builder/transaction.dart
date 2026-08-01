@@ -100,6 +100,15 @@ SuiCoreClient expectClient(BuildOptions options) {
 SuiObjectRef _objectRefFromData(ObjectData data) =>
     SuiObjectRef(data.digest, data.objectId, data.version);
 
+/// A command referencing an earlier one holds a [TransactionResult] rather than a
+/// map. Its `result` is the right form: a stored bare result means the whole
+/// result, while its own `toJson` can report a nested index read elsewhere.
+Object? _jsonEncodable(dynamic value) {
+  if (value is BigInt) return value.toString();
+  if (value is TransactionResult) return value.result;
+  return value;
+}
+
 const LIMITS = {
   // The maximum gas that is allowed.
   "maxTxGas": 'max_tx_gas',
@@ -310,10 +319,13 @@ class Transaction {
 
     final id = getIdFromCallArg(value);
 
-    final inserted = _blockData.inputs.firstWhere(
-      (i) => id == getIdFromCallArg(i),
-      orElse: () => <String, dynamic>{},
-    );
+    // A pure input has no id either, so a null match would return a pure argument.
+    final inserted = id == null
+        ? <String, dynamic>{}
+        : _blockData.inputs.firstWhere(
+            (i) => id == getIdFromCallArg(i),
+            orElse: () => <String, dynamic>{},
+          );
 
     // Upgrade shared object inputs to mutable if needed:
     if (inserted.isNotEmpty &&
@@ -466,7 +478,7 @@ class Transaction {
     await prepareForSerialization(options);
     return jsonEncode(
       _blockData.snapshot().toJson(),
-      toEncodable: (v) => v is BigInt ? v.toString() : v,
+      toEncodable: _jsonEncodable,
     );
   }
 
@@ -545,8 +557,12 @@ class Transaction {
     return jsonEncode(serializeV1TransactionData(_blockData.snapshot()));
   }
 
+  /// [toJsonAsync] resolves intents first; prefer it when the block may hold any.
   String toJson([SerializeTransactionOptions? options]) {
-    return jsonEncode(_blockData.snapshot());
+    return jsonEncode(
+      _blockData.snapshot().toJson(),
+      toEncodable: _jsonEncodable,
+    );
   }
 
   String _getConfig(String key, BuildOptions options) {

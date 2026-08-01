@@ -1,3 +1,18 @@
+## 0.9.1
+
+### Fixed
+
+* `Transaction.toJson()` encoded the raw block snapshot and threw
+  "Converting object to an encodable object failed: Instance of
+  'TransactionData'".
+* Blocks whose commands reference an earlier command's result now serialize to
+  JSON. `TransactionResult` was not encodable, so both `toJson` and
+  `toJsonAsync` failed on nearly every real transaction.
+* `Transaction.object()` no longer resolves an argument onto an existing pure
+  input. A value with no object id matched the first pure input, handing back a
+  pure argument where an object was wanted and failing on chain with
+  `CommandArgumentError { kind: InvalidUsageOfPureArg }`.
+
 ## 0.9.0
 
 This release is breaking throughout: the JSON-RPC surface is gone and the
