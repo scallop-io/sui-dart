@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:sui_dart/grpc/types.dart';
 import 'package:sui_dart/sui.dart' hide AddressOwner, ObjectData;
 import 'package:test/test.dart';
@@ -42,91 +40,9 @@ class _FakeClient implements SuiCoreClient {
   }
 
   @override
-  Future<List<ObjectResult>> getObjects(
-    List<String> objectIds, {
-    ObjectIncludeOptions? include,
-  }) => throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<Page<ObjectData>> getOwnedObjects(
-    String address, {
-    String? type,
-    String? cursor,
-    int? limit,
-    ObjectIncludeOptions? include,
-  }) => throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<Balance> getBalance(
-    String address, {
-    String coinType = '0x2::sui::SUI',
-  }) => throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<CoinMetadata?> getCoinMetadata(String coinType) =>
-      throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<List<Balance>> getAllBalances(String address) =>
-      throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<TransactionResponse> getTransaction(
-    String digest, {
-    TransactionIncludeOptions? include,
-  }) => throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<TransactionResponse> executeTransaction(
-    Uint8List transactionBytes,
-    List<String> signatures, {
-    TransactionIncludeOptions? include,
-  }) => throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<TransactionResponse> simulateTransaction(
-    Transaction transactionBlock, {
-    TransactionIncludeOptions? include,
-    bool? doGasSelection,
-    bool? checksEnabled,
-  }) => throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<String> getReferenceGasPrice() =>
-      throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<SystemState> getCurrentSystemState() =>
-      throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<Page<DynamicFieldEntry>> getDynamicFields(
-    String parentId, {
-    String? cursor,
-    int? limit,
-  }) => throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<VerifySignatureResult> verifyZkLoginSignature(
-    Uint8List bytes,
-    String signature, {
-    String? address,
-  }) => throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<String?> defaultNameServiceName(String address) =>
-      throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<MoveFunction> getMoveFunction(
-    String packageId,
-    String moduleName,
-    String functionName,
-  ) => throw UnimplementedError('not needed by this fixture');
-
-  @override
-  Future<String> getChainIdentifier() =>
-      throw UnimplementedError('not needed by this fixture');
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError(
+    '${invocation.memberName} is not needed by this fixture',
+  );
 }
 
 Future<List<dynamic>> _resolve(Transaction tx, List<CoinData> pool) async {
@@ -227,6 +143,26 @@ void main() {
         ),
         isTrue,
       );
+    });
+
+    test('destroys the dust coin before later commands', () async {
+      final tx = Transaction();
+      final coin = tx.add(coinWithBalance(type: _fooType, balance: 100));
+      tx.transferObjects([coin], _recipient);
+
+      final commands = await _resolve(tx, [_coin('0x1', '100')]);
+
+      // Nothing may follow a Random MoveCall, so cleanup must not trail.
+      final destroyIndex = commands.indexWhere(
+        (c) =>
+            c['\$kind'] == 'MoveCall' &&
+            c['MoveCall']['function'] == 'destroy_zero',
+      );
+      final transferIndex = commands.indexWhere(
+        (c) => c['\$kind'] == 'TransferObjects',
+      );
+      expect(destroyIndex, greaterThanOrEqualTo(0));
+      expect(destroyIndex, lessThan(transferIndex));
     });
 
     test('uses the gas coin for SUI', () async {

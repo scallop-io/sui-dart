@@ -22,8 +22,11 @@ import 'package:protobuf/well_known_types/google/protobuf/timestamp.pb.dart'
 import '../../../google/rpc/status.pb.dart' as $4;
 import 'checkpoint.pb.dart' as $6;
 import 'epoch.pb.dart' as $7;
+import 'event.pb.dart' as $10;
 import 'executed_transaction.pb.dart' as $5;
+import 'filter.pb.dart' as $8;
 import 'object.pb.dart' as $3;
+import 'query_options.pb.dart' as $9;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
@@ -1217,6 +1220,707 @@ class GetEpochResponse extends $pb.GeneratedMessage {
   void clearEpoch() => $_clearField(1);
   @$pb.TagNumber(1)
   $7.Epoch ensureEpoch() => $_ensure(0);
+}
+
+/// Request message for LedgerService.ListCheckpoints.
+class ListCheckpointsRequest extends $pb.GeneratedMessage {
+  factory ListCheckpointsRequest({
+    $2.FieldMask? readMask,
+    $fixnum.Int64? startCheckpoint,
+    $fixnum.Int64? endCheckpoint,
+    $8.TransactionFilter? filter,
+    $9.QueryOptions? options,
+  }) {
+    final result = create();
+    if (readMask != null) result.readMask = readMask;
+    if (startCheckpoint != null) result.startCheckpoint = startCheckpoint;
+    if (endCheckpoint != null) result.endCheckpoint = endCheckpoint;
+    if (filter != null) result.filter = filter;
+    if (options != null) result.options = options;
+    return result;
+  }
+
+  ListCheckpointsRequest._();
+
+  factory ListCheckpointsRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ListCheckpointsRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ListCheckpointsRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'sui.rpc.v2'),
+      createEmptyInstance: create)
+    ..aOM<$2.FieldMask>(1, _omitFieldNames ? '' : 'readMask',
+        subBuilder: $2.FieldMask.create)
+    ..a<$fixnum.Int64>(
+        2, _omitFieldNames ? '' : 'startCheckpoint', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..a<$fixnum.Int64>(
+        3, _omitFieldNames ? '' : 'endCheckpoint', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aOM<$8.TransactionFilter>(4, _omitFieldNames ? '' : 'filter',
+        subBuilder: $8.TransactionFilter.create)
+    ..aOM<$9.QueryOptions>(5, _omitFieldNames ? '' : 'options',
+        subBuilder: $9.QueryOptions.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListCheckpointsRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListCheckpointsRequest copyWith(
+          void Function(ListCheckpointsRequest) updates) =>
+      super.copyWith((message) => updates(message as ListCheckpointsRequest))
+          as ListCheckpointsRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListCheckpointsRequest create() => ListCheckpointsRequest._();
+  @$core.override
+  ListCheckpointsRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ListCheckpointsRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ListCheckpointsRequest>(create);
+  static ListCheckpointsRequest? _defaultInstance;
+
+  /// Optional. Mask for specifying which parts of the Checkpoint should be
+  /// returned (e.g. summary, contents, signatures).
+  @$pb.TagNumber(1)
+  $2.FieldMask get readMask => $_getN(0);
+  @$pb.TagNumber(1)
+  set readMask($2.FieldMask value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasReadMask() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearReadMask() => $_clearField(1);
+  @$pb.TagNumber(1)
+  $2.FieldMask ensureReadMask() => $_ensure(0);
+
+  /// Optional. Start of the checkpoint range to query (inclusive). Defaults to
+  /// genesis.
+  @$pb.TagNumber(2)
+  $fixnum.Int64 get startCheckpoint => $_getI64(1);
+  @$pb.TagNumber(2)
+  set startCheckpoint($fixnum.Int64 value) => $_setInt64(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasStartCheckpoint() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearStartCheckpoint() => $_clearField(2);
+
+  /// Optional. End of the checkpoint range to query (exclusive). Defaults to the
+  /// current indexed ledger tip.
+  @$pb.TagNumber(3)
+  $fixnum.Int64 get endCheckpoint => $_getI64(2);
+  @$pb.TagNumber(3)
+  set endCheckpoint($fixnum.Int64 value) => $_setInt64(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasEndCheckpoint() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearEndCheckpoint() => $_clearField(3);
+
+  /// Optional. DNF filter over indexed transaction dimensions. A checkpoint
+  /// matches if any transaction it contains satisfies the filter. If absent,
+  /// all checkpoints in the range are returned.
+  @$pb.TagNumber(4)
+  $8.TransactionFilter get filter => $_getN(3);
+  @$pb.TagNumber(4)
+  set filter($8.TransactionFilter value) => $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasFilter() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearFilter() => $_clearField(4);
+  @$pb.TagNumber(4)
+  $8.TransactionFilter ensureFilter() => $_ensure(3);
+
+  /// Optional cursor-bounded query options. If unspecified, reads in ascending
+  /// order with the default item limit. The server enforces a maximum item
+  /// limit and silently coerces larger values down to it. To paginate, pass
+  /// the last received `Watermark.cursor` as `options.after` (ascending) or
+  /// `options.before` (descending) on the next request.
+  @$pb.TagNumber(5)
+  $9.QueryOptions get options => $_getN(4);
+  @$pb.TagNumber(5)
+  set options($9.QueryOptions value) => $_setField(5, value);
+  @$pb.TagNumber(5)
+  $core.bool hasOptions() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearOptions() => $_clearField(5);
+  @$pb.TagNumber(5)
+  $9.QueryOptions ensureOptions() => $_ensure(4);
+}
+
+/// Response message for LedgerService.ListCheckpoints.
+///
+/// Every frame carries a `watermark` with a safe resume cursor. A frame
+/// with `checkpoint` set delivers one matching item; a frame without it reports
+/// scan progress or terminal completion. Watermarks never regress in the
+/// requested ordering but may repeat.
+///
+/// `end` is set exactly once, on the final frame of a successful stream. For
+/// `QUERY_END_REASON_ITEM_LIMIT`, that frame also carries the final item. For
+/// every other end reason, the final frame has no `checkpoint` payload.
+class ListCheckpointsResponse extends $pb.GeneratedMessage {
+  factory ListCheckpointsResponse({
+    $6.Checkpoint? checkpoint,
+    $9.Watermark? watermark,
+    $9.QueryEnd? end,
+  }) {
+    final result = create();
+    if (checkpoint != null) result.checkpoint = checkpoint;
+    if (watermark != null) result.watermark = watermark;
+    if (end != null) result.end = end;
+    return result;
+  }
+
+  ListCheckpointsResponse._();
+
+  factory ListCheckpointsResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ListCheckpointsResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ListCheckpointsResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'sui.rpc.v2'),
+      createEmptyInstance: create)
+    ..aOM<$6.Checkpoint>(1, _omitFieldNames ? '' : 'checkpoint',
+        subBuilder: $6.Checkpoint.create)
+    ..aOM<$9.Watermark>(2, _omitFieldNames ? '' : 'watermark',
+        subBuilder: $9.Watermark.create)
+    ..aOM<$9.QueryEnd>(3, _omitFieldNames ? '' : 'end',
+        subBuilder: $9.QueryEnd.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListCheckpointsResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListCheckpointsResponse copyWith(
+          void Function(ListCheckpointsResponse) updates) =>
+      super.copyWith((message) => updates(message as ListCheckpointsResponse))
+          as ListCheckpointsResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListCheckpointsResponse create() => ListCheckpointsResponse._();
+  @$core.override
+  ListCheckpointsResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ListCheckpointsResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ListCheckpointsResponse>(create);
+  static ListCheckpointsResponse? _defaultInstance;
+
+  /// One matching checkpoint.
+  @$pb.TagNumber(1)
+  $6.Checkpoint get checkpoint => $_getN(0);
+  @$pb.TagNumber(1)
+  set checkpoint($6.Checkpoint value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasCheckpoint() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCheckpoint() => $_clearField(1);
+  @$pb.TagNumber(1)
+  $6.Checkpoint ensureCheckpoint() => $_ensure(0);
+
+  /// Progress watermark as of this frame. Present on every frame. A
+  /// ScanLimit terminal watermark may repeat the previous frame's cursor when
+  /// its authoritative scan frontier was already emitted.
+  @$pb.TagNumber(2)
+  $9.Watermark get watermark => $_getN(1);
+  @$pb.TagNumber(2)
+  set watermark($9.Watermark value) => $_setField(2, value);
+  @$pb.TagNumber(2)
+  $core.bool hasWatermark() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearWatermark() => $_clearField(2);
+  @$pb.TagNumber(2)
+  $9.Watermark ensureWatermark() => $_ensure(1);
+
+  /// Set exactly once, on the final frame of a successful query stream.
+  @$pb.TagNumber(3)
+  $9.QueryEnd get end => $_getN(2);
+  @$pb.TagNumber(3)
+  set end($9.QueryEnd value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasEnd() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearEnd() => $_clearField(3);
+  @$pb.TagNumber(3)
+  $9.QueryEnd ensureEnd() => $_ensure(2);
+}
+
+/// Request message for LedgerService.ListTransactions.
+class ListTransactionsRequest extends $pb.GeneratedMessage {
+  factory ListTransactionsRequest({
+    $2.FieldMask? readMask,
+    $fixnum.Int64? startCheckpoint,
+    $fixnum.Int64? endCheckpoint,
+    $8.TransactionFilter? filter,
+    $9.QueryOptions? options,
+  }) {
+    final result = create();
+    if (readMask != null) result.readMask = readMask;
+    if (startCheckpoint != null) result.startCheckpoint = startCheckpoint;
+    if (endCheckpoint != null) result.endCheckpoint = endCheckpoint;
+    if (filter != null) result.filter = filter;
+    if (options != null) result.options = options;
+    return result;
+  }
+
+  ListTransactionsRequest._();
+
+  factory ListTransactionsRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ListTransactionsRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ListTransactionsRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'sui.rpc.v2'),
+      createEmptyInstance: create)
+    ..aOM<$2.FieldMask>(1, _omitFieldNames ? '' : 'readMask',
+        subBuilder: $2.FieldMask.create)
+    ..a<$fixnum.Int64>(
+        2, _omitFieldNames ? '' : 'startCheckpoint', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..a<$fixnum.Int64>(
+        3, _omitFieldNames ? '' : 'endCheckpoint', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aOM<$8.TransactionFilter>(4, _omitFieldNames ? '' : 'filter',
+        subBuilder: $8.TransactionFilter.create)
+    ..aOM<$9.QueryOptions>(5, _omitFieldNames ? '' : 'options',
+        subBuilder: $9.QueryOptions.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListTransactionsRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListTransactionsRequest copyWith(
+          void Function(ListTransactionsRequest) updates) =>
+      super.copyWith((message) => updates(message as ListTransactionsRequest))
+          as ListTransactionsRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListTransactionsRequest create() => ListTransactionsRequest._();
+  @$core.override
+  ListTransactionsRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ListTransactionsRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ListTransactionsRequest>(create);
+  static ListTransactionsRequest? _defaultInstance;
+
+  /// Optional. Mask for specifying which parts of the ExecutedTransaction
+  /// should be returned.
+  @$pb.TagNumber(1)
+  $2.FieldMask get readMask => $_getN(0);
+  @$pb.TagNumber(1)
+  set readMask($2.FieldMask value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasReadMask() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearReadMask() => $_clearField(1);
+  @$pb.TagNumber(1)
+  $2.FieldMask ensureReadMask() => $_ensure(0);
+
+  /// Optional. Start of the checkpoint range to query (inclusive). Defaults to
+  /// genesis.
+  @$pb.TagNumber(2)
+  $fixnum.Int64 get startCheckpoint => $_getI64(1);
+  @$pb.TagNumber(2)
+  set startCheckpoint($fixnum.Int64 value) => $_setInt64(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasStartCheckpoint() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearStartCheckpoint() => $_clearField(2);
+
+  /// Optional. End of the checkpoint range to query (exclusive). Defaults to the
+  /// current indexed ledger tip.
+  @$pb.TagNumber(3)
+  $fixnum.Int64 get endCheckpoint => $_getI64(2);
+  @$pb.TagNumber(3)
+  set endCheckpoint($fixnum.Int64 value) => $_setInt64(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasEndCheckpoint() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearEndCheckpoint() => $_clearField(3);
+
+  /// Optional. DNF filter over indexed dimensions.
+  /// If absent, all transactions in the range are returned.
+  @$pb.TagNumber(4)
+  $8.TransactionFilter get filter => $_getN(3);
+  @$pb.TagNumber(4)
+  set filter($8.TransactionFilter value) => $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasFilter() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearFilter() => $_clearField(4);
+  @$pb.TagNumber(4)
+  $8.TransactionFilter ensureFilter() => $_ensure(3);
+
+  /// Optional cursor-bounded query options. If unspecified, reads in ascending
+  /// order with the default item limit. The server enforces a maximum item
+  /// limit and silently coerces larger values down to it. To paginate, pass
+  /// the last received `Watermark.cursor` as `options.after` (ascending) or
+  /// `options.before` (descending) on the next request.
+  @$pb.TagNumber(5)
+  $9.QueryOptions get options => $_getN(4);
+  @$pb.TagNumber(5)
+  set options($9.QueryOptions value) => $_setField(5, value);
+  @$pb.TagNumber(5)
+  $core.bool hasOptions() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearOptions() => $_clearField(5);
+  @$pb.TagNumber(5)
+  $9.QueryOptions ensureOptions() => $_ensure(4);
+}
+
+/// Response message for LedgerService.ListTransactions.
+///
+/// Every frame carries a `watermark` with a safe resume cursor. A frame
+/// with `transaction` set delivers one matching item; a frame without it reports
+/// scan progress or terminal completion. Watermarks never regress in the
+/// requested ordering but may repeat.
+///
+/// `end` is set exactly once, on the final frame of a successful stream. For
+/// `QUERY_END_REASON_ITEM_LIMIT`, that frame also carries the final item. For
+/// every other end reason, the final frame has no `transaction` payload.
+class ListTransactionsResponse extends $pb.GeneratedMessage {
+  factory ListTransactionsResponse({
+    $5.ExecutedTransaction? transaction,
+    $9.Watermark? watermark,
+    $9.QueryEnd? end,
+  }) {
+    final result = create();
+    if (transaction != null) result.transaction = transaction;
+    if (watermark != null) result.watermark = watermark;
+    if (end != null) result.end = end;
+    return result;
+  }
+
+  ListTransactionsResponse._();
+
+  factory ListTransactionsResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ListTransactionsResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ListTransactionsResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'sui.rpc.v2'),
+      createEmptyInstance: create)
+    ..aOM<$5.ExecutedTransaction>(1, _omitFieldNames ? '' : 'transaction',
+        subBuilder: $5.ExecutedTransaction.create)
+    ..aOM<$9.Watermark>(2, _omitFieldNames ? '' : 'watermark',
+        subBuilder: $9.Watermark.create)
+    ..aOM<$9.QueryEnd>(3, _omitFieldNames ? '' : 'end',
+        subBuilder: $9.QueryEnd.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListTransactionsResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListTransactionsResponse copyWith(
+          void Function(ListTransactionsResponse) updates) =>
+      super.copyWith((message) => updates(message as ListTransactionsResponse))
+          as ListTransactionsResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListTransactionsResponse create() => ListTransactionsResponse._();
+  @$core.override
+  ListTransactionsResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ListTransactionsResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ListTransactionsResponse>(create);
+  static ListTransactionsResponse? _defaultInstance;
+
+  /// One matching transaction. Its position within the containing checkpoint
+  /// is reported by `ExecutedTransaction.transaction_index`.
+  @$pb.TagNumber(1)
+  $5.ExecutedTransaction get transaction => $_getN(0);
+  @$pb.TagNumber(1)
+  set transaction($5.ExecutedTransaction value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasTransaction() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTransaction() => $_clearField(1);
+  @$pb.TagNumber(1)
+  $5.ExecutedTransaction ensureTransaction() => $_ensure(0);
+
+  /// Progress watermark as of this frame. Present on every frame. A
+  /// ScanLimit terminal watermark may repeat the previous frame's cursor when
+  /// its authoritative scan frontier was already emitted.
+  @$pb.TagNumber(2)
+  $9.Watermark get watermark => $_getN(1);
+  @$pb.TagNumber(2)
+  set watermark($9.Watermark value) => $_setField(2, value);
+  @$pb.TagNumber(2)
+  $core.bool hasWatermark() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearWatermark() => $_clearField(2);
+  @$pb.TagNumber(2)
+  $9.Watermark ensureWatermark() => $_ensure(1);
+
+  /// Set exactly once, on the final frame of a successful query stream.
+  @$pb.TagNumber(3)
+  $9.QueryEnd get end => $_getN(2);
+  @$pb.TagNumber(3)
+  set end($9.QueryEnd value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasEnd() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearEnd() => $_clearField(3);
+  @$pb.TagNumber(3)
+  $9.QueryEnd ensureEnd() => $_ensure(2);
+}
+
+/// Request message for LedgerService.ListEvents.
+class ListEventsRequest extends $pb.GeneratedMessage {
+  factory ListEventsRequest({
+    $2.FieldMask? readMask,
+    $fixnum.Int64? startCheckpoint,
+    $fixnum.Int64? endCheckpoint,
+    $8.EventFilter? filter,
+    $9.QueryOptions? options,
+  }) {
+    final result = create();
+    if (readMask != null) result.readMask = readMask;
+    if (startCheckpoint != null) result.startCheckpoint = startCheckpoint;
+    if (endCheckpoint != null) result.endCheckpoint = endCheckpoint;
+    if (filter != null) result.filter = filter;
+    if (options != null) result.options = options;
+    return result;
+  }
+
+  ListEventsRequest._();
+
+  factory ListEventsRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ListEventsRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ListEventsRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'sui.rpc.v2'),
+      createEmptyInstance: create)
+    ..aOM<$2.FieldMask>(1, _omitFieldNames ? '' : 'readMask',
+        subBuilder: $2.FieldMask.create)
+    ..a<$fixnum.Int64>(
+        2, _omitFieldNames ? '' : 'startCheckpoint', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..a<$fixnum.Int64>(
+        3, _omitFieldNames ? '' : 'endCheckpoint', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aOM<$8.EventFilter>(4, _omitFieldNames ? '' : 'filter',
+        subBuilder: $8.EventFilter.create)
+    ..aOM<$9.QueryOptions>(5, _omitFieldNames ? '' : 'options',
+        subBuilder: $9.QueryOptions.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListEventsRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListEventsRequest copyWith(void Function(ListEventsRequest) updates) =>
+      super.copyWith((message) => updates(message as ListEventsRequest))
+          as ListEventsRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListEventsRequest create() => ListEventsRequest._();
+  @$core.override
+  ListEventsRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ListEventsRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ListEventsRequest>(create);
+  static ListEventsRequest? _defaultInstance;
+
+  /// Optional. Mask for specifying which parts of the Event should be returned.
+  @$pb.TagNumber(1)
+  $2.FieldMask get readMask => $_getN(0);
+  @$pb.TagNumber(1)
+  set readMask($2.FieldMask value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasReadMask() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearReadMask() => $_clearField(1);
+  @$pb.TagNumber(1)
+  $2.FieldMask ensureReadMask() => $_ensure(0);
+
+  /// Optional. Start of the checkpoint range to query (inclusive). Defaults to
+  /// genesis.
+  @$pb.TagNumber(2)
+  $fixnum.Int64 get startCheckpoint => $_getI64(1);
+  @$pb.TagNumber(2)
+  set startCheckpoint($fixnum.Int64 value) => $_setInt64(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasStartCheckpoint() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearStartCheckpoint() => $_clearField(2);
+
+  /// Optional. End of the checkpoint range to query (exclusive). Defaults to the
+  /// current indexed ledger tip.
+  @$pb.TagNumber(3)
+  $fixnum.Int64 get endCheckpoint => $_getI64(2);
+  @$pb.TagNumber(3)
+  set endCheckpoint($fixnum.Int64 value) => $_setInt64(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasEndCheckpoint() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearEndCheckpoint() => $_clearField(3);
+
+  /// Optional. DNF filter over indexed dimensions.
+  /// If absent, all events in the range are returned.
+  @$pb.TagNumber(4)
+  $8.EventFilter get filter => $_getN(3);
+  @$pb.TagNumber(4)
+  set filter($8.EventFilter value) => $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasFilter() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearFilter() => $_clearField(4);
+  @$pb.TagNumber(4)
+  $8.EventFilter ensureFilter() => $_ensure(3);
+
+  /// Optional cursor-bounded query options. If unspecified, reads in ascending
+  /// order with the default item limit. The server enforces a maximum item
+  /// limit and silently coerces larger values down to it. To paginate, pass
+  /// the last received `Watermark.cursor` as `options.after` (ascending) or
+  /// `options.before` (descending) on the next request.
+  @$pb.TagNumber(5)
+  $9.QueryOptions get options => $_getN(4);
+  @$pb.TagNumber(5)
+  set options($9.QueryOptions value) => $_setField(5, value);
+  @$pb.TagNumber(5)
+  $core.bool hasOptions() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearOptions() => $_clearField(5);
+  @$pb.TagNumber(5)
+  $9.QueryOptions ensureOptions() => $_ensure(4);
+}
+
+/// Response message for LedgerService.ListEvents.
+///
+/// Every frame carries a `watermark` with a safe resume cursor. A frame
+/// with `event` set delivers one matching item; a frame without it reports scan
+/// progress or terminal completion. Watermarks never regress in the requested
+/// ordering but may repeat.
+///
+/// `end` is set exactly once, on the final frame of a successful stream. For
+/// `QUERY_END_REASON_ITEM_LIMIT`, that frame also carries the final item. For
+/// every other end reason, the final frame has no `event` payload.
+class ListEventsResponse extends $pb.GeneratedMessage {
+  factory ListEventsResponse({
+    $10.Event? event,
+    $9.Watermark? watermark,
+    $9.QueryEnd? end,
+  }) {
+    final result = create();
+    if (event != null) result.event = event;
+    if (watermark != null) result.watermark = watermark;
+    if (end != null) result.end = end;
+    return result;
+  }
+
+  ListEventsResponse._();
+
+  factory ListEventsResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ListEventsResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ListEventsResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'sui.rpc.v2'),
+      createEmptyInstance: create)
+    ..aOM<$10.Event>(1, _omitFieldNames ? '' : 'event',
+        subBuilder: $10.Event.create)
+    ..aOM<$9.Watermark>(2, _omitFieldNames ? '' : 'watermark',
+        subBuilder: $9.Watermark.create)
+    ..aOM<$9.QueryEnd>(3, _omitFieldNames ? '' : 'end',
+        subBuilder: $9.QueryEnd.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListEventsResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListEventsResponse copyWith(void Function(ListEventsResponse) updates) =>
+      super.copyWith((message) => updates(message as ListEventsResponse))
+          as ListEventsResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListEventsResponse create() => ListEventsResponse._();
+  @$core.override
+  ListEventsResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ListEventsResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ListEventsResponse>(create);
+  static ListEventsResponse? _defaultInstance;
+
+  /// One matching event. Its ledger position -- containing checkpoint,
+  /// emitting transaction digest and offset, and index within that
+  /// transaction's event list -- is reported by the corresponding fields on
+  /// `Event`.
+  @$pb.TagNumber(1)
+  $10.Event get event => $_getN(0);
+  @$pb.TagNumber(1)
+  set event($10.Event value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasEvent() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearEvent() => $_clearField(1);
+  @$pb.TagNumber(1)
+  $10.Event ensureEvent() => $_ensure(0);
+
+  /// Progress watermark as of this frame. Present on every frame. A
+  /// ScanLimit terminal watermark may repeat the previous frame's cursor when
+  /// its authoritative scan frontier was already emitted.
+  @$pb.TagNumber(2)
+  $9.Watermark get watermark => $_getN(1);
+  @$pb.TagNumber(2)
+  set watermark($9.Watermark value) => $_setField(2, value);
+  @$pb.TagNumber(2)
+  $core.bool hasWatermark() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearWatermark() => $_clearField(2);
+  @$pb.TagNumber(2)
+  $9.Watermark ensureWatermark() => $_ensure(1);
+
+  /// Set exactly once, on the final frame of a successful query stream.
+  @$pb.TagNumber(3)
+  $9.QueryEnd get end => $_getN(2);
+  @$pb.TagNumber(3)
+  set end($9.QueryEnd value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasEnd() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearEnd() => $_clearField(3);
+  @$pb.TagNumber(3)
+  $9.QueryEnd ensureEnd() => $_ensure(2);
 }
 
 const $core.bool _omitFieldNames =

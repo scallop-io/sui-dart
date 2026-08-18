@@ -22,6 +22,7 @@ import 'package:sui_dart/grpc/types.dart'
         ObjectResult,
         ObjectSuccess,
         SharedOwner,
+        SystemState,
         TransactionIncludeOptions;
 import 'package:sui_dart/types/common.dart';
 import 'package:sui_dart/types/framework.dart' hide ObjectData;
@@ -1236,9 +1237,37 @@ class Transaction {
               : baseComputationCostWithOverhead,
         );
       }
+
+      await _prepareAddressBalanceExpiration(options);
     }
 
     _validate(options);
+  }
+
+  /// Gas paid from the sender's address balance (an empty payment) has no coin
+  /// version to bound it, so without a `ValidDuring` window it can be replayed.
+  Future<void> _prepareAddressBalanceExpiration(BuildOptions options) async {
+    final payment = _blockData.gasData.payment;
+    if (payment == null || payment.isNotEmpty) return;
+
+    final expiration = _blockData.expiration;
+    if (expiration?.epoch != null || expiration?.validDuring != null) return;
+
+    final client = expectClient(options);
+    final chain = await client.getChainIdentifier();
+    final SystemState state = await client.getCurrentSystemState();
+    final epoch = BigInt.parse(state.epoch);
+
+    _blockData.expiration = TransactionExpiration(
+      validDuring: {
+        'minEpoch': epoch.toString(),
+        'maxEpoch': (epoch + BigInt.one).toString(),
+        'minTimestamp': null,
+        'maxTimestamp': null,
+        'chain': chain,
+        'nonce': Random().nextInt(0x100000000),
+      },
+    );
   }
 
   bool isUsedAsMutable(TransactionBlockDataBuilder transactionData, int index) {

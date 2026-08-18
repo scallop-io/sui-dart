@@ -516,3 +516,368 @@ const GetEpochResponse$json = {
 final $typed_data.Uint8List getEpochResponseDescriptor = $convert.base64Decode(
     'ChBHZXRFcG9jaFJlc3BvbnNlEiwKBWVwb2NoGAEgASgLMhEuc3VpLnJwYy52Mi5FcG9jaEgAUg'
     'VlcG9jaIgBAUIICgZfZXBvY2g=');
+
+@$core.Deprecated('Use listCheckpointsRequestDescriptor instead')
+const ListCheckpointsRequest$json = {
+  '1': 'ListCheckpointsRequest',
+  '2': [
+    {
+      '1': 'read_mask',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.FieldMask',
+      '9': 0,
+      '10': 'readMask',
+      '17': true
+    },
+    {
+      '1': 'start_checkpoint',
+      '3': 2,
+      '4': 1,
+      '5': 4,
+      '9': 1,
+      '10': 'startCheckpoint',
+      '17': true
+    },
+    {
+      '1': 'end_checkpoint',
+      '3': 3,
+      '4': 1,
+      '5': 4,
+      '9': 2,
+      '10': 'endCheckpoint',
+      '17': true
+    },
+    {
+      '1': 'filter',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.TransactionFilter',
+      '9': 3,
+      '10': 'filter',
+      '17': true
+    },
+    {
+      '1': 'options',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.QueryOptions',
+      '9': 4,
+      '10': 'options',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_read_mask'},
+    {'1': '_start_checkpoint'},
+    {'1': '_end_checkpoint'},
+    {'1': '_filter'},
+    {'1': '_options'},
+  ],
+};
+
+/// Descriptor for `ListCheckpointsRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listCheckpointsRequestDescriptor = $convert.base64Decode(
+    'ChZMaXN0Q2hlY2twb2ludHNSZXF1ZXN0EjwKCXJlYWRfbWFzaxgBIAEoCzIaLmdvb2dsZS5wcm'
+    '90b2J1Zi5GaWVsZE1hc2tIAFIIcmVhZE1hc2uIAQESLgoQc3RhcnRfY2hlY2twb2ludBgCIAEo'
+    'BEgBUg9zdGFydENoZWNrcG9pbnSIAQESKgoOZW5kX2NoZWNrcG9pbnQYAyABKARIAlINZW5kQ2'
+    'hlY2twb2ludIgBARI6CgZmaWx0ZXIYBCABKAsyHS5zdWkucnBjLnYyLlRyYW5zYWN0aW9uRmls'
+    'dGVySANSBmZpbHRlcogBARI3CgdvcHRpb25zGAUgASgLMhguc3VpLnJwYy52Mi5RdWVyeU9wdG'
+    'lvbnNIBFIHb3B0aW9uc4gBAUIMCgpfcmVhZF9tYXNrQhMKEV9zdGFydF9jaGVja3BvaW50QhEK'
+    'D19lbmRfY2hlY2twb2ludEIJCgdfZmlsdGVyQgoKCF9vcHRpb25z');
+
+@$core.Deprecated('Use listCheckpointsResponseDescriptor instead')
+const ListCheckpointsResponse$json = {
+  '1': 'ListCheckpointsResponse',
+  '2': [
+    {
+      '1': 'checkpoint',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.Checkpoint',
+      '9': 0,
+      '10': 'checkpoint',
+      '17': true
+    },
+    {
+      '1': 'watermark',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.Watermark',
+      '9': 1,
+      '10': 'watermark',
+      '17': true
+    },
+    {
+      '1': 'end',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.QueryEnd',
+      '9': 2,
+      '10': 'end',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_checkpoint'},
+    {'1': '_watermark'},
+    {'1': '_end'},
+  ],
+};
+
+/// Descriptor for `ListCheckpointsResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listCheckpointsResponseDescriptor = $convert.base64Decode(
+    'ChdMaXN0Q2hlY2twb2ludHNSZXNwb25zZRI7CgpjaGVja3BvaW50GAEgASgLMhYuc3VpLnJwYy'
+    '52Mi5DaGVja3BvaW50SABSCmNoZWNrcG9pbnSIAQESOAoJd2F0ZXJtYXJrGAIgASgLMhUuc3Vp'
+    'LnJwYy52Mi5XYXRlcm1hcmtIAVIJd2F0ZXJtYXJriAEBEisKA2VuZBgDIAEoCzIULnN1aS5ycG'
+    'MudjIuUXVlcnlFbmRIAlIDZW5kiAEBQg0KC19jaGVja3BvaW50QgwKCl93YXRlcm1hcmtCBgoE'
+    'X2VuZA==');
+
+@$core.Deprecated('Use listTransactionsRequestDescriptor instead')
+const ListTransactionsRequest$json = {
+  '1': 'ListTransactionsRequest',
+  '2': [
+    {
+      '1': 'read_mask',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.FieldMask',
+      '9': 0,
+      '10': 'readMask',
+      '17': true
+    },
+    {
+      '1': 'start_checkpoint',
+      '3': 2,
+      '4': 1,
+      '5': 4,
+      '9': 1,
+      '10': 'startCheckpoint',
+      '17': true
+    },
+    {
+      '1': 'end_checkpoint',
+      '3': 3,
+      '4': 1,
+      '5': 4,
+      '9': 2,
+      '10': 'endCheckpoint',
+      '17': true
+    },
+    {
+      '1': 'filter',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.TransactionFilter',
+      '9': 3,
+      '10': 'filter',
+      '17': true
+    },
+    {
+      '1': 'options',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.QueryOptions',
+      '9': 4,
+      '10': 'options',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_read_mask'},
+    {'1': '_start_checkpoint'},
+    {'1': '_end_checkpoint'},
+    {'1': '_filter'},
+    {'1': '_options'},
+  ],
+};
+
+/// Descriptor for `ListTransactionsRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listTransactionsRequestDescriptor = $convert.base64Decode(
+    'ChdMaXN0VHJhbnNhY3Rpb25zUmVxdWVzdBI8CglyZWFkX21hc2sYASABKAsyGi5nb29nbGUucH'
+    'JvdG9idWYuRmllbGRNYXNrSABSCHJlYWRNYXNriAEBEi4KEHN0YXJ0X2NoZWNrcG9pbnQYAiAB'
+    'KARIAVIPc3RhcnRDaGVja3BvaW50iAEBEioKDmVuZF9jaGVja3BvaW50GAMgASgESAJSDWVuZE'
+    'NoZWNrcG9pbnSIAQESOgoGZmlsdGVyGAQgASgLMh0uc3VpLnJwYy52Mi5UcmFuc2FjdGlvbkZp'
+    'bHRlckgDUgZmaWx0ZXKIAQESNwoHb3B0aW9ucxgFIAEoCzIYLnN1aS5ycGMudjIuUXVlcnlPcH'
+    'Rpb25zSARSB29wdGlvbnOIAQFCDAoKX3JlYWRfbWFza0ITChFfc3RhcnRfY2hlY2twb2ludEIR'
+    'Cg9fZW5kX2NoZWNrcG9pbnRCCQoHX2ZpbHRlckIKCghfb3B0aW9ucw==');
+
+@$core.Deprecated('Use listTransactionsResponseDescriptor instead')
+const ListTransactionsResponse$json = {
+  '1': 'ListTransactionsResponse',
+  '2': [
+    {
+      '1': 'transaction',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.ExecutedTransaction',
+      '9': 0,
+      '10': 'transaction',
+      '17': true
+    },
+    {
+      '1': 'watermark',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.Watermark',
+      '9': 1,
+      '10': 'watermark',
+      '17': true
+    },
+    {
+      '1': 'end',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.QueryEnd',
+      '9': 2,
+      '10': 'end',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_transaction'},
+    {'1': '_watermark'},
+    {'1': '_end'},
+  ],
+};
+
+/// Descriptor for `ListTransactionsResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listTransactionsResponseDescriptor = $convert.base64Decode(
+    'ChhMaXN0VHJhbnNhY3Rpb25zUmVzcG9uc2USRgoLdHJhbnNhY3Rpb24YASABKAsyHy5zdWkucn'
+    'BjLnYyLkV4ZWN1dGVkVHJhbnNhY3Rpb25IAFILdHJhbnNhY3Rpb26IAQESOAoJd2F0ZXJtYXJr'
+    'GAIgASgLMhUuc3VpLnJwYy52Mi5XYXRlcm1hcmtIAVIJd2F0ZXJtYXJriAEBEisKA2VuZBgDIA'
+    'EoCzIULnN1aS5ycGMudjIuUXVlcnlFbmRIAlIDZW5kiAEBQg4KDF90cmFuc2FjdGlvbkIMCgpf'
+    'd2F0ZXJtYXJrQgYKBF9lbmQ=');
+
+@$core.Deprecated('Use listEventsRequestDescriptor instead')
+const ListEventsRequest$json = {
+  '1': 'ListEventsRequest',
+  '2': [
+    {
+      '1': 'read_mask',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.FieldMask',
+      '9': 0,
+      '10': 'readMask',
+      '17': true
+    },
+    {
+      '1': 'start_checkpoint',
+      '3': 2,
+      '4': 1,
+      '5': 4,
+      '9': 1,
+      '10': 'startCheckpoint',
+      '17': true
+    },
+    {
+      '1': 'end_checkpoint',
+      '3': 3,
+      '4': 1,
+      '5': 4,
+      '9': 2,
+      '10': 'endCheckpoint',
+      '17': true
+    },
+    {
+      '1': 'filter',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.EventFilter',
+      '9': 3,
+      '10': 'filter',
+      '17': true
+    },
+    {
+      '1': 'options',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.QueryOptions',
+      '9': 4,
+      '10': 'options',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_read_mask'},
+    {'1': '_start_checkpoint'},
+    {'1': '_end_checkpoint'},
+    {'1': '_filter'},
+    {'1': '_options'},
+  ],
+};
+
+/// Descriptor for `ListEventsRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listEventsRequestDescriptor = $convert.base64Decode(
+    'ChFMaXN0RXZlbnRzUmVxdWVzdBI8CglyZWFkX21hc2sYASABKAsyGi5nb29nbGUucHJvdG9idW'
+    'YuRmllbGRNYXNrSABSCHJlYWRNYXNriAEBEi4KEHN0YXJ0X2NoZWNrcG9pbnQYAiABKARIAVIP'
+    'c3RhcnRDaGVja3BvaW50iAEBEioKDmVuZF9jaGVja3BvaW50GAMgASgESAJSDWVuZENoZWNrcG'
+    '9pbnSIAQESNAoGZmlsdGVyGAQgASgLMhcuc3VpLnJwYy52Mi5FdmVudEZpbHRlckgDUgZmaWx0'
+    'ZXKIAQESNwoHb3B0aW9ucxgFIAEoCzIYLnN1aS5ycGMudjIuUXVlcnlPcHRpb25zSARSB29wdG'
+    'lvbnOIAQFCDAoKX3JlYWRfbWFza0ITChFfc3RhcnRfY2hlY2twb2ludEIRCg9fZW5kX2NoZWNr'
+    'cG9pbnRCCQoHX2ZpbHRlckIKCghfb3B0aW9ucw==');
+
+@$core.Deprecated('Use listEventsResponseDescriptor instead')
+const ListEventsResponse$json = {
+  '1': 'ListEventsResponse',
+  '2': [
+    {
+      '1': 'event',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.Event',
+      '9': 0,
+      '10': 'event',
+      '17': true
+    },
+    {
+      '1': 'watermark',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.Watermark',
+      '9': 1,
+      '10': 'watermark',
+      '17': true
+    },
+    {
+      '1': 'end',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.QueryEnd',
+      '9': 2,
+      '10': 'end',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_event'},
+    {'1': '_watermark'},
+    {'1': '_end'},
+  ],
+};
+
+/// Descriptor for `ListEventsResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listEventsResponseDescriptor = $convert.base64Decode(
+    'ChJMaXN0RXZlbnRzUmVzcG9uc2USLAoFZXZlbnQYASABKAsyES5zdWkucnBjLnYyLkV2ZW50SA'
+    'BSBWV2ZW50iAEBEjgKCXdhdGVybWFyaxgCIAEoCzIVLnN1aS5ycGMudjIuV2F0ZXJtYXJrSAFS'
+    'CXdhdGVybWFya4gBARIrCgNlbmQYAyABKAsyFC5zdWkucnBjLnYyLlF1ZXJ5RW5kSAJSA2VuZI'
+    'gBAUIICgZfZXZlbnRCDAoKX3dhdGVybWFya0IGCgRfZW5k');

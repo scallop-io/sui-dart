@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
+import 'package:sui_dart/builder/transaction.dart' as sui_dart show Transaction;
+import 'package:sui_dart/grpc/types.dart';
 
 import '../sui_urls.dart';
 import 'graphql_core_client.dart';
@@ -195,6 +199,179 @@ class SuiGraphQLClient {
       const GraphQLNoVariables(),
     );
     return data.chainIdentifier;
+  }
+
+  // `executeTransaction` and `verifyZkLoginSignature` throw `UnsupportedError`.
+
+  Future<List<ObjectResult>> getObjects(
+    List<String> ids, {
+    ObjectIncludeOptions? include,
+  }) {
+    return core.getObjects(ids, include: include);
+  }
+
+  Future<Page<ObjectData>> getOwnedObjects(
+    String owner, {
+    String? objectType,
+    String? cursor,
+    int? limit,
+    ObjectIncludeOptions? include,
+  }) {
+    return core.getOwnedObjects(
+      owner,
+      type: objectType,
+      cursor: cursor,
+      limit: limit,
+      include: include,
+    );
+  }
+
+  Future<Page<CoinData>> getCoins(
+    String owner, {
+    String coinType = '0x2::sui::SUI',
+    String? cursor,
+    int? limit,
+  }) {
+    return core.getCoins(
+      owner,
+      coinType: coinType,
+      cursor: cursor,
+      limit: limit,
+    );
+  }
+
+  Future<Balance> getBalance(
+    String owner, {
+    String coinType = '0x2::sui::SUI',
+  }) {
+    return core.getBalance(owner, coinType: coinType);
+  }
+
+  Future<List<Balance>> getAllBalances(String owner) {
+    return core.getAllBalances(owner);
+  }
+
+  Future<CoinMetadata?> getCoinMetadata(String coinType) {
+    return core.getCoinMetadata(coinType);
+  }
+
+  Future<TransactionResponse> getTransaction(
+    String digest, {
+    TransactionIncludeOptions? include,
+  }) {
+    return core.getTransaction(digest, include: include);
+  }
+
+  Future<TransactionResponse> executeTransaction(
+    Uint8List transactionBytes,
+    List<String> signatures, {
+    TransactionIncludeOptions? include,
+  }) {
+    return core.executeTransaction(
+      transactionBytes,
+      signatures,
+      include: include,
+    );
+  }
+
+  Future<TransactionResponse> simulateTransaction(
+    sui_dart.Transaction transactionBlock, {
+    TransactionIncludeOptions? include,
+    bool? doGasSelection,
+    bool? checksEnabled,
+  }) {
+    return core.simulateTransaction(
+      transactionBlock,
+      include: include,
+      doGasSelection: doGasSelection,
+      checksEnabled: checksEnabled,
+    );
+  }
+
+  Future<Page<TransactionResponse>> listTransactions({
+    TransactionFilter? filter,
+    String? after,
+    String? before,
+    QueryOrder? order,
+    int? limit,
+    int? startCheckpoint,
+    int? endCheckpoint,
+    TransactionIncludeOptions? include,
+  }) {
+    return core.listTransactions(
+      filter: filter,
+      after: after,
+      before: before,
+      order: order,
+      limit: limit,
+      startCheckpoint: startCheckpoint,
+      endCheckpoint: endCheckpoint,
+      include: include,
+    );
+  }
+
+  Future<Page<Event>> listEvents({
+    EventFilter? filter,
+    String? after,
+    String? before,
+    QueryOrder? order,
+    int? limit,
+    int? startCheckpoint,
+    int? endCheckpoint,
+  }) {
+    return core.listEvents(
+      filter: filter,
+      after: after,
+      before: before,
+      order: order,
+      limit: limit,
+      startCheckpoint: startCheckpoint,
+      endCheckpoint: endCheckpoint,
+    );
+  }
+
+  Future<String> getReferenceGasPrice() {
+    return core.getReferenceGasPrice();
+  }
+
+  Future<SystemState> getCurrentSystemState() {
+    return core.getCurrentSystemState();
+  }
+
+  Future<ProtocolConfig> getProtocolConfig() {
+    return core.getProtocolConfig();
+  }
+
+  Future<Page<DynamicFieldEntry>> getDynamicFields(
+    String parentId, {
+    String? cursor,
+    int? limit,
+  }) {
+    return core.getDynamicFields(parentId, cursor: cursor, limit: limit);
+  }
+
+  Future<VerifySignatureResult> verifyZkLoginSignature(
+    Uint8List bytes,
+    String signature, {
+    String? address,
+  }) {
+    return core.verifyZkLoginSignature(bytes, signature, address: address);
+  }
+
+  Future<String?> defaultNameServiceName(String address) {
+    return core.defaultNameServiceName(address);
+  }
+
+  Future<String?> resolveNameServiceAddress(String name) {
+    return core.resolveNameServiceAddress(name);
+  }
+
+  Future<MoveFunction> getMoveFunction(
+    String packageId,
+    String moduleName,
+    String functionName,
+  ) {
+    return core.getMoveFunction(packageId, moduleName, functionName);
   }
 
   /// Transactions that affected [address], including sent and received ones.

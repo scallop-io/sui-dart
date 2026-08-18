@@ -41,7 +41,41 @@ class Page<T> {
   final bool hasNextPage;
   final String? nextCursor;
 
-  const Page({required this.data, required this.hasNextPage, this.nextCursor});
+  /// For reading back from this page. Only the ledger queries report one.
+  final String? startCursor;
+
+  const Page({
+    required this.data,
+    required this.hasNextPage,
+    this.nextCursor,
+    this.startCursor,
+  });
+}
+
+enum QueryOrder { ascending, descending }
+
+/// Narrows [SuiCoreClient.listTransactions]. Set exactly one predicate.
+class TransactionFilter {
+  final String? sender;
+
+  /// `package`, `package::module`, or `package::module::function`.
+  final String? function;
+
+  const TransactionFilter({this.sender, this.function});
+}
+
+/// Narrows [SuiCoreClient.listEvents]. Set exactly one predicate.
+class EventFilter {
+  /// The sender of the emitting transaction.
+  final String? sender;
+
+  /// `package::module`.
+  final String? emitModule;
+
+  /// `package::module` or a full type name.
+  final String? eventType;
+
+  const EventFilter({this.sender, this.emitModule, this.eventType});
 }
 
 sealed class Owner {
@@ -89,9 +123,47 @@ class ObjectSuccess extends ObjectResult {
   const ObjectSuccess(this.data);
 }
 
+/// Switch on this rather than [ObjectError.code]: it is transport-neutral.
+enum ObjectErrorReason { notFound, deleted, unknown }
+
 class ObjectError extends ObjectResult {
   final String error;
-  const ObjectError(this.error);
+
+  /// The transport's own code. A missing object reports `notExists` on every
+  /// transport; other gRPC statuses use the status name, e.g. `INTERNAL`.
+  final String code;
+  final ObjectErrorReason reason;
+
+  /// The requested object id, when the lookup identifies one.
+  final String? objectId;
+
+  final Object? cause;
+
+  const ObjectError(
+    this.error, {
+    this.code = 'unknown',
+    this.reason = ObjectErrorReason.unknown,
+    this.objectId,
+    this.cause,
+  });
+}
+
+enum TransactionErrorReason { notFound }
+
+/// Thrown by `getTransaction` when the digest is unknown.
+class TransactionError implements Exception {
+  final TransactionErrorReason reason;
+  final String digest;
+  final Object? cause;
+
+  const TransactionError(this.reason, this.digest, {this.cause});
+
+  String get message => switch (reason) {
+    TransactionErrorReason.notFound => 'Transaction $digest not found',
+  };
+
+  @override
+  String toString() => 'TransactionError: $message';
 }
 
 class ObjectData {
@@ -459,6 +531,11 @@ class Event {
   final Uint8List bcs;
   final Map<String, dynamic>? json;
 
+  // Set by the ledger queries only; null for events read off a transaction.
+  final String? checkpoint;
+  final String? transactionDigest;
+  final int? eventIndex;
+
   const Event({
     required this.packageId,
     required this.module,
@@ -466,6 +543,9 @@ class Event {
     required this.eventType,
     required this.bcs,
     this.json,
+    this.checkpoint,
+    this.transactionDigest,
+    this.eventIndex,
   });
 }
 
@@ -513,6 +593,18 @@ class SystemState {
     required this.referenceGasPrice,
     this.systemState,
     this.epochStartTimestampMs,
+  });
+}
+
+class ProtocolConfig {
+  final String protocolVersion;
+  final Map<String, bool> featureFlags;
+  final Map<String, String?> attributes;
+
+  const ProtocolConfig({
+    required this.protocolVersion,
+    required this.featureFlags,
+    required this.attributes,
   });
 }
 

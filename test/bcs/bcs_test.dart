@@ -262,6 +262,75 @@ void main() {
       expect(bytes, bytes2);
     });
   });
+
+  group('system transaction kinds', () {
+    final digest = toB58(Uint8List.fromList(List.filled(32, 7)));
+
+    test('round-trips ConsensusCommitPrologueV3', () {
+      final bytes = SuiBcs.TransactionKind.serialize({
+        'ConsensusCommitPrologueV3': {
+          'epoch': BigInt.from(5),
+          'round': BigInt.from(9),
+          'subDagIndex': null,
+          'commitTimestampMs': BigInt.from(1700000000000),
+          'consensusCommitDigest': digest,
+          'consensusDeterminedVersionAssignments': {
+            'CancelledTransactionsV2': [],
+          },
+        },
+      }).toBytes();
+
+      final parsed = SuiBcs.TransactionKind.parse(bytes);
+      expect(parsed['\$kind'], 'ConsensusCommitPrologueV3');
+      expect(
+        parsed['ConsensusCommitPrologueV3']['consensusCommitDigest'],
+        digest,
+      );
+      expect(SuiBcs.TransactionKind.serialize(parsed).toBytes(), bytes);
+    });
+
+    test('round-trips EndOfEpochTransaction', () {
+      final bytes = SuiBcs.TransactionKind.serialize({
+        'EndOfEpochTransaction': [
+          {'AuthenticatorStateCreate': true},
+          {'BridgeCommitteeInit': BigInt.from(3)},
+          {
+            'WriteAccumulatorStorageCost': {'storageCost': BigInt.from(42)},
+          },
+        ],
+      }).toBytes();
+
+      final parsed = SuiBcs.TransactionKind.parse(bytes);
+      expect(parsed['EndOfEpochTransaction'].length, 3);
+      expect(SuiBcs.TransactionKind.serialize(parsed).toBytes(), bytes);
+    });
+
+    test('round-trips Genesis', () {
+      final bytes = SuiBcs.TransactionKind.serialize({
+        'Genesis': {
+          'objects': [
+            {
+              'RawObject': {
+                'data': {
+                  'Move': {
+                    'type': {'GasCoin': true},
+                    'hasPublicTransfer': true,
+                    'version': BigInt.one,
+                    'contents': [1, 2, 3],
+                  },
+                },
+                'owner': {'Immutable': true},
+              },
+            },
+          ],
+        },
+      }).toBytes();
+
+      final parsed = SuiBcs.TransactionKind.parse(bytes);
+      expect(parsed['Genesis']['objects'].length, 1);
+      expect(SuiBcs.TransactionKind.serialize(parsed).toBytes(), bytes);
+    });
+  });
 }
 
 SuiObjectRef ref() {

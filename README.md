@@ -25,7 +25,7 @@ Or add it to `pubspec.yaml` directly:
 
 ```yaml
 dependencies:
-  sui_dart: ^0.8.8
+  sui_dart: ^0.10.0
 ```
 
 ## Demo
@@ -45,7 +45,9 @@ Two transports, both implementing the same `SuiCoreClient` contract:
 | Simulate / dry-run | ✅ | ✅ |
 | Execute (sign & submit) | ✅ | ❌ (not implemented) |
 | zkLogin signature verification | ✅ | ❌ (not implemented) |
-| Name service lookup | ✅ | ✅ |
+| Name service lookup and resolution | ✅ | ✅ |
+| Ledger queries (`listTransactions`, `listEvents`) | ✅ | ✅ |
+| Protocol config | ✅ | ✅ |
 
 Use gRPC by default, and for anything that signs or executes. Use GraphQL when
 the deployment target is a GraphQL indexer, or the workload is read-only.
@@ -64,7 +66,7 @@ final balance = await client.getBalance('0xa2d8bb82df40770ac5bc8628d8070b041a133
 import 'package:sui_dart/sui.dart';
 
 final client = SuiGraphQLClient.forNetwork(SuiNetwork.mainnet);
-final balance = await client.core.getBalance('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
+final balance = await client.getBalance('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
 ```
 
 ### Getting coins from the faucet
@@ -441,12 +443,70 @@ final allBalances = await client.getAllBalances('0xa2d8bb82df40770ac5bc8628d8070
 final suiBalance = await client.getBalance('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
 ```
 
+#### Ledger Queries
+
+`listTransactions` and `listEvents` read the indexed ledger with a filter, a page
+size, and a cursor. `after` pages forward, `before` pages back, and only one may
+be given:
+
+```dart
+final page = await client.listTransactions(
+    filter: const TransactionFilter(sender: '0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2'),
+    limit: 20,
+);
+
+// Newest first, then keep reading back
+final newest = await client.listTransactions(order: QueryOrder.descending, limit: 20);
+final older = await client.listTransactions(
+    order: QueryOrder.descending,
+    before: newest.nextCursor,
+    limit: 20,
+);
+```
+
+Filter transactions by `sender` or by `function` (`package`, `package::module`, or
+`package::module::function`); paging a function filter requires the fully
+qualified form. Events filter by `sender`, `emitModule`, or `eventType`:
+
+```dart
+final events = await client.listEvents(
+    filter: const EventFilter(emitModule: '0x2::coin'),
+    limit: 50,
+);
+
+for (final event in events.data) {
+    print('${event.eventType} in ${event.transactionDigest} at ${event.checkpoint}');
+}
+```
+
+Both accept optional `startCheckpoint` (inclusive) and `endCheckpoint`
+(exclusive) bounds.
+
+#### Name Service
+
+```dart
+final address = await client.resolveNameServiceAddress('example.sui');
+final name = await client.defaultNameServiceName('0xa2d8bb82df40770ac5bc8628d8070b041a13386fef17db27b32f3b0f316ae5a2');
+```
+
+`resolveNameServiceAddress` returns `null` when the name is unregistered or
+expired.
+
+#### Protocol Config
+
+```dart
+final config = await client.getProtocolConfig();
+final maxTxGas = config.attributes['max_tx_gas'];
+final coinRegistry = config.featureFlags['enable_coin_registry'] ?? false;
+```
+
 ### Events
 
-Standalone event queries (`queryEventsByModule`) are a GraphQL capability; see
-[GraphQL Queries](#graphql-queries). Neither transport's client wrapper exposes
-checkpoint reads or live event subscriptions today (the raw gRPC subscription
-service exists in `lib/grpc/generated/`, but isn't wrapped by `SuiGrpcClient`).
+Use `listEvents` from [Ledger Queries](#ledger-queries) on either transport.
+`SuiGraphQLClient` also has `queryEventsByModule` with GraphQL-shaped results; see
+[GraphQL Queries](#graphql-queries). Neither client wraps checkpoint reads or live
+event subscriptions today. The raw gRPC subscription service is generated in
+`lib/grpc/generated/`, but `SuiGrpcClient` does not expose it.
 
 ## License
 

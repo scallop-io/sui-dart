@@ -181,12 +181,58 @@ class SuiGrpcClient {
     );
   }
 
+  Future<Page<TransactionResponse>> listTransactions({
+    TransactionFilter? filter,
+    String? after,
+    String? before,
+    QueryOrder? order,
+    int? limit,
+    int? startCheckpoint,
+    int? endCheckpoint,
+    TransactionIncludeOptions? include,
+  }) {
+    return core.listTransactions(
+      filter: filter,
+      after: after,
+      before: before,
+      order: order,
+      limit: limit,
+      startCheckpoint: startCheckpoint,
+      endCheckpoint: endCheckpoint,
+      include: include,
+    );
+  }
+
+  Future<Page<Event>> listEvents({
+    EventFilter? filter,
+    String? after,
+    String? before,
+    QueryOrder? order,
+    int? limit,
+    int? startCheckpoint,
+    int? endCheckpoint,
+  }) {
+    return core.listEvents(
+      filter: filter,
+      after: after,
+      before: before,
+      order: order,
+      limit: limit,
+      startCheckpoint: startCheckpoint,
+      endCheckpoint: endCheckpoint,
+    );
+  }
+
   Future<String> getReferenceGasPrice() {
     return core.getReferenceGasPrice();
   }
 
   Future<SystemState> getCurrentSystemState() {
     return core.getCurrentSystemState();
+  }
+
+  Future<ProtocolConfig> getProtocolConfig() {
+    return core.getProtocolConfig();
   }
 
   Future<Page<DynamicFieldEntry>> getDynamicFields(
@@ -207,6 +253,10 @@ class SuiGrpcClient {
 
   Future<String?> defaultNameServiceName(String address) {
     return core.defaultNameServiceName(address);
+  }
+
+  Future<String?> resolveNameServiceAddress(String name) {
+    return core.resolveNameServiceAddress(name);
   }
 
   Future<MoveFunction> getMoveFunction(

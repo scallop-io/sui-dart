@@ -177,7 +177,6 @@ Future<void> resolveCoinBalance(
   // Per-type split results, computed when the first intent of a type is seen.
   final typeResults = <String, List<dynamic>>{};
   final typeNextIntent = <String, int>{};
-  final mergedCoins = <String, dynamic>{};
   final exactBalanceByType = <String, bool>{};
 
   var index = 0;
@@ -228,7 +227,6 @@ Future<void> resolveCoinBalance(
           ),
         );
       }
-      mergedCoins[type] = baseCoin;
 
       final splitCmdIndex = index + commands.length;
       commands.add(
@@ -267,6 +265,17 @@ Future<void> resolveCoinBalance(
           results.add(splitResult);
         }
       }
+      // Cleanup goes here, not appended: nothing may follow a Random MoveCall.
+      if (type != 'gas' && exactBalanceByType[type] == true) {
+        commands.add(
+          Commands.moveCall({
+            'target': '0x2::coin::destroy_zero',
+            'typeArguments': [coinType],
+            'arguments': [baseCoin],
+          }),
+        );
+      }
+
       typeResults[type] = results;
       typeNextIntent[type] = 0;
     }
@@ -276,22 +285,6 @@ Future<void> resolveCoinBalance(
 
     transactionData.replaceCommand(index, commands, intentResult);
     index += commands.length;
-  }
-
-  // Remainder: a merged non-gas coin that exactly matched is now zero — destroy
-  // it. Surplus coins (and the gas coin) are left owned by the sender.
-  for (final entry in mergedCoins.entries) {
-    if (entry.key == 'gas') continue;
-    if (exactBalanceByType[entry.key] == true) {
-      final coinType = entry.key;
-      transactionData.commands.add(
-        Commands.moveCall({
-          'target': '0x2::coin::destroy_zero',
-          'typeArguments': [coinType],
-          'arguments': [entry.value],
-        }),
-      );
-    }
   }
 
   return next();

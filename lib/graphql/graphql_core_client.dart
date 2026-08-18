@@ -4,7 +4,8 @@ import 'dart:typed_data';
 import 'package:sui_dart/builder/transaction.dart' show Transaction;
 import 'package:sui_dart/core/sui_core_client.dart';
 import 'package:sui_dart/grpc/types.dart';
-import 'package:sui_dart/types/common.dart' show normalizeStructTagString;
+import 'package:sui_dart/types/common.dart'
+    show normalizeStructTagString, normalizeSuiAddress;
 
 import 'graphql_operation.dart';
 import 'operations.graphql.dart' as generated;
@@ -30,6 +31,7 @@ typedef _SimEventNode =
     generated.Query$SimulateTransaction$simulateTransaction$effects$events$nodes;
 typedef _SimCommand =
     generated.Query$SimulateTransaction$simulateTransaction$outputs;
+typedef _ListedEvent = generated.Query$ListEvents$events$nodes;
 
 /// GraphQL-backed [SuiCoreClient]. [executeTransaction] and
 /// [verifyZkLoginSignature] throw `UnsupportedError`; use the gRPC transport
@@ -154,6 +156,47 @@ class GraphQLCoreClient implements SuiCoreClient {
         document: generated.documentNodeQueryGetDefaultNameServiceName,
         operationName: 'GetDefaultNameServiceName',
         decodeData: generated.Query$GetDefaultNameServiceName.fromJson,
+        encodeVariables: (v) => v.toJson(),
+      );
+
+  static final _resolveNameServiceAddressOperation =
+      GraphQLOperation<
+        generated.Query$ResolveNameServiceAddress,
+        generated.Variables$Query$ResolveNameServiceAddress
+      >(
+        document: generated.documentNodeQueryResolveNameServiceAddress,
+        operationName: 'ResolveNameServiceAddress',
+        decodeData: generated.Query$ResolveNameServiceAddress.fromJson,
+        encodeVariables: (v) => v.toJson(),
+      );
+
+  static final _getProtocolConfigOperation =
+      GraphQLOperation<generated.Query$GetProtocolConfig, GraphQLNoVariables>(
+        document: generated.documentNodeQueryGetProtocolConfig,
+        operationName: 'GetProtocolConfig',
+        decodeData: generated.Query$GetProtocolConfig.fromJson,
+        encodeVariables: (_) => const {},
+      );
+
+  static final _listTransactionsOperation =
+      GraphQLOperation<
+        generated.Query$ListTransactions,
+        generated.Variables$Query$ListTransactions
+      >(
+        document: generated.documentNodeQueryListTransactions,
+        operationName: 'ListTransactions',
+        decodeData: generated.Query$ListTransactions.fromJson,
+        encodeVariables: (v) => v.toJson(),
+      );
+
+  static final _listEventsOperation =
+      GraphQLOperation<
+        generated.Query$ListEvents,
+        generated.Variables$Query$ListEvents
+      >(
+        document: generated.documentNodeQueryListEvents,
+        operationName: 'ListEvents',
+        decodeData: generated.Query$ListEvents.fromJson,
         encodeVariables: (v) => v.toJson(),
       );
 
@@ -309,13 +352,19 @@ class GraphQLCoreClient implements SuiCoreClient {
             .toList(),
       ),
     );
-    return data.multiGetObjects
-        .map<ObjectResult>(
-          (obj) => obj == null
-              ? const ObjectError('Object not found')
-              : ObjectSuccess(_mapObject(obj)),
-        )
-        .toList();
+    final objects = data.multiGetObjects;
+    return [
+      for (var i = 0; i < objects.length; i++)
+        if (objects[i] == null)
+          ObjectError(
+            'Object ${objectIds[i]} not found',
+            code: 'notExists',
+            reason: ObjectErrorReason.notFound,
+            objectId: objectIds[i],
+          )
+        else
+          ObjectSuccess(_mapObject(objects[i]!)),
+    ];
   }
 
   @override
@@ -447,7 +496,9 @@ class GraphQLCoreClient implements SuiCoreClient {
       generated.Variables$Query$GetTransaction(digest: digest),
     );
     final tx = data.transaction;
-    if (tx == null) throw Exception('Transaction not found: $digest');
+    if (tx == null) {
+      throw TransactionError(TransactionErrorReason.notFound, digest);
+    }
     final effects = tx.effects;
     final timestamp = effects?.timestamp;
     return TransactionResponse(
@@ -478,12 +529,13 @@ class GraphQLCoreClient implements SuiCoreClient {
     final txJson =
         transactionBlock.toGrpcTransaction().toProto3Json()
             as Map<String, dynamic>;
+    final payment = transactionBlock.getData().gasData.payment;
     final data = await _client.executeData(
       _simulateTransactionOperation,
       generated.Variables$Query$SimulateTransaction(
         tx: txJson,
         checksEnabled: checksEnabled,
-        doGasSelection: doGasSelection,
+        doGasSelection: doGasSelection ?? (payment != null && payment.isEmpty),
       ),
     );
     final result = data.simulateTransaction;
@@ -495,6 +547,182 @@ class GraphQLCoreClient implements SuiCoreClient {
       ),
       events: effects?.events?.nodes.map(_mapSimEvent).toList(),
       commandResults: result.outputs?.map(_mapSimCommand).toList(),
+    );
+  }
+
+  @override
+  Future<Page<TransactionResponse>> listTransactions({
+    TransactionFilter? filter,
+    String? after,
+    String? before,
+    QueryOrder? order,
+    int? limit,
+    int? startCheckpoint,
+    int? endCheckpoint,
+    TransactionIncludeOptions? include,
+  }) async {
+    final pagination = resolvePagination(
+      after: after,
+      before: before,
+      order: order,
+      limit: limit,
+    );
+    final resolved = filter == null ? null : resolveTransactionFilter(filter);
+    validateTransactionQuery(resolved, pagination);
+
+    final data = await _client.executeData(
+      _listTransactionsOperation,
+      generated.Variables$Query$ListTransactions(
+        filter: schema.Input$TransactionFilter(
+          sentAddress: resolved?.sender,
+          function: resolved?.package == null ? null : resolved!.functionTarget,
+          afterCheckpoint: _afterCheckpoint(startCheckpoint),
+          beforeCheckpoint: endCheckpoint,
+        ),
+        first: pagination.descending ? null : pagination.limit,
+        after: pagination.after,
+        last: pagination.descending ? pagination.limit : null,
+        before: pagination.before,
+      ),
+    );
+
+    final connection = data.transactions;
+    if (connection == null) {
+      return Page(data: const [], hasNextPage: false);
+    }
+    // Reading back returns nodes ascending, so flip them for a descending page.
+    final nodes = pagination.descending
+        ? connection.nodes.reversed.toList()
+        : connection.nodes;
+
+    return _pageOf(
+      nodes.map((tx) {
+        final effects = tx.effects;
+        final timestamp = effects?.timestamp;
+        return TransactionResponse(
+          digest: tx.digest,
+          status: ExecutionStatus(
+            success: effects?.status == schema.Enum$ExecutionStatus.SUCCESS,
+          ),
+          timestampMs: timestamp == null
+              ? null
+              : DateTime.tryParse(timestamp)?.millisecondsSinceEpoch.toString(),
+        );
+      }).toList(),
+      descending: pagination.descending,
+      hasNextPage: connection.pageInfo.hasNextPage,
+      hasPreviousPage: connection.pageInfo.hasPreviousPage,
+      startCursor: connection.pageInfo.startCursor,
+      endCursor: connection.pageInfo.endCursor,
+    );
+  }
+
+  @override
+  Future<Page<Event>> listEvents({
+    EventFilter? filter,
+    String? after,
+    String? before,
+    QueryOrder? order,
+    int? limit,
+    int? startCheckpoint,
+    int? endCheckpoint,
+  }) async {
+    final pagination = resolvePagination(
+      after: after,
+      before: before,
+      order: order,
+      limit: limit,
+    );
+    final resolved = filter == null ? null : resolveEventFilter(filter);
+
+    final data = await _client.executeData(
+      _listEventsOperation,
+      generated.Variables$Query$ListEvents(
+        filter: schema.Input$EventFilter(
+          sender: resolved?.sender,
+          module: resolved?.emitModule,
+          type: resolved?.eventType,
+          afterCheckpoint: _afterCheckpoint(startCheckpoint),
+          beforeCheckpoint: endCheckpoint,
+        ),
+        first: pagination.descending ? null : pagination.limit,
+        after: pagination.after,
+        last: pagination.descending ? pagination.limit : null,
+        before: pagination.before,
+      ),
+    );
+
+    final connection = data.events;
+    if (connection == null) {
+      return Page(data: const [], hasNextPage: false);
+    }
+    final nodes = pagination.descending
+        ? connection.nodes.reversed.toList()
+        : connection.nodes;
+
+    return _pageOf(
+      nodes.map(_mapListedEvent).toList(),
+      descending: pagination.descending,
+      hasNextPage: connection.pageInfo.hasNextPage,
+      hasPreviousPage: connection.pageInfo.hasPreviousPage,
+      startCursor: connection.pageInfo.startCursor,
+      endCursor: connection.pageInfo.endCursor,
+    );
+  }
+
+  /// GraphQL's bound is exclusive; [startCheckpoint] is inclusive.
+  static int? _afterCheckpoint(int? startCheckpoint) =>
+      startCheckpoint == null || startCheckpoint == 0
+      ? null
+      : startCheckpoint - 1;
+
+  /// Reading back reverses the connection, so the cursors and flag swap ends.
+  static Page<T> _pageOf<T>(
+    List<T> data, {
+    required bool descending,
+    required bool hasNextPage,
+    required bool hasPreviousPage,
+    required String? startCursor,
+    required String? endCursor,
+  }) {
+    return Page(
+      data: data,
+      hasNextPage: descending ? hasPreviousPage : hasNextPage,
+      nextCursor: descending ? startCursor : endCursor,
+      startCursor: descending ? endCursor : startCursor,
+    );
+  }
+
+  static Event _mapListedEvent(_ListedEvent event) {
+    final packageId = event.transactionModule?.package?.address;
+    final module = event.transactionModule?.name;
+    final sender = event.sender?.address;
+    final eventType = event.contents?.type?.repr;
+    final digest = event.transaction?.digest;
+
+    if (packageId == null ||
+        module == null ||
+        sender == null ||
+        eventType == null ||
+        digest == null) {
+      throw const GraphQLResponseDecodingException(
+        'ListEvents',
+        'event is missing required fields',
+      );
+    }
+
+    final bcs = event.contents?.bcs;
+    return Event(
+      packageId: normalizeSuiAddress(packageId),
+      module: module,
+      sender: normalizeSuiAddress(sender),
+      eventType: normalizeStructTagString(eventType),
+      bcs: bcs == null ? Uint8List(0) : base64Decode(bcs),
+      json: event.contents?.json,
+      checkpoint: event.transaction?.effects?.checkpoint?.sequenceNumber
+          .toString(),
+      transactionDigest: digest,
+      eventIndex: event.sequenceNumber,
     );
   }
 
@@ -521,6 +749,24 @@ class GraphQLCoreClient implements SuiCoreClient {
       epochStartTimestampMs: start == null
           ? null
           : DateTime.tryParse(start)?.millisecondsSinceEpoch.toString(),
+    );
+  }
+
+  @override
+  Future<ProtocolConfig> getProtocolConfig() async {
+    final data = await _client.executeData(
+      _getProtocolConfigOperation,
+      const GraphQLNoVariables(),
+    );
+    final configs = data.protocolConfigs;
+    return ProtocolConfig(
+      protocolVersion: configs?.protocolVersion.toString() ?? '0',
+      featureFlags: {
+        for (final flag in configs?.featureFlags ?? []) flag.key: flag.value,
+      },
+      attributes: {
+        for (final config in configs?.configs ?? []) config.key: config.value,
+      },
     );
   }
 
@@ -561,6 +807,15 @@ class GraphQLCoreClient implements SuiCoreClient {
       generated.Variables$Query$GetDefaultNameServiceName(address: address),
     );
     return data.address?.defaultNameRecord?.domain;
+  }
+
+  @override
+  Future<String?> resolveNameServiceAddress(String name) async {
+    final data = await _client.executeData(
+      _resolveNameServiceAddressOperation,
+      generated.Variables$Query$ResolveNameServiceAddress(name: name),
+    );
+    return data.address?.address;
   }
 
   @override

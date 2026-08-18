@@ -3,6 +3,15 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:sui_dart/graphql/operations.graphql.dart' as generated;
+import 'package:sui_dart/grpc/types.dart'
+    show
+        EventFilter,
+        ObjectError,
+        ObjectErrorReason,
+        QueryOrder,
+        TransactionError,
+        TransactionErrorReason,
+        TransactionFilter;
 import 'package:sui_dart/sui.dart';
 import 'package:test/test.dart';
 
@@ -36,6 +45,9 @@ class _MockAdapter implements HttpClientAdapter {
 }
 
 Dio _dioWith(_MockAdapter adapter) => Dio()..httpClientAdapter = adapter;
+
+/// `0xab` normalized, as the filters send it.
+final _pkg = normalizeSuiAddress('0xab');
 
 void main() {
   test('network endpoints and transport request shape', () async {
@@ -560,4 +572,323 @@ void main() {
     expect(events.hasNextPage, isTrue);
     expect(events.endCursor, 'next-event');
   });
+
+  test('listTransactions pages forward with a function filter', () async {
+    final adapter = _MockAdapter((body) {
+      expect(body['variables'], {
+        'filter': {'function': '$_pkg::coin::mint', 'beforeCheckpoint': 900},
+        'first': 2,
+        'after': 'cursor-1',
+      });
+      return {
+        'data': {
+          'transactions': {
+            'pageInfo': {
+              'hasNextPage': true,
+              'hasPreviousPage': true,
+              'startCursor': 'page-start',
+              'endCursor': 'page-end',
+            },
+            'nodes': [
+              {
+                'digest': 'D1',
+                'effects': {
+                  'status': 'SUCCESS',
+                  'timestamp': '2026-07-20T00:00:00Z',
+                },
+              },
+              {
+                'digest': 'D2',
+                'effects': {'status': 'FAILURE', 'timestamp': null},
+              },
+            ],
+          },
+        },
+      };
+    });
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final page = await client.listTransactions(
+      filter: TransactionFilter(function: '0xab::coin::mint'),
+      after: 'cursor-1',
+      limit: 2,
+      endCheckpoint: 900,
+    );
+
+    expect(page.data.map((tx) => tx.digest), ['D1', 'D2']);
+    expect(page.data.first.status.success, isTrue);
+    expect(page.data.last.status.success, isFalse);
+    expect(page.hasNextPage, isTrue);
+    expect(page.nextCursor, 'page-end');
+    expect(page.startCursor, 'page-start');
+  });
+
+  test('listTransactions reads back for a descending page', () async {
+    final adapter = _MockAdapter((body) {
+      expect((body['variables'] as Map)['last'], 2);
+      expect((body['variables'] as Map)['before'], 'cursor-9');
+      expect((body['variables'] as Map).containsKey('first'), isFalse);
+      return {
+        'data': {
+          'transactions': {
+            'pageInfo': {
+              'hasNextPage': false,
+              'hasPreviousPage': true,
+              'startCursor': 'page-start',
+              'endCursor': 'page-end',
+            },
+            'nodes': [
+              {
+                'digest': 'older',
+                'effects': {'status': 'SUCCESS', 'timestamp': null},
+              },
+              {
+                'digest': 'newer',
+                'effects': {'status': 'SUCCESS', 'timestamp': null},
+              },
+            ],
+          },
+        },
+      };
+    });
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final page = await client.listTransactions(before: 'cursor-9', limit: 2);
+
+    // Backwards reads come back ascending; the page is newest first.
+    expect(page.data.map((tx) => tx.digest), ['newer', 'older']);
+    expect(page.hasNextPage, isTrue);
+    expect(page.nextCursor, 'page-start');
+    expect(page.startCursor, 'page-end');
+  });
+
+  test('listEvents maps event entries', () async {
+    final adapter = _MockAdapter((body) {
+      expect((body['variables'] as Map)['filter'], {'module': '$_pkg::coin'});
+      return {
+        'data': {
+          'events': {
+            'pageInfo': {
+              'hasNextPage': false,
+              'hasPreviousPage': false,
+              'startCursor': 'e-start',
+              'endCursor': 'e-end',
+            },
+            'nodes': [
+              {
+                'sequenceNumber': 3,
+                'sender': {'address': '0xsender'},
+                'transactionModule': {
+                  'name': 'coin',
+                  'package': {'address': '0xab'},
+                },
+                'contents': {
+                  'type': {'repr': '0xab::coin::Minted'},
+                  'json': {'amount': '5'},
+                  'bcs': 'AQID',
+                },
+                'transaction': {
+                  'digest': 'tx-1',
+                  'effects': {
+                    'checkpoint': {'sequenceNumber': 77},
+                  },
+                },
+              },
+            ],
+          },
+        },
+      };
+    });
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final page = await client.listEvents(
+      filter: EventFilter(emitModule: '0xab::coin'),
+    );
+
+    final event = page.data.single;
+    expect(event.module, 'coin');
+    expect(event.packageId, normalizeSuiAddress('0xab'));
+    expect(event.sender, normalizeSuiAddress('0xsender'));
+    expect(event.eventType, normalizeStructTagString('0xab::coin::Minted'));
+    expect(event.bcs, [1, 2, 3]);
+    expect(event.json, {'amount': '5'});
+    expect(event.checkpoint, '77');
+    expect(event.transactionDigest, 'tx-1');
+    expect(event.eventIndex, 3);
+    expect(page.hasNextPage, isFalse);
+  });
+
+  test('ledger queries reject conflicting pagination', () async {
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(_MockAdapter((_) => {'data': <String, dynamic>{}})),
+    );
+
+    expect(
+      () => client.listEvents(after: 'a', before: 'b'),
+      throwsA(isA<ArgumentError>()),
+    );
+    expect(
+      () => client.listEvents(after: 'a', order: QueryOrder.descending),
+      throwsA(isA<ArgumentError>()),
+    );
+    expect(
+      () => client.listTransactions(
+        filter: const TransactionFilter(function: '0xab'),
+        after: 'a',
+      ),
+      throwsA(isA<ArgumentError>()),
+    );
+    expect(
+      () => client.listEvents(
+        filter: const EventFilter(sender: '0x1', eventType: '0xab::coin::X'),
+      ),
+      throwsA(isA<ArgumentError>()),
+    );
+  });
+
+  test('missing objects come back as typed lookup errors', () async {
+    final adapter = _MockAdapter(
+      (_) => {
+        'data': {
+          'multiGetObjects': [null],
+        },
+      },
+    );
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final results = await client.getObjects(['0x1']);
+    final error = results.single as ObjectError;
+    expect(error.reason, ObjectErrorReason.notFound);
+    expect(error.code, 'notExists');
+    expect(error.objectId, '0x1');
+  });
+
+  test('a missing transaction throws TransactionError', () async {
+    final adapter = _MockAdapter(
+      (_) => {
+        'data': {'transaction': null},
+      },
+    );
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    await expectLater(
+      client.getTransaction('0xdead'),
+      throwsA(
+        isA<TransactionError>()
+            .having((e) => e.reason, 'reason', TransactionErrorReason.notFound)
+            .having((e) => e.digest, 'digest', '0xdead'),
+      ),
+    );
+  });
+
+  test('resolves a SuiNS name to an address', () async {
+    final adapter = _MockAdapter(
+      (_) => {
+        'data': {
+          'address': {'address': '0xabc'},
+        },
+      },
+    );
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    expect(await client.resolveNameServiceAddress('example.sui'), '0xabc');
+    expect(adapter.lastBody!['variables'], {'name': 'example.sui'});
+  });
+
+  test('unregistered SuiNS names resolve to null', () async {
+    final adapter = _MockAdapter(
+      (_) => {
+        'data': {'address': null},
+      },
+    );
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    expect(await client.resolveNameServiceAddress('missing.sui'), isNull);
+  });
+
+  test('protocol config maps attributes and feature flags', () async {
+    final adapter = _MockAdapter(
+      (_) => {
+        'data': {
+          'protocolConfigs': {
+            'protocolVersion': 92,
+            'configs': [
+              {'key': 'max_tx_gas', 'value': '50000000000'},
+              {'key': 'unset_limit', 'value': null},
+            ],
+            'featureFlags': [
+              {'key': 'enable_coin_registry', 'value': true},
+            ],
+          },
+        },
+      },
+    );
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final config = await client.getProtocolConfig();
+    expect(config.protocolVersion, '92');
+    expect(config.attributes['max_tx_gas'], '50000000000');
+    expect(config.attributes.containsKey('unset_limit'), isTrue);
+    expect(config.attributes['unset_limit'], isNull);
+    expect(config.featureFlags['enable_coin_registry'], isTrue);
+  });
+
+  test(
+    'simulate requests gas selection only for an empty gas payment',
+    () async {
+      final adapter = _MockAdapter(
+        (_) => {
+          'data': {'simulateTransaction': <String, dynamic>{}},
+        },
+      );
+      final client = SuiGraphQLClient(
+        endpoint: 'https://example.test/graphql',
+        dio: _dioWith(adapter),
+      );
+
+      final tx = Transaction();
+      tx.setSender(
+        '0x000000000000000000000000000000000000000000000000000000000000aaaa',
+      );
+
+      await client.simulateTransaction(tx);
+      var variables = adapter.lastBody!['variables'] as Map;
+      expect(variables['doGasSelection'], isFalse);
+
+      // An empty payment means gas comes from the sender's address balance.
+      tx.setGasPayment([]);
+      await client.simulateTransaction(tx);
+      variables = adapter.lastBody!['variables'] as Map;
+      expect(variables['doGasSelection'], isTrue);
+
+      await client.simulateTransaction(tx, doGasSelection: false);
+      variables = adapter.lastBody!['variables'] as Map;
+      expect(variables['doGasSelection'], isFalse);
+    },
+  );
 }

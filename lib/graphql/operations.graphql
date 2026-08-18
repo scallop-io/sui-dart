@@ -456,3 +456,103 @@ query EventsByModule($module: String!, $first: Int!, $after: String) {
     }
   }
 }
+
+query ResolveNameServiceAddress($name: String!) {
+  address(name: $name) {
+    address
+  }
+}
+
+query GetProtocolConfig {
+  protocolConfigs {
+    protocolVersion
+    configs {
+      key
+      value
+    }
+    featureFlags {
+      key
+      value
+    }
+  }
+}
+
+query ListTransactions(
+  $filter: TransactionFilter
+  $first: Int
+  $after: String
+  $last: Int
+  $before: String
+) {
+  transactions(
+    filter: $filter
+    first: $first
+    after: $after
+    last: $last
+    before: $before
+  ) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    nodes {
+      digest
+      effects {
+        status
+        timestamp
+      }
+    }
+  }
+}
+
+query ListEvents(
+  $filter: EventFilter
+  $first: Int
+  $after: String
+  $last: Int
+  $before: String
+) {
+  events(
+    filter: $filter
+    first: $first
+    after: $after
+    last: $last
+    before: $before
+  ) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    nodes {
+      sequenceNumber
+      sender {
+        address
+      }
+      transactionModule {
+        name
+        package {
+          address
+        }
+      }
+      contents {
+        type {
+          repr
+        }
+        json
+        bcs
+      }
+      transaction {
+        digest
+        effects {
+          checkpoint {
+            sequenceNumber
+          }
+        }
+      }
+    }
+  }
+}

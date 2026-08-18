@@ -1,3 +1,74 @@
+## 0.10.0
+
+Synced to `f033be4`.
+
+### Breaking
+
+* `SuiCoreClient` gained `resolveNameServiceAddress`, `getProtocolConfig`,
+  `listTransactions`, and `listEvents`; implementations of the interface must add
+  all four.
+* `simulateTransaction` no longer requests gas selection by default. It is
+  requested only when the transaction's gas payment is an explicitly empty list,
+  which means gas is paid from the sender's address balance; a transaction with
+  no gas payment is simulated against a mocked gas coin. Pass
+  `doGasSelection: true` for the previous behavior.
+* `getTransaction` throws `TransactionError` when the digest is unknown. GraphQL
+  threw a bare `Exception`; gRPC returned an empty response.
+
+### Fixed
+
+* `coinWithBalance` / `createBalance`: the `coin::destroy_zero` cleanup for an
+  exact-balance match is spliced in with the intent's own commands instead of
+  appended to the block. Appended cleanup can land after a Move call that
+  consumes `Random`, which the chain rejects.
+* BCS `TransactionKind` decodes system transactions. `ChangeEpoch`, `Genesis`,
+  and `ConsensusCommitPrologue` were unparseable placeholders and now have typed
+  payloads; `AuthenticatorStateUpdate`, `EndOfEpochTransaction`,
+  `RandomnessStateUpdate`, `ConsensusCommitPrologueV2`–`V4`, and
+  `ProgrammableSystemTransaction` were missing entirely.
+* A transaction that pays gas from the sender's address balance is built with a
+  `ValidDuring` expiration covering the current and next epoch. With no gas coin
+  version to bound it and no expiration set, such a transaction could be
+  replayed.
+
+### Added
+
+* `listTransactions` and `listEvents` read the indexed ledger on both transports,
+  with sender/function and sender/module/type filters, cursor paging in either
+  direction, and optional checkpoint bounds. `Page` gained `startCursor` for
+  reading back, and `Event` gained `checkpoint`, `transactionDigest`, and
+  `eventIndex`.
+* `resolveNameServiceAddress` resolves a SuiNS name to an address (`null` when
+  the name is unregistered or expired), on both transports.
+* `getProtocolConfig` returns `protocolVersion`, `featureFlags`, and
+  `attributes`, on both transports.
+* `SuiGraphQLClient` forwards the whole Core API as top-level methods, matching
+  `SuiGrpcClient`. `executeTransaction` and `verifyZkLoginSignature` still throw
+  `UnsupportedError` there.
+* `FaucetRateLimitError` is exported from `package:sui_dart/sui.dart`, so the
+  throw `requestSuiFromFaucetV2` documents can be caught by type.
+* README sections for the ledger queries, name-service resolution, and protocol
+  config, and the transport table covers them.
+* `ObjectError` carries a transport-neutral `reason`, the requested `objectId`,
+  the transport's `code`, and the underlying `cause`. Missing objects report
+  `reason: ObjectErrorReason.notFound` and `code: 'notExists'` on both
+  transports.
+
+### Changed
+
+* The faucet tests run offline against a stubbed HTTP adapter. They used to call
+  the live devnet faucet's retired `/gas` and `/v1/gas` endpoints, so they failed
+  on every run.
+
+### gRPC
+
+* Regenerated `lib/grpc/generated/` from the current protobuf definitions.
+  `LedgerService` gained the streaming `ListTransactions`/`ListEvents`/
+  `ListCheckpoints` RPCs with the `filter` and `query_options` messages;
+  `SubscriptionService` gained `SubscribeTransactions`/`SubscribeEvents`; `Event`
+  carries its checkpoint, transaction digest, and index; `CommandArgumentError`
+  gained `INVALID_TX_CONTEXT`. `listCheckpoints` has no core-client wrapper yet.
+
 ## 0.9.1
 
 ### Fixed

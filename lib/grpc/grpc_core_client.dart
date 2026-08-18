@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:fixnum/fixnum.dart';
+import 'package:grpc/grpc.dart' show GrpcError, StatusCode;
 import 'package:protobuf/protobuf.dart';
+import 'package:sui_dart/grpc/generated/google/rpc/status.pb.dart'
+    as rpc_status;
 import 'package:protobuf/well_known_types/google/protobuf/field_mask.pb.dart';
 
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/bcs.pb.dart' as grpc_bcs;
@@ -11,7 +14,10 @@ import 'package:sui_dart/grpc/generated/sui/rpc/v2/effects.pb.dart'
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/execution_status.pb.dart'
     as pb_exec;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/executed_transaction.pb.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/filter.pb.dart' as pb_filter;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/ledger_service.pbgrpc.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/query_options.pb.dart'
+    as pb_query;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/move_package.pb.dart'
     hide TypeParameter;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/move_package_service.pbgrpc.dart';
@@ -38,6 +44,78 @@ import 'sui_grpc_client.dart';
 
 // ignore: constant_identifier_names
 const _MAX_OBJECTS_PER_BATCH = 50;
+
+const _grpcStatusNames = <int, String>{
+  StatusCode.cancelled: 'CANCELLED',
+  StatusCode.unknown: 'UNKNOWN',
+  StatusCode.invalidArgument: 'INVALID_ARGUMENT',
+  StatusCode.deadlineExceeded: 'DEADLINE_EXCEEDED',
+  StatusCode.notFound: 'NOT_FOUND',
+  StatusCode.alreadyExists: 'ALREADY_EXISTS',
+  StatusCode.permissionDenied: 'PERMISSION_DENIED',
+  StatusCode.resourceExhausted: 'RESOURCE_EXHAUSTED',
+  StatusCode.failedPrecondition: 'FAILED_PRECONDITION',
+  StatusCode.aborted: 'ABORTED',
+  StatusCode.outOfRange: 'OUT_OF_RANGE',
+  StatusCode.unimplemented: 'UNIMPLEMENTED',
+  StatusCode.internal: 'INTERNAL',
+  StatusCode.unavailable: 'UNAVAILABLE',
+  StatusCode.dataLoss: 'DATA_LOSS',
+  StatusCode.unauthenticated: 'UNAUTHENTICATED',
+};
+
+/// Collects a server-streamed ledger query into a [Page].
+///
+/// One item over the page is requested as lookahead: the node reports its item
+/// limit as reached without scanning past it, so a page filled exactly to the
+/// limit would otherwise look the same as one with more behind it.
+class _LedgerPage<T> {
+  _LedgerPage(this.limit);
+
+  final int limit;
+  final List<T> _items = [];
+  String? _frontier;
+  String? _startCursor;
+  String? _endCursor;
+  pb_query.QueryEndReason? _endReason;
+  bool _sawLookahead = false;
+
+  void watermark(pb_query.Watermark watermark) {
+    if (watermark.hasCursor()) _frontier = base64Encode(watermark.cursor);
+  }
+
+  void add(T Function() parse) {
+    if (_items.length >= limit) {
+      _sawLookahead = true;
+      return;
+    }
+    _startCursor ??= _frontier;
+    _endCursor = _frontier;
+    _items.add(parse());
+  }
+
+  void end(pb_query.QueryEnd end) => _endReason = end.reason;
+
+  Page<T> build() {
+    // A clamped item limit means a full page may still have more behind it.
+    final hasNextPage =
+        _sawLookahead ||
+        _endReason == pb_query.QueryEndReason.QUERY_END_REASON_ITEM_LIMIT ||
+        _endReason == pb_query.QueryEndReason.QUERY_END_REASON_SCAN_LIMIT;
+
+    return Page(
+      data: _items,
+      hasNextPage: hasNextPage,
+      // An early-stopped scan resumes at the frontier, not at the last item.
+      nextCursor: _sawLookahead
+          ? _endCursor
+          : hasNextPage
+          ? (_frontier ?? _endCursor)
+          : _endCursor,
+      startCursor: _startCursor,
+    );
+  }
+}
 
 /// Converts a Google protobuf Value to a Dart dynamic value.
 dynamic _protoValueToDart(pb_struct.Value value) {
@@ -97,12 +175,27 @@ class GrpcCoreClient implements SuiCoreClient {
       results.addAll(response.objects);
     }
 
-    return results.map((result) {
-      if (result.whichResult() == GetObjectResult_Result.error) {
-        return ObjectError(result.error.message);
-      }
-      return ObjectSuccess(_parseObject(result.object, include));
-    }).toList();
+    return [
+      for (var i = 0; i < results.length; i++)
+        if (results[i].whichResult() == GetObjectResult_Result.error)
+          _objectError(results[i].error, i < ids.length ? ids[i] : null)
+        else
+          ObjectSuccess(_parseObject(results[i].object, include)),
+    ];
+  }
+
+  static ObjectError _objectError(rpc_status.Status status, String? objectId) {
+    final notFound = status.code == StatusCode.notFound;
+    return ObjectError(
+      status.message,
+      // Missing objects keep the `notExists` code so existing handlers work.
+      code: notFound
+          ? 'notExists'
+          : (_grpcStatusNames[status.code] ?? 'unknown'),
+      reason: notFound ? ObjectErrorReason.notFound : ObjectErrorReason.unknown,
+      objectId: objectId,
+      cause: status,
+    );
   }
 
   @override
@@ -257,11 +350,26 @@ class GrpcCoreClient implements SuiCoreClient {
   }) async {
     final readMask = _transactionReadMask(include);
 
-    final response = await _client.ledgerService.getTransaction(
-      GetTransactionRequest(digest: digest, readMask: readMask),
-    );
+    try {
+      final response = await _client.ledgerService.getTransaction(
+        GetTransactionRequest(digest: digest, readMask: readMask),
+      );
 
-    return _parseTransaction(response.transaction, include);
+      if (!response.hasTransaction()) {
+        throw TransactionError(TransactionErrorReason.notFound, digest);
+      }
+
+      return _parseTransaction(response.transaction, include);
+    } on GrpcError catch (error) {
+      if (error.code == StatusCode.notFound) {
+        throw TransactionError(
+          TransactionErrorReason.notFound,
+          digest,
+          cause: error,
+        );
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -295,8 +403,12 @@ class GrpcCoreClient implements SuiCoreClient {
   }) async {
     final readMask = _simulateReadMask(include);
 
-    final gasSelection = doGasSelection ?? true;
-    final effectiveChecks = checksEnabled ?? (gasSelection ? null : false);
+    // An empty payment means address-balance gas, so the node must select gas.
+    final payment = transactionBlock.getData().gasData.payment;
+    final gasSelection = doGasSelection ?? (payment != null && payment.isEmpty);
+    // An explicitly gasless simulate has no gas coin for the node to validate.
+    final effectiveChecks =
+        checksEnabled ?? (doGasSelection == false ? false : null);
 
     final response = await _client.transactionExecutionService
         .simulateTransaction(
@@ -341,6 +453,181 @@ class GrpcCoreClient implements SuiCoreClient {
   }
 
   @override
+  Future<Page<TransactionResponse>> listTransactions({
+    TransactionFilter? filter,
+    String? after,
+    String? before,
+    QueryOrder? order,
+    int? limit,
+    int? startCheckpoint,
+    int? endCheckpoint,
+    TransactionIncludeOptions? include,
+  }) async {
+    final pagination = resolvePagination(
+      after: after,
+      before: before,
+      order: order,
+      limit: limit,
+    );
+    final resolved = filter == null ? null : resolveTransactionFilter(filter);
+    validateTransactionQuery(resolved, pagination);
+
+    final stream = _client.ledgerService.listTransactions(
+      ListTransactionsRequest(
+        readMask: _transactionReadMask(include),
+        startCheckpoint: _checkpoint(startCheckpoint),
+        endCheckpoint: _checkpoint(endCheckpoint),
+        filter: resolved == null ? null : _transactionFilter(resolved),
+        options: _queryOptions(pagination),
+      ),
+    );
+
+    final page = _LedgerPage<TransactionResponse>(pagination.limit);
+    await for (final frame in stream) {
+      if (frame.hasWatermark()) page.watermark(frame.watermark);
+      if (frame.hasTransaction()) {
+        page.add(() => _parseTransaction(frame.transaction, include));
+      }
+      if (frame.hasEnd()) page.end(frame.end);
+    }
+
+    return page.build();
+  }
+
+  @override
+  Future<Page<Event>> listEvents({
+    EventFilter? filter,
+    String? after,
+    String? before,
+    QueryOrder? order,
+    int? limit,
+    int? startCheckpoint,
+    int? endCheckpoint,
+  }) async {
+    final pagination = resolvePagination(
+      after: after,
+      before: before,
+      order: order,
+      limit: limit,
+    );
+    final resolved = filter == null ? null : resolveEventFilter(filter);
+
+    final stream = _client.ledgerService.listEvents(
+      ListEventsRequest(
+        readMask: FieldMask(
+          paths: [
+            'package_id',
+            'module',
+            'sender',
+            'event_type',
+            'contents',
+            'json',
+            'checkpoint',
+            'transaction_digest',
+            'event_index',
+          ],
+        ),
+        startCheckpoint: _checkpoint(startCheckpoint),
+        endCheckpoint: _checkpoint(endCheckpoint),
+        filter: resolved == null ? null : _eventFilter(resolved),
+        options: _queryOptions(pagination),
+      ),
+    );
+
+    final page = _LedgerPage<Event>(pagination.limit);
+    await for (final frame in stream) {
+      if (frame.hasWatermark()) page.watermark(frame.watermark);
+      if (frame.hasEvent()) {
+        final event = frame.event;
+        page.add(
+          () => Event(
+            packageId: event.packageId,
+            module: event.module,
+            sender: event.sender,
+            eventType: event.eventType,
+            bcs: event.hasContents()
+                ? Uint8List.fromList(event.contents.value)
+                : Uint8List(0),
+            json: event.hasJson() ? _protoValueToMap(event.json) : null,
+            checkpoint: event.hasCheckpoint()
+                ? event.checkpoint.toString()
+                : null,
+            transactionDigest: event.hasTransactionDigest()
+                ? event.transactionDigest
+                : null,
+            eventIndex: event.hasEventIndex() ? event.eventIndex : null,
+          ),
+        );
+      }
+      if (frame.hasEnd()) page.end(frame.end);
+    }
+
+    return page.build();
+  }
+
+  static Int64? _checkpoint(int? checkpoint) =>
+      checkpoint == null ? null : Int64(checkpoint);
+
+  static pb_query.QueryOptions _queryOptions(ResolvedPagination pagination) {
+    return pb_query.QueryOptions(
+      // One item over the page as lookahead; see [_LedgerPage].
+      limit: pagination.limit + 1,
+      after: pagination.after == null ? null : base64Decode(pagination.after!),
+      before: pagination.before == null
+          ? null
+          : base64Decode(pagination.before!),
+      ordering: pagination.descending
+          ? pb_query.Ordering.ORDERING_DESCENDING
+          : pb_query.Ordering.ORDERING_ASCENDING,
+    );
+  }
+
+  static pb_filter.TransactionFilter _transactionFilter(
+    ResolvedTransactionFilter filter,
+  ) {
+    return pb_filter.TransactionFilter(
+      terms: [
+        pb_filter.TransactionTerm(
+          literals: [
+            filter.sender != null
+                ? pb_filter.TransactionLiteral(
+                    sender: pb_filter.SenderFilter(address: filter.sender),
+                  )
+                : pb_filter.TransactionLiteral(
+                    moveCall: pb_filter.MoveCallFilter(
+                      function: filter.functionTarget,
+                    ),
+                  ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  static pb_filter.EventFilter _eventFilter(ResolvedEventFilter filter) {
+    final pb_filter.EventLiteral literal;
+    if (filter.sender != null) {
+      literal = pb_filter.EventLiteral(
+        sender: pb_filter.SenderFilter(address: filter.sender),
+      );
+    } else if (filter.emitModule != null) {
+      literal = pb_filter.EventLiteral(
+        emitModule: pb_filter.EmitModuleFilter(module: filter.emitModule),
+      );
+    } else {
+      literal = pb_filter.EventLiteral(
+        eventType: pb_filter.EventTypeFilter(eventType: filter.eventType),
+      );
+    }
+
+    return pb_filter.EventFilter(
+      terms: [
+        pb_filter.EventTerm(literals: [literal]),
+      ],
+    );
+  }
+
+  @override
   Future<String> getReferenceGasPrice() async {
     final response = await _client.ledgerService.getEpoch(
       GetEpochRequest(readMask: FieldMask(paths: ['reference_gas_price'])),
@@ -375,6 +662,20 @@ class GrpcCoreClient implements SuiCoreClient {
       epochStartTimestampMs: epoch.hasStart()
           ? epoch.start.seconds.toString()
           : null,
+    );
+  }
+
+  @override
+  Future<ProtocolConfig> getProtocolConfig() async {
+    final response = await _client.ledgerService.getEpoch(
+      GetEpochRequest(readMask: FieldMask(paths: ['protocol_config'])),
+    );
+
+    final config = response.epoch.protocolConfig;
+    return ProtocolConfig(
+      protocolVersion: config.protocolVersion.toString(),
+      featureFlags: Map.of(config.featureFlags),
+      attributes: Map.of(config.attributes),
     );
   }
 
@@ -447,6 +748,22 @@ class GrpcCoreClient implements SuiCoreClient {
       }
       return null;
     } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<String?> resolveNameServiceAddress(String name) async {
+    try {
+      final response = await _client.nameService.lookupName(
+        LookupNameRequest(name: name),
+      );
+      if (response.hasRecord() && response.record.hasTargetAddress()) {
+        return response.record.targetAddress;
+      }
+      return null;
+    } catch (_) {
+      // Unregistered names come back NOT_FOUND, expired ones RESOURCE_EXHAUSTED.
       return null;
     }
   }

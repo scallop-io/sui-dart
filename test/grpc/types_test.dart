@@ -193,6 +193,23 @@ void main() {
       const result = ObjectError('Object not found');
       expect(result, isA<ObjectResult>());
       expect(result.error, 'Object not found');
+      expect(result.code, 'unknown');
+      expect(result.reason, ObjectErrorReason.unknown);
+      expect(result.objectId, isNull);
+    });
+
+    test('ObjectError carries lookup details', () {
+      const result = ObjectError(
+        'Object 0x1 not found',
+        code: 'notExists',
+        reason: ObjectErrorReason.notFound,
+        objectId: '0x1',
+        cause: 'transport status',
+      );
+      expect(result.reason, ObjectErrorReason.notFound);
+      expect(result.code, 'notExists');
+      expect(result.objectId, '0x1');
+      expect(result.cause, 'transport status');
     });
 
     test('pattern matching works on result variants', () {
@@ -217,6 +234,13 @@ void main() {
       }).toList();
 
       expect(messages, ['ok:0x1', 'err:not found']);
+    });
+
+    test('TransactionError reports the digest it looked up', () {
+      const error = TransactionError(TransactionErrorReason.notFound, '0xdead');
+      expect(error, isA<Exception>());
+      expect(error.message, 'Transaction 0xdead not found');
+      expect(error.toString(), contains('0xdead'));
     });
   });
 

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:bcs_dart/utils.dart';
 import 'package:test/test.dart';
+import 'package:sui_dart/grpc/types.dart' show SystemState;
 import 'package:sui_dart/sui.dart';
 
 void main() {
@@ -218,6 +219,66 @@ void main() {
       },
     );
   });
+
+  group('address-balance gas', () {
+    test('gets a ValidDuring expiration', () async {
+      final tx = Transaction();
+      tx.setSender(normalizeSuiAddress('0xaaaa'));
+      tx.setGasPrice(BigInt.from(1000));
+      tx.setGasBudget(BigInt.from(2000000));
+      // An empty payment pays gas from the sender's address balance.
+      tx.setGasPayment([]);
+
+      // The build also proves ValidDuring survives BCS encoding.
+      final bytes = await tx.build(BuildOptions(client: _StubCoreClient()));
+      expect(bytes, isNotEmpty);
+
+      final validDuring = tx.getData().expiration!.validDuring!;
+      expect(validDuring['minEpoch'], '42');
+      expect(validDuring['maxEpoch'], '43');
+      expect(validDuring['chain'], _StubCoreClient.chainId);
+      expect(validDuring['nonce'], isA<int>());
+    });
+
+    test('leaves an expiration the caller already set', () async {
+      final tx = Transaction();
+      tx.setSender(normalizeSuiAddress('0xaaaa'));
+      tx.setGasPrice(BigInt.from(1000));
+      tx.setGasBudget(BigInt.from(2000000));
+      tx.setGasPayment([]);
+      tx.setExpiration(7);
+
+      await tx.build(BuildOptions(client: _StubCoreClient()));
+
+      expect(tx.getData().expiration!.epoch, 7);
+      expect(tx.getData().expiration!.validDuring, isNull);
+    });
+
+    test('a funded gas payment keeps no expiration', () async {
+      final tx = setup();
+
+      await tx.build(BuildOptions(client: _StubCoreClient()));
+
+      expect(tx.getData().expiration?.validDuring, isNull);
+      expect(tx.getData().expiration?.epoch, isNull);
+    });
+  });
+}
+
+class _StubCoreClient implements SuiCoreClient {
+  static const chainId = '4btiuiMPvEENsttpZC7CZ53DruC3MAgfznDbASZ7DR6S';
+
+  @override
+  Future<String> getChainIdentifier() async => chainId;
+
+  @override
+  Future<SystemState> getCurrentSystemState() async =>
+      const SystemState(epoch: '42', referenceGasPrice: '1000');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError(
+    '${invocation.memberName} is not needed by this fixture',
+  );
 }
 
 SuiObjectRef ref() {

@@ -82,6 +82,46 @@ class LedgerServiceClient extends $grpc.Client {
     return $createUnaryCall(_$getEpoch, request, options: options);
   }
 
+  /// List checkpoints matching the provided filters.
+  ///
+  /// Checkpoints are returned in ascending or descending checkpoint sequence
+  /// number order according to the query options ordering.
+  /// A checkpoint matches if any transaction it contains satisfies the filter.
+  $grpc.ResponseStream<$0.ListCheckpointsResponse> listCheckpoints(
+    $0.ListCheckpointsRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createStreamingCall(
+        _$listCheckpoints, $async.Stream.fromIterable([request]),
+        options: options);
+  }
+
+  /// List transactions matching the provided filters.
+  ///
+  /// Transactions are returned in ascending or descending transaction sequence
+  /// order according to the query options ordering.
+  $grpc.ResponseStream<$0.ListTransactionsResponse> listTransactions(
+    $0.ListTransactionsRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createStreamingCall(
+        _$listTransactions, $async.Stream.fromIterable([request]),
+        options: options);
+  }
+
+  /// List events matching the provided filters.
+  ///
+  /// Events are returned in ascending or descending packed event sequence order
+  /// according to the query options ordering.
+  $grpc.ResponseStream<$0.ListEventsResponse> listEvents(
+    $0.ListEventsRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createStreamingCall(
+        _$listEvents, $async.Stream.fromIterable([request]),
+        options: options);
+  }
+
   // method descriptors
 
   static final _$getServiceInfo =
@@ -119,6 +159,21 @@ class LedgerServiceClient extends $grpc.Client {
           '/sui.rpc.v2.LedgerService/GetEpoch',
           ($0.GetEpochRequest value) => value.writeToBuffer(),
           $0.GetEpochResponse.fromBuffer);
+  static final _$listCheckpoints =
+      $grpc.ClientMethod<$0.ListCheckpointsRequest, $0.ListCheckpointsResponse>(
+          '/sui.rpc.v2.LedgerService/ListCheckpoints',
+          ($0.ListCheckpointsRequest value) => value.writeToBuffer(),
+          $0.ListCheckpointsResponse.fromBuffer);
+  static final _$listTransactions = $grpc.ClientMethod<
+          $0.ListTransactionsRequest, $0.ListTransactionsResponse>(
+      '/sui.rpc.v2.LedgerService/ListTransactions',
+      ($0.ListTransactionsRequest value) => value.writeToBuffer(),
+      $0.ListTransactionsResponse.fromBuffer);
+  static final _$listEvents =
+      $grpc.ClientMethod<$0.ListEventsRequest, $0.ListEventsResponse>(
+          '/sui.rpc.v2.LedgerService/ListEvents',
+          ($0.ListEventsRequest value) => value.writeToBuffer(),
+          $0.ListEventsResponse.fromBuffer);
 }
 
 @$pb.GrpcServiceName('sui.rpc.v2.LedgerService')
@@ -185,6 +240,31 @@ abstract class LedgerServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.GetEpochRequest.fromBuffer(value),
         ($0.GetEpochResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.ListCheckpointsRequest,
+            $0.ListCheckpointsResponse>(
+        'ListCheckpoints',
+        listCheckpoints_Pre,
+        false,
+        true,
+        ($core.List<$core.int> value) =>
+            $0.ListCheckpointsRequest.fromBuffer(value),
+        ($0.ListCheckpointsResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.ListTransactionsRequest,
+            $0.ListTransactionsResponse>(
+        'ListTransactions',
+        listTransactions_Pre,
+        false,
+        true,
+        ($core.List<$core.int> value) =>
+            $0.ListTransactionsRequest.fromBuffer(value),
+        ($0.ListTransactionsResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.ListEventsRequest, $0.ListEventsResponse>(
+        'ListEvents',
+        listEvents_Pre,
+        false,
+        true,
+        ($core.List<$core.int> value) => $0.ListEventsRequest.fromBuffer(value),
+        ($0.ListEventsResponse value) => value.writeToBuffer()));
   }
 
   $async.Future<$0.GetServiceInfoResponse> getServiceInfo_Pre(
@@ -247,4 +327,30 @@ abstract class LedgerServiceBase extends $grpc.Service {
 
   $async.Future<$0.GetEpochResponse> getEpoch(
       $grpc.ServiceCall call, $0.GetEpochRequest request);
+
+  $async.Stream<$0.ListCheckpointsResponse> listCheckpoints_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.ListCheckpointsRequest> $request) async* {
+    yield* listCheckpoints($call, await $request);
+  }
+
+  $async.Stream<$0.ListCheckpointsResponse> listCheckpoints(
+      $grpc.ServiceCall call, $0.ListCheckpointsRequest request);
+
+  $async.Stream<$0.ListTransactionsResponse> listTransactions_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.ListTransactionsRequest> $request) async* {
+    yield* listTransactions($call, await $request);
+  }
+
+  $async.Stream<$0.ListTransactionsResponse> listTransactions(
+      $grpc.ServiceCall call, $0.ListTransactionsRequest request);
+
+  $async.Stream<$0.ListEventsResponse> listEvents_Pre($grpc.ServiceCall $call,
+      $async.Future<$0.ListEventsRequest> $request) async* {
+    yield* listEvents($call, await $request);
+  }
+
+  $async.Stream<$0.ListEventsResponse> listEvents(
+      $grpc.ServiceCall call, $0.ListEventsRequest request);
 }

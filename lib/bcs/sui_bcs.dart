@@ -205,11 +205,194 @@ class SuiBcs {
     'commands': Bcs.vector(Command),
   });
 
+  static final ChangeEpoch = Bcs.struct('ChangeEpoch', {
+    'epoch': Bcs.u64(),
+    'protocolVersion': Bcs.u64(),
+    'storageCharge': Bcs.u64(),
+    'computationCharge': Bcs.u64(),
+    'storageRebate': Bcs.u64(),
+    'nonRefundableStorageFee': Bcs.u64(),
+    'epochStartTimestampMs': Bcs.u64(),
+    'systemPackages': Bcs.vector(
+      Bcs.tuple([Bcs.u64(), Bcs.vector(Bcs.byteVector()), Bcs.vector(Address)]),
+    ),
+  });
+
+  static final GenesisObject = Bcs.enumeration('GenesisObject', {
+    'RawObject': Bcs.struct('RawObject', {
+      'data': Bcs.lazy(() => Data),
+      'owner': Owner,
+    }),
+  });
+
+  static final GenesisTransaction = Bcs.struct('GenesisTransaction', {
+    'objects': Bcs.vector(GenesisObject),
+  });
+
+  static final ConsensusCommitPrologue = Bcs.struct('ConsensusCommitPrologue', {
+    'epoch': Bcs.u64(),
+    'round': Bcs.u64(),
+    'commitTimestampMs': Bcs.u64(),
+  });
+
+  static final ConsensusCommitPrologueV2 =
+      Bcs.struct('ConsensusCommitPrologueV2', {
+        'epoch': Bcs.u64(),
+        'round': Bcs.u64(),
+        'commitTimestampMs': Bcs.u64(),
+        'consensusCommitDigest': ObjectDigest,
+      });
+
+  static final ConsensusDeterminedVersionAssignments = Bcs.enumeration(
+    'ConsensusDeterminedVersionAssignments',
+    {
+      'CancelledTransactions': Bcs.vector(
+        Bcs.tuple([
+          ObjectDigest,
+          Bcs.vector(Bcs.tuple([Address, Bcs.u64()])),
+        ]),
+      ),
+      'CancelledTransactionsV2': Bcs.vector(
+        Bcs.tuple([
+          ObjectDigest,
+          Bcs.vector(
+            Bcs.tuple([
+              Bcs.tuple([Address, Bcs.u64()]),
+              Bcs.u64(),
+            ]),
+          ),
+        ]),
+      ),
+    },
+  );
+
+  static final ConsensusCommitPrologueV3 =
+      Bcs.struct('ConsensusCommitPrologueV3', {
+        'epoch': Bcs.u64(),
+        'round': Bcs.u64(),
+        'subDagIndex': Bcs.option(Bcs.u64()),
+        'commitTimestampMs': Bcs.u64(),
+        'consensusCommitDigest': ObjectDigest,
+        'consensusDeterminedVersionAssignments':
+            ConsensusDeterminedVersionAssignments,
+      });
+
+  static final ConsensusCommitPrologueV4 =
+      Bcs.struct('ConsensusCommitPrologueV4', {
+        'epoch': Bcs.u64(),
+        'round': Bcs.u64(),
+        'subDagIndex': Bcs.option(Bcs.u64()),
+        'commitTimestampMs': Bcs.u64(),
+        'consensusCommitDigest': ObjectDigest,
+        'consensusDeterminedVersionAssignments':
+            ConsensusDeterminedVersionAssignments,
+        'additionalStateDigest': ObjectDigest,
+      });
+
+  static final ActiveJwk = Bcs.struct('ActiveJwk', {
+    'jwkId': Bcs.struct('JwkId', {'iss': Bcs.string(), 'kid': Bcs.string()}),
+    'jwk': Bcs.struct('JWK', {
+      'kty': Bcs.string(),
+      'e': Bcs.string(),
+      'n': Bcs.string(),
+      'alg': Bcs.string(),
+    }),
+    'epoch': Bcs.u64(),
+  });
+
+  static final AuthenticatorStateUpdate =
+      Bcs.struct('AuthenticatorStateUpdate', {
+        'epoch': Bcs.u64(),
+        'round': Bcs.u64(),
+        'newActiveJwks': Bcs.vector(ActiveJwk),
+        'authenticatorObjInitialSharedVersion': Bcs.u64(),
+      });
+
+  static final RandomnessStateUpdate = Bcs.struct('RandomnessStateUpdate', {
+    'epoch': Bcs.u64(),
+    'randomnessRound': Bcs.u64(),
+    'randomBytes': Bcs.byteVector(),
+    'randomnessObjInitialSharedVersion': Bcs.u64(),
+  });
+
+  static final AuthenticatorStateExpire = Bcs.struct(
+    'AuthenticatorStateExpire',
+    {'minEpoch': Bcs.u64(), 'authenticatorObjInitialSharedVersion': Bcs.u64()},
+  );
+
+  static final ExecutionTimeObservationKey = Bcs.enumeration(
+    'ExecutionTimeObservationKey',
+    {
+      'MoveEntryPoint': Bcs.struct('MoveEntryPoint', {
+        'package': Address,
+        'module': Bcs.string(),
+        'function': Bcs.string(),
+        'typeArguments': Bcs.vector(TypeTag),
+      }),
+      'TransferObjects': null,
+      'SplitCoins': null,
+      'MergeCoins': null,
+      'Publish': null,
+      'MakeMoveVec': null,
+      'Upgrade': null,
+    },
+  );
+
+  static final StoredExecutionTimeObservations = Bcs.enumeration(
+    'StoredExecutionTimeObservations',
+    {
+      'V1': Bcs.vector(
+        Bcs.tuple([
+          ExecutionTimeObservationKey,
+          Bcs.vector(
+            Bcs.tuple([
+              // AuthorityName: BLS public key bytes.
+              Bcs.byteVector(),
+              Bcs.struct('Duration', {'secs': Bcs.u64(), 'nanos': Bcs.u32()}),
+            ]),
+          ),
+        ]),
+      ),
+    },
+  );
+
+  static final WriteAccumulatorStorageCost = Bcs.struct(
+    'WriteAccumulatorStorageCost',
+    {'storageCost': Bcs.u64()},
+  );
+
+  static final EndOfEpochTransactionKind = Bcs.enumeration(
+    'EndOfEpochTransactionKind',
+    {
+      'ChangeEpoch': ChangeEpoch,
+      'AuthenticatorStateCreate': null,
+      'AuthenticatorStateExpire': AuthenticatorStateExpire,
+      'RandomnessStateCreate': null,
+      'DenyListStateCreate': null,
+      // The chain identifier (the genesis checkpoint digest).
+      'BridgeStateCreate': ObjectDigest,
+      'BridgeCommitteeInit': Bcs.u64(),
+      'StoreExecutionTimeObservations': StoredExecutionTimeObservations,
+      'AccumulatorRootCreate': null,
+      'CoinRegistryCreate': null,
+      'DisplayRegistryCreate': null,
+      'AddressAliasStateCreate': null,
+      'WriteAccumulatorStorageCost': WriteAccumulatorStorageCost,
+    },
+  );
+
   static final TransactionKind = Bcs.enumeration('TransactionKind', {
     'ProgrammableTransaction': ProgrammableTransaction,
-    'ChangeEpoch': null,
-    'Genesis': null,
-    'ConsensusCommitPrologue': null,
+    'ChangeEpoch': ChangeEpoch,
+    'Genesis': GenesisTransaction,
+    'ConsensusCommitPrologue': ConsensusCommitPrologue,
+    'AuthenticatorStateUpdate': AuthenticatorStateUpdate,
+    'EndOfEpochTransaction': Bcs.vector(EndOfEpochTransactionKind),
+    'RandomnessStateUpdate': RandomnessStateUpdate,
+    'ConsensusCommitPrologueV2': ConsensusCommitPrologueV2,
+    'ConsensusCommitPrologueV3': ConsensusCommitPrologueV3,
+    'ConsensusCommitPrologueV4': ConsensusCommitPrologueV4,
+    'ProgrammableSystemTransaction': ProgrammableTransaction,
   });
 
   static final ValidDuring = Bcs.struct('ValidDuring', {
