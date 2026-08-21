@@ -3,8 +3,15 @@ import 'dart:typed_data';
 
 import 'package:bcs_dart/utils.dart';
 import 'package:test/test.dart';
-import 'package:sui_dart/grpc/types.dart' show SystemState;
-import 'package:sui_dart/sui.dart';
+import 'package:sui_dart/grpc/types.dart'
+    show
+        ExecutionStatus,
+        GasUsed,
+        SystemState,
+        TransactionEffects,
+        TransactionIncludeOptions,
+        TransactionResponse;
+import 'package:sui_dart/sui.dart' hide ExecutionStatus, TransactionEffects;
 
 void main() {
   test('can construct and serialize an empty transaction', () {
@@ -262,11 +269,57 @@ void main() {
       expect(tx.getData().expiration?.validDuring, isNull);
       expect(tx.getData().expiration?.epoch, isNull);
     });
+
+    test('the budget dry-run mocks gas behind a ValidDuring', () async {
+      final tx = Transaction();
+      tx.setSender(normalizeSuiAddress('0xaaaa'));
+      tx.setGasPrice(BigInt.from(1000));
+      tx.setGasPayment([ref()]);
+
+      final client = _StubCoreClient();
+      await tx.build(BuildOptions(client: client));
+
+      expect(client.simulateGasSelection, isFalse);
+      // u64 comes back from BCS as BigInt.
+      expect(client.simulateValidDuring!['minEpoch'].toString(), '42');
+      expect(client.simulateValidDuring!['maxEpoch'].toString(), '43');
+      expect(client.simulateValidDuring!['chain'], _StubCoreClient.chainId);
+      // Only the simulate needed the window: real gas coins bound the transaction.
+      expect(tx.getData().expiration?.validDuring, isNull);
+    });
   });
 }
 
 class _StubCoreClient implements SuiCoreClient {
   static const chainId = '4btiuiMPvEENsttpZC7CZ53DruC3MAgfznDbASZ7DR6S';
+
+  bool? simulateGasSelection;
+  Map<String, dynamic>? simulateValidDuring;
+
+  @override
+  Future<TransactionResponse> simulateTransaction(
+    Transaction transactionBlock, {
+    TransactionIncludeOptions? include,
+    bool? doGasSelection,
+    bool? checksEnabled,
+  }) async {
+    simulateGasSelection = doGasSelection;
+    // Read off the rebuilt tx: this also covers the BCS round-trip.
+    simulateValidDuring = transactionBlock.getData().expiration?.validDuring;
+    return const TransactionResponse(
+      digest: '',
+      status: ExecutionStatus(success: true),
+      effects: TransactionEffects(
+        status: ExecutionStatus(success: true),
+        gasUsed: GasUsed(
+          computationCost: '1000',
+          storageCost: '0',
+          storageRebate: '0',
+          nonRefundableStorageFee: '0',
+        ),
+      ),
+    );
+  }
 
   @override
   Future<String> getChainIdentifier() async => chainId;

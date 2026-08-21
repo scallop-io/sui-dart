@@ -1,3 +1,19 @@
+## 0.10.1
+
+### Fixed
+
+* `simulateTransaction` no longer disables transaction checks as a side effect of
+  `doGasSelection: false`. Checks follow `checksEnabled` alone, and are disabled
+  only when it is explicitly `false`. A caller that relied on the old coupling
+  for a gasless simulate should pass `checksEnabled: false`, or build the
+  transaction first so it carries an expiration.
+* The gas budget dry-run simulates against a mocked gas coin instead of asking
+  the node to select one, and carries a `ValidDuring` expiration for replay
+  protection. Gas paid from the sender's address balance can now be estimated
+  without owning a gas coin.
+* gRPC conversion reads a tagged-union variant from its sole key when `$kind` is
+  absent, which a JSON round-trip omits.
+
 ## 0.10.0
 
 Synced to `f033be4`.

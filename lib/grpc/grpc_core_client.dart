@@ -406,9 +406,6 @@ class GrpcCoreClient implements SuiCoreClient {
     // An empty payment means address-balance gas, so the node must select gas.
     final payment = transactionBlock.getData().gasData.payment;
     final gasSelection = doGasSelection ?? (payment != null && payment.isEmpty);
-    // An explicitly gasless simulate has no gas coin for the node to validate.
-    final effectiveChecks =
-        checksEnabled ?? (doGasSelection == false ? false : null);
 
     final response = await _client.transactionExecutionService
         .simulateTransaction(
@@ -416,11 +413,9 @@ class GrpcCoreClient implements SuiCoreClient {
             transaction: transactionBlock.toGrpcTransaction(),
             readMask: readMask,
             doGasSelection: gasSelection,
-            checks: effectiveChecks == null
-                ? null
-                : effectiveChecks
-                ? SimulateTransactionRequest_TransactionChecks.ENABLED
-                : SimulateTransactionRequest_TransactionChecks.DISABLED,
+            checks: checksEnabled == false
+                ? SimulateTransactionRequest_TransactionChecks.DISABLED
+                : SimulateTransactionRequest_TransactionChecks.ENABLED,
           ),
         );
 

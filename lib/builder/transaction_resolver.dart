@@ -9,16 +9,27 @@ import 'package:sui_dart/sui.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction.pb.dart'
     as grpc_transaction;
 
+/// The variant tag of a tagged union. A JSON round-trip drops `$kind`, so fall
+/// back to the sole other key.
+String? _variantKind(Map<dynamic, dynamic> value) {
+  final kind = value['\$kind'];
+  if (kind is String) return kind;
+  for (final key in value.keys) {
+    if (key != '\$kind') return key as String;
+  }
+  return null;
+}
+
 Input callArgToGrpcInput(Map<String, dynamic> arg) {
-  switch (arg['\$kind']) {
+  switch (_variantKind(arg)) {
     case 'Pure':
       return Input(
         kind: Input_InputKind.PURE,
         pure: base64Decode(arg['Pure']['bytes']),
       );
     case 'Object':
-      final obj = arg['Object'];
-      switch (obj['\$kind']) {
+      final obj = arg['Object'] as Map<dynamic, dynamic>;
+      switch (_variantKind(obj)) {
         case 'ImmOrOwnedObject':
           return Input(
             kind: Input_InputKind.IMMUTABLE_OR_OWNED,
@@ -76,13 +87,13 @@ Input callArgToGrpcInput(Map<String, dynamic> arg) {
       return Input(
         kind: Input_InputKind.FUNDS_WITHDRAWAL,
         fundsWithdrawal: .new(
-          amount: withdrawal['reservation']['\$kind'] == 'MaxAmountU64'
+          amount: _variantKind(withdrawal['reservation']) == 'MaxAmountU64'
               ? Int64.parseRadix(withdrawal['reservation']['MaxAmountU64'], 10)
               : null,
-          coinType: withdrawal['typeArg']['\$kind'] == 'Balance'
+          coinType: _variantKind(withdrawal['typeArg']) == 'Balance'
               ? withdrawal['typeArg']['Balance']
               : null,
-          source: withdrawal['withdrawFrom']['\$kind'] == 'Sponsor'
+          source: _variantKind(withdrawal['withdrawFrom']) == 'Sponsor'
               ? .SPONSOR
               : .SENDER,
         ),
@@ -116,7 +127,7 @@ Argument argumentToGrpcArgument(Map<String, dynamic> arg) {
 }
 
 grpc_transaction.Command commandToGrpcCommand(Map<dynamic, dynamic> cmd) {
-  switch (cmd['\$kind']) {
+  switch (_variantKind(cmd)) {
     case 'MoveCall':
       return grpc_transaction.Command(
         moveCall: (grpc_transaction.MoveCall(

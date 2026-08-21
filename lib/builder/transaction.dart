@@ -1190,18 +1190,28 @@ class Transaction {
     if (options.onlyTransactionKind != true) {
       await _prepareGasPayment(options);
 
-      if (_blockData.gasData.budget == null) {
+      final payment = _blockData.gasData.payment;
+      final addressBalanceGas = payment != null && payment.isEmpty;
+      final needsBudget = _blockData.gasData.budget == null;
+
+      // Replay protection needs a bound: an empty gas payment has none.
+      final validDuring =
+          (!_hasExpiration && (needsBudget || addressBalanceGas))
+          ? await _buildValidDuringExpiration(options)
+          : null;
+
+      if (needsBudget) {
         final bytes = _blockData.build(
           gasConfig: GasConfig(
             budget: BigInt.tryParse(_getConfig('maxTxGas', options)),
             payment: [],
           ),
+          expiration: validDuring,
         );
-        // No bytes-based dry-run over gRPC: rebuild the tx and simulate. The
-        // node picks gas itself since we dry-run with empty payment above.
+        // The empty payment is a placeholder, so the node mocks gas.
         final dryRunResult = await expectClient(options).simulateTransaction(
           Transaction.fromBytes(bytes),
-          doGasSelection: true,
+          doGasSelection: false,
           include: const TransactionIncludeOptions(effects: true),
         );
 
@@ -1238,27 +1248,28 @@ class Transaction {
         );
       }
 
-      await _prepareAddressBalanceExpiration(options);
+      if (addressBalanceGas && validDuring != null) {
+        _blockData.expiration = validDuring;
+      }
     }
 
     _validate(options);
   }
 
-  /// Gas paid from the sender's address balance (an empty payment) has no coin
-  /// version to bound it, so without a `ValidDuring` window it can be replayed.
-  Future<void> _prepareAddressBalanceExpiration(BuildOptions options) async {
-    final payment = _blockData.gasData.payment;
-    if (payment == null || payment.isNotEmpty) return;
-
+  bool get _hasExpiration {
     final expiration = _blockData.expiration;
-    if (expiration?.epoch != null || expiration?.validDuring != null) return;
+    return expiration?.epoch != null || expiration?.validDuring != null;
+  }
 
+  Future<TransactionExpiration> _buildValidDuringExpiration(
+    BuildOptions options,
+  ) async {
     final client = expectClient(options);
     final chain = await client.getChainIdentifier();
     final SystemState state = await client.getCurrentSystemState();
     final epoch = BigInt.parse(state.epoch);
 
-    _blockData.expiration = TransactionExpiration(
+    return TransactionExpiration(
       validDuring: {
         'minEpoch': epoch.toString(),
         'maxEpoch': (epoch + BigInt.one).toString(),
