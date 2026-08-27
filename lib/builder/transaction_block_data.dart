@@ -109,7 +109,11 @@ String prepareSuiAddress(String address) {
 
 dynamic _deepClone(dynamic value) {
   if (value is Map) {
-    return value.map((k, v) => MapEntry(k, _deepClone(v)));
+    // keys stay String-typed; a dynamic-keyed clone fails the gRPC cast.
+    return <String, dynamic>{
+      for (final entry in value.entries)
+        '${entry.key}': _deepClone(entry.value),
+    };
   }
   if (value is List) {
     return value.map(_deepClone).toList();
@@ -252,7 +256,8 @@ class TransactionBlockDataBuilder {
   dynamic addInput<T>(T type, CallArg arg) {
     final index = inputs.length;
     inputs.add(arg);
-    return {"Input": index, "type": type, "\$kind": 'Input'};
+    // explicitly typed: inferred dynamic keys fail the gRPC cast.
+    return <String, dynamic>{"Input": index, "type": type, "\$kind": 'Input'};
   }
 
   dynamic getInputUses(int index, Function(dynamic arg, dynamic command) fn) {

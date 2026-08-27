@@ -955,11 +955,8 @@ class Transaction {
         .map((coin) => SuiObjectRef(coin.digest, coin.objectId, coin.version))
         .toList();
 
-    if (paymentCoins.isEmpty) {
-      throw ArgumentError('No valid gas coins found for the transaction.');
-    }
-
-    setGasPayment(usePaymentCoins);
+    // an empty payment makes the node pay gas from the address balance.
+    setGasPayment(paymentCoins.isEmpty ? const [] : usePaymentCoins);
   }
 
   Future<void> _prepareGasPrice(BuildOptions options) async {

@@ -75,6 +75,28 @@ class Inputs {
       },
     };
   }
+
+  /// Reserves [maxAmount] of [coinType] from the sender's (or sponsor's) address
+  /// balance. A matching `0x2::coin::redeem_funds` turns it into a `Coin<T>`.
+  static Map<String, dynamic> fundsWithdrawal({
+    required BigInt maxAmount,
+    required String coinType,
+    bool fromSponsor = false,
+  }) {
+    return {
+      "\$kind": 'FundsWithdrawal',
+      "FundsWithdrawal": {
+        "reservation": {
+          "\$kind": 'MaxAmountU64',
+          "MaxAmountU64": maxAmount.toString(),
+        },
+        "typeArg": {"\$kind": 'Balance', "Balance": coinType},
+        "withdrawFrom": fromSponsor
+            ? {"\$kind": 'Sponsor', "Sponsor": true}
+            : {"\$kind": 'Sender', "Sender": true},
+      },
+    };
+  }
 }
 
 dynamic getIdFromCallArg(dynamic arg) {

@@ -289,8 +289,8 @@ class GrpcCoreClient implements SuiCoreClient {
     return Balance(
       coinType: balance.coinType,
       balance: balance.balance.toString(),
-      coinBalance: balance.balance.toString(),
-      addressBalance: balance.balance.toString(),
+      coinBalance: balance.coinBalance.toString(),
+      addressBalance: balance.addressBalance.toString(),
     );
   }
 
@@ -337,8 +337,8 @@ class GrpcCoreClient implements SuiCoreClient {
       return Balance(
         coinType: balance.coinType,
         balance: balance.balance.toString(),
-        coinBalance: balance.balance.toString(),
-        addressBalance: balance.balance.toString(),
+        coinBalance: balance.coinBalance.toString(),
+        addressBalance: balance.addressBalance.toString(),
       );
     }).toList();
   }
@@ -402,6 +402,13 @@ class GrpcCoreClient implements SuiCoreClient {
     bool? checksEnabled,
   }) async {
     final readMask = _simulateReadMask(include);
+
+    // gRPC conversion is synchronous, so intents must resolve before it.
+    if (!transactionBlock.isPreparedForSerialization()) {
+      await transactionBlock.prepareForSerialization(
+        sui_dart.SerializeTransactionOptions(client: this),
+      );
+    }
 
     // An empty payment means address-balance gas, so the node must select gas.
     final payment = transactionBlock.getData().gasData.payment;

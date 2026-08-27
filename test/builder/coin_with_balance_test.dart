@@ -23,7 +23,26 @@ CoinData _coin(String id, String balance, [String type = _fooType]) {
 /// Returns coins from a fixed pool; no network.
 class _FakeClient implements SuiCoreClient {
   final List<CoinData> pool;
-  _FakeClient(this.pool);
+  final BigInt addressBalance;
+  _FakeClient(this.pool, {BigInt? addressBalance})
+    : addressBalance = addressBalance ?? BigInt.zero;
+
+  @override
+  Future<Balance> getBalance(
+    String address, {
+    String coinType = '0x2::sui::SUI',
+  }) async {
+    final normalized = normalizeStructTagString(coinType);
+    final coinBalance = pool
+        .where((c) => normalizeStructTagString(c.type) == normalized)
+        .fold(BigInt.zero, (sum, c) => sum + BigInt.parse(c.balance));
+    return Balance(
+      coinType: coinType,
+      balance: (coinBalance + addressBalance).toString(),
+      coinBalance: coinBalance.toString(),
+      addressBalance: addressBalance.toString(),
+    );
+  }
 
   @override
   Future<Page<CoinData>> getCoins(
@@ -45,11 +64,15 @@ class _FakeClient implements SuiCoreClient {
   );
 }
 
-Future<List<dynamic>> _resolve(Transaction tx, List<CoinData> pool) async {
+Future<List<dynamic>> _resolve(
+  Transaction tx,
+  List<CoinData> pool, {
+  BigInt? addressBalance,
+}) async {
   tx.setSender(_owner);
   await tx.build(
     BuildOptions(
-      client: _FakeClient(pool),
+      client: _FakeClient(pool, addressBalance: addressBalance),
       onlyTransactionKind: true,
       limits: {'maxPureArgumentSize': 16 * 1024},
     ),
@@ -177,6 +200,65 @@ void main() {
       final split = commands.firstWhere((c) => c['\$kind'] == 'SplitCoins');
       expect(split['SplitCoins']['coin']['\$kind'], 'GasCoin');
     });
+
+    test(
+      'withdraws from the address balance when it covers the amount',
+      () async {
+        final tx = Transaction();
+        final coin = tx.add(coinWithBalance(type: _fooType, balance: 20000000));
+        tx.transferObjects([coin], _recipient);
+
+        final commands = await _resolve(tx, [
+          _coin('0x1', '636508'),
+        ], addressBalance: BigInt.from(30000000));
+
+        expect(_hasIntent(commands), isFalse);
+        final targets = commands
+            .where((c) => c['\$kind'] == 'MoveCall')
+            .map((c) => c['MoveCall']['function'])
+            .toList();
+        expect(targets, contains('redeem_funds'));
+        expect(targets, contains('send_funds'));
+        expect(commands.any((c) => c['\$kind'] == 'MergeCoins'), isFalse);
+      },
+    );
+
+    test('tops up a coin shortfall from the address balance', () async {
+      final tx = Transaction();
+      final coin = tx.add(coinWithBalance(type: _fooType, balance: 150));
+      tx.transferObjects([coin], _recipient);
+
+      final commands = await _resolve(tx, [
+        _coin('0x1', '100'),
+      ], addressBalance: BigInt.from(80));
+
+      final kinds = commands.map((c) => c['\$kind']).toList();
+      // Redeem the missing 50, merge it into the coin, split, return the rest.
+      expect(kinds, [
+        'MoveCall',
+        'MergeCoins',
+        'SplitCoins',
+        'MoveCall',
+        'TransferObjects',
+      ]);
+      expect(commands[0]['MoveCall']['function'], 'redeem_funds');
+      expect(commands[3]['MoveCall']['function'], 'send_funds');
+    });
+
+    test(
+      'throws when coins and the address balance together fall short',
+      () async {
+        final tx = Transaction();
+        tx.add(coinWithBalance(type: _fooType, balance: 1000));
+
+        expect(
+          () => _resolve(tx, [
+            _coin('0x1', '120'),
+          ], addressBalance: BigInt.from(80)),
+          throwsA(isA<ArgumentError>()),
+        );
+      },
+    );
 
     test('throws when the balance is insufficient', () async {
       final tx = Transaction();

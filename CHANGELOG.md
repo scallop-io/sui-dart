@@ -1,3 +1,32 @@
+## 0.11.0
+
+Synced to `ad407b5`.
+
+### Added
+
+* `Inputs.fundsWithdrawal` builds a `FUNDS_WITHDRAWAL` input against the sender's
+  or sponsor's address balance.
+* `coinWithBalance` and `createBalance` source from the address balance when the
+  owned coins fall short, returning the leftover there via `coin::send_funds`.
+  Funds held as `Balance<T>` were unspendable through this intent.
+
+### Changed
+
+* Gas payment falls back to the address balance when the sender owns no spare SUI
+  coin object, instead of throwing `No valid gas coins found for the transaction.`.
+
+### Fixed
+
+* `simulateTransaction` resolves pending intents before converting to gRPC, which
+  is synchronous. A `coinWithBalance` intent failed with `Unknown Command kind`.
+* Command clones and `addInput` results keep `String` map keys, which the cast to
+  `Map<String, dynamic>` on the way to gRPC requires.
+* A `FUNDS_WITHDRAWAL` input converts to gRPC after a BCS round trip. Its
+  reservation reads back as a `BigInt`, failing every dry run of a parsed
+  transaction with `type '_BigIntImpl' is not a subtype of type 'String'`.
+* A `ValidDuring` expiration reaches gRPC as `VALID_DURING` rather than `NONE`,
+  keeping the replay protection address-balance gas depends on.
+
 ## 0.10.1
 
 ### Fixed

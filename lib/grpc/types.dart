@@ -215,8 +215,15 @@ class CoinData {
 
 class Balance {
   final String coinType;
+
+  /// [addressBalance] plus [coinBalance].
   final String balance;
+
+  /// Held as `Coin<T>` objects.
   final String coinBalance;
+
+  /// Held in the address's own `Balance<T>`, spendable only through a
+  /// funds-withdrawal input.
   final String addressBalance;
 
   const Balance({

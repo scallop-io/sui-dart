@@ -88,7 +88,10 @@ Input callArgToGrpcInput(Map<String, dynamic> arg) {
         kind: Input_InputKind.FUNDS_WITHDRAWAL,
         fundsWithdrawal: .new(
           amount: _variantKind(withdrawal['reservation']) == 'MaxAmountU64'
-              ? Int64.parseRadix(withdrawal['reservation']['MaxAmountU64'], 10)
+              ? Int64.parseRadix(
+                  withdrawal['reservation']['MaxAmountU64'].toString(),
+                  10,
+                )
               : null,
           coinType: _variantKind(withdrawal['typeArg']) == 'Balance'
               ? withdrawal['typeArg']['Balance']
@@ -242,7 +245,17 @@ grpc_transaction.Transaction transactionDataToGrpcTransaction(
   );
 
   if (data.expiration != null) {
-    if (data.expiration?.epoch == null) {
+    final validDuring = data.expiration?.validDuring;
+    if (validDuring != null) {
+      tx.expiration = (grpc_transaction.TransactionExpiration()
+        ..kind = grpc_transaction
+            .TransactionExpiration_TransactionExpirationKind
+            .VALID_DURING
+        ..epoch = Int64.parseRadix(validDuring['maxEpoch'].toString(), 10)
+        ..minEpoch = Int64.parseRadix(validDuring['minEpoch'].toString(), 10)
+        ..chain = validDuring['chain'] as String
+        ..nonce = validDuring['nonce'] as int);
+    } else if (data.expiration?.epoch == null) {
       tx.expiration = (grpc_transaction.TransactionExpiration()
         ..kind = grpc_transaction
             .TransactionExpiration_TransactionExpirationKind

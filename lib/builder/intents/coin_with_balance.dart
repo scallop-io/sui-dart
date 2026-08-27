@@ -10,6 +10,7 @@ import 'package:sui_dart/core/sui_core_client.dart';
 import 'package:sui_dart/grpc/types.dart' show CoinData;
 import 'package:sui_dart/types/common.dart';
 import 'package:sui_dart/types/objects.dart';
+import 'package:sui_dart/bcs/sui_bcs.dart';
 
 const COIN_WITH_BALANCE = 'CoinWithBalance';
 final SUI_TYPE = normalizeStructTagString('0x2::sui::SUI');
@@ -85,11 +86,8 @@ typedef _IntentInfo = ({BigInt balance, String outputKind});
 /// Resolves all [COIN_WITH_BALANCE] intents in [transactionData] into concrete
 /// merge/split commands.
 ///
-/// This selects and merges the sender's owned coins (or the gas coin for SUI)
-/// and splits the exact requested amounts. It does not use the address-balance
-/// withdrawal path (`coin::redeem_funds` / `coin::send_funds`); any surplus
-/// stays as an owned coin with the sender. Coins are merged rather than left as
-/// dust.
+/// A shortfall in owned coins is redeemed from the sender's address balance and
+/// the remainder returns there; a coin-only surplus stays as an owned coin.
 Future<void> resolveCoinBalance(
   TransactionBlockDataBuilder transactionData,
   BuildOptions options,
@@ -161,23 +159,27 @@ Future<void> resolveCoinBalance(
     if (objectId != null) usedIds.add(normalizeSuiAddress(objectId));
   }
 
-  // Load coins for every non-gas type up front.
   final coinsByType = <String, List<CoinData>>{};
+  final addressBalanceByType = <String, BigInt>{};
   for (final entry in totalByType.entries) {
-    if (entry.key == 'gas') continue;
-    coinsByType[entry.key] = await _loadCoins(
+    final isGas = entry.key == 'gas';
+    final source = await _loadSources(
       client,
       sender,
-      entry.key,
+      isGas ? SUI_TYPE : entry.key,
       entry.value,
       usedIds,
+      withCoins: !isGas,
     );
+    addressBalanceByType[entry.key] = source.addressBalance;
+    if (!isGas) coinsByType[entry.key] = source.coins;
   }
 
   // Per-type split results, computed when the first intent of a type is seen.
   final typeResults = <String, List<dynamic>>{};
   final typeNextIntent = <String, int>{};
   final exactBalanceByType = <String, bool>{};
+  final usedAddressBalance = <String>{};
 
   var index = 0;
   while (index < transactionData.commands.length) {
@@ -196,15 +198,29 @@ Future<void> resolveCoinBalance(
       final intents = intentsByType[type]!;
       final sources = <dynamic>[];
 
-      if (type == 'gas') {
-        sources.add({'\$kind': 'GasCoin', 'GasCoin': true});
+      final totalRequired = totalByType[type]!;
+      final addressBalance = addressBalanceByType[type] ?? BigInt.zero;
+
+      if (addressBalance >= totalRequired) {
+        // covers it alone, so no coin object (or the gas coin) is touched.
+        usedAddressBalance.add(type);
+        commands.add(_redeemFunds(transactionData, coinType, totalRequired));
+        sources.add(<String, dynamic>{
+          '\$kind': 'Result',
+          'Result': index + commands.length - 1,
+        });
+      } else if (type == 'gas') {
+        sources.add(<String, dynamic>{'\$kind': 'GasCoin', 'GasCoin': true});
       } else {
         final coins = coinsByType[type]!;
         final loaded = coins.fold(
           BigInt.zero,
           (sum, c) => sum + BigInt.parse(c.balance),
         );
-        exactBalanceByType[type] = loaded == totalByType[type];
+        final shortfall = totalRequired > loaded
+            ? totalRequired - loaded
+            : BigInt.zero;
+        exactBalanceByType[type] = loaded + shortfall == totalRequired;
         for (final coin in coins) {
           sources.add(
             transactionData.addInput(
@@ -214,6 +230,14 @@ Future<void> resolveCoinBalance(
               ),
             ),
           );
+        }
+        if (shortfall > BigInt.zero) {
+          usedAddressBalance.add(type);
+          commands.add(_redeemFunds(transactionData, coinType, shortfall));
+          sources.add(<String, dynamic>{
+            '\$kind': 'Result',
+            'Result': index + commands.length - 1,
+          });
         }
       }
 
@@ -245,7 +269,7 @@ Future<void> resolveCoinBalance(
 
       final results = <dynamic>[];
       for (var i = 0; i < intents.length; i++) {
-        final splitResult = {
+        final splitResult = <String, dynamic>{
           '\$kind': 'NestedResult',
           'NestedResult': [splitCmdIndex, i],
         };
@@ -257,7 +281,7 @@ Future<void> resolveCoinBalance(
               'arguments': [splitResult],
             }),
           );
-          results.add({
+          results.add(<String, dynamic>{
             '\$kind': 'NestedResult',
             'NestedResult': [index + commands.length - 1, 0],
           });
@@ -266,7 +290,22 @@ Future<void> resolveCoinBalance(
         }
       }
       // Cleanup goes here, not appended: nothing may follow a Random MoveCall.
-      if (type != 'gas' && exactBalanceByType[type] == true) {
+      if (usedAddressBalance.contains(type)) {
+        // a redeemed coin can't dangle; send_funds also takes a zero remainder.
+        commands.add(
+          Commands.moveCall({
+            'target': '0x2::coin::send_funds',
+            'typeArguments': [coinType],
+            'arguments': [
+              baseCoin,
+              transactionData.addInput(
+                'pure',
+                Inputs.pure(SuiBcs.Address.serialize(sender)),
+              ),
+            ],
+          }),
+        );
+      } else if (type != 'gas' && exactBalanceByType[type] == true) {
         commands.add(
           Commands.moveCall({
             'target': '0x2::coin::destroy_zero',
@@ -290,13 +329,49 @@ Future<void> resolveCoinBalance(
   return next();
 }
 
-Future<List<CoinData>> _loadCoins(
+Map<String, dynamic> _redeemFunds(
+  TransactionBlockDataBuilder transactionData,
+  String coinType,
+  BigInt amount,
+) {
+  return Commands.moveCall({
+    'target': '0x2::coin::redeem_funds',
+    'typeArguments': [coinType],
+    'arguments': [
+      transactionData.addInput(
+        'withdrawal',
+        Inputs.fundsWithdrawal(maxAmount: amount, coinType: coinType),
+      ),
+    ],
+  });
+}
+
+Future<({List<CoinData> coins, BigInt addressBalance})> _loadSources(
   SuiCoreClient client,
   String owner,
   String coinType,
   BigInt needed,
-  Set<String> usedIds,
-) async {
+  Set<String> usedIds, {
+  bool withCoins = true,
+}) async {
+  final balance = await client.getBalance(owner, coinType: coinType);
+  final addressBalance = BigInt.tryParse(balance.addressBalance) ?? BigInt.zero;
+
+  // the gas coin isn't in a balance query and covers any shortfall itself.
+  if (!withCoins) return (coins: <CoinData>[], addressBalance: addressBalance);
+
+  final total = BigInt.tryParse(balance.balance) ?? BigInt.zero;
+  if (total < needed) {
+    throw ArgumentError(
+      'Insufficient balance of $coinType for $owner. '
+      'Required: $needed, available: $total',
+    );
+  }
+  if (addressBalance >= needed) {
+    return (coins: <CoinData>[], addressBalance: addressBalance);
+  }
+
+  final fromCoins = needed - addressBalance;
   final coins = <CoinData>[];
   var loaded = BigInt.zero;
   String? cursor;
@@ -312,15 +387,15 @@ Future<List<CoinData>> _loadCoins(
       coins.add(coin);
       loaded += BigInt.parse(coin.balance);
     }
-    if (loaded >= needed || !page.hasNextPage) break;
+    if (loaded >= fromCoins || !page.hasNextPage) break;
     cursor = page.nextCursor;
   }
 
-  if (loaded < needed) {
+  if (loaded + addressBalance < needed) {
     throw ArgumentError(
       'Insufficient balance of $coinType for $owner. '
-      'Required: $needed, available: $loaded',
+      'Required: $needed, available: ${loaded + addressBalance}',
     );
   }
-  return coins;
+  return (coins: coins, addressBalance: addressBalance);
 }
