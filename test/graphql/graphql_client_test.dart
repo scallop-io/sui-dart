@@ -891,4 +891,58 @@ void main() {
       expect(variables['doGasSelection'], isFalse);
     },
   );
+
+  test('getObjects batches ids and keeps them in order', () async {
+    final batchSizes = <int>[];
+    final adapter = _MockAdapter((body) {
+      final keys = (body['variables'] as Map)['keys'] as List;
+      batchSizes.add(keys.length);
+      return {
+        'data': {'multiGetObjects': List<dynamic>.filled(keys.length, null)},
+      };
+    });
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final ids = [
+      for (var i = 0; i < 90; i++) '0x${i.toString().padLeft(4, '0')}',
+    ];
+    final results = await client.getObjects(ids);
+
+    expect(batchSizes, [40, 40, 10]);
+    expect(results.map((r) => (r as ObjectError).objectId).toList(), ids);
+  });
+
+  test('a transaction carries its checkpoint and timestamp', () async {
+    final adapter = _MockAdapter(
+      (_) => {
+        'data': {
+          'transaction': {
+            'digest': '0xabc',
+            'effects': {
+              'status': 'SUCCESS',
+              'timestamp': '2026-08-28T03:09:19.500Z',
+              'checkpoint': {'sequenceNumber': 12345},
+            },
+          },
+        },
+      },
+    );
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final tx = await client.getTransaction('0xabc');
+
+    expect(tx.checkpoint, '12345');
+    expect(
+      tx.timestampMs,
+      DateTime.parse(
+        '2026-08-28T03:09:19.500Z',
+      ).millisecondsSinceEpoch.toString(),
+    );
+  });
 }

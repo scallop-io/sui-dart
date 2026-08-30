@@ -83,7 +83,7 @@ class SuiAccount {
   ]) {
     String sk = privateKey;
     SignatureScheme? se = scheme;
-    if (privateKey.startsWith('suiprivkey')) {
+    if (privateKey.startsWith(SUI_PRIVATE_KEY_PREFIX)) {
       final (scheme, privKey) = decodeSuiPrivateKey(privateKey);
       se = scheme;
       sk = Hex.encode(privKey);

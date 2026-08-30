@@ -830,7 +830,15 @@ class GrpcCoreClient implements SuiCoreClient {
   }
 
   FieldMask _transactionReadMask(TransactionIncludeOptions? include) {
-    final paths = <String>['digest', 'signatures', 'checkpoint', 'timestamp'];
+    // status is always requested: without it a failed transaction reads as
+    // successful. The full effects message still needs include.effects.
+    final paths = <String>[
+      'digest',
+      'signatures',
+      'checkpoint',
+      'timestamp',
+      'effects.status',
+    ];
 
     if (include?.transaction == true) paths.add('transaction');
     if (include?.effects == true) paths.add('effects');
@@ -892,7 +900,6 @@ class GrpcCoreClient implements SuiCoreClient {
     ExecutedTransaction tx,
     TransactionIncludeOptions? include,
   ) {
-    // Extract status from effects (always present when effects are available)
     ExecutionStatus status = const ExecutionStatus(success: true);
     if (tx.hasEffects() && tx.effects.hasStatus()) {
       status = ExecutionStatus(
@@ -955,7 +962,9 @@ class GrpcCoreClient implements SuiCoreClient {
           : null,
       checkpoint: tx.hasCheckpoint() ? tx.checkpoint.toString() : null,
       timestampMs: tx.hasTimestamp()
-          ? (tx.timestamp.seconds * Int64(1000)).toString()
+          ? (tx.timestamp.seconds * Int64(1000) +
+                    Int64(tx.timestamp.nanos ~/ 1000000))
+                .toString()
           : null,
     );
   }
@@ -964,6 +973,7 @@ class GrpcCoreClient implements SuiCoreClient {
     pb_effects.TransactionEffects effects,
   ) {
     return TransactionEffects(
+      version: effects.hasVersion() ? effects.version : 2,
       transactionDigest: effects.hasTransactionDigest()
           ? effects.transactionDigest
           : null,

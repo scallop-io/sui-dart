@@ -16,6 +16,9 @@ query GetTransaction($digest: String!) {
     effects {
       status
       timestamp
+      checkpoint {
+        sequenceNumber
+      }
     }
   }
 }
@@ -502,6 +505,9 @@ query ListTransactions(
       effects {
         status
         timestamp
+        checkpoint {
+          sequenceNumber
+        }
       }
     }
   }

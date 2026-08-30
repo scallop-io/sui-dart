@@ -1,3 +1,35 @@
+## 0.11.1
+
+Synced to `1056b78`.
+
+### Fixed
+
+* GraphQL `getObjects` sends ids 40 at a time. One request carrying every id can
+  exceed the node's request size limit.
+* gRPC transaction timestamps keep their sub-second part.
+* gRPC transaction effects carry the version the node reported.
+* gRPC `getTransaction` reports a failed transaction as failed. `effects.status`
+  was only requested when `include.effects` was set, so a default call reported
+  every transaction as successful.
+* GraphQL `getTransaction` and `listTransactions` return the checkpoint sequence
+  number, which was always null on that transport.
+
+### Changed
+
+* Vendored protos refreshed from `sui-apis` `201981c`, adding the
+  `TransactionExpiration` `VALIDITY` kind and its `AllowedProposers` message.
+  The copies under `lib/grpc/proto/` had drifted behind the generated code, and
+  `filter.proto` and `query_options.proto` were missing entirely.
+
+### Removed
+
+* Unreachable JSON-RPC response models: `Checkpoint`, `DevInspectResults`,
+  `SuiExecutionResult`, `DynamicFieldPage`, `DynamicFieldInfo`, `Paged`,
+  `NextCursor`, `ValidatorsApys`, `ValidatorApy`, and the `lib/types/`
+  validator, version, and event models. None was exported from `package:sui_dart`.
+* `RPCError`, `RPCValidationError`, and `RPCErrorRequest`, left from the removed
+  JSON-RPC transport and never exported.
+
 ## 0.11.0
 
 Synced to `ad407b5`.

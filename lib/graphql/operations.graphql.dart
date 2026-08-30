@@ -5715,6 +5715,23 @@ const documentNodeQueryGetTransaction = DocumentNode(
                         directives: [],
                         selectionSet: null,
                       ),
+                      FieldNode(
+                        name: NameNode(value: 'checkpoint'),
+                        alias: null,
+                        arguments: [],
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'sequenceNumber'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -5787,24 +5804,36 @@ class Query$GetTransaction$transaction {
 }
 
 class Query$GetTransaction$transaction$effects {
-  Query$GetTransaction$transaction$effects({this.status, this.timestamp});
+  Query$GetTransaction$transaction$effects({
+    this.status,
+    this.timestamp,
+    this.checkpoint,
+  });
 
   factory Query$GetTransaction$transaction$effects.fromJson(
     Map<String, dynamic> json,
   ) {
     final l$status = json['status'];
     final l$timestamp = json['timestamp'];
+    final l$checkpoint = json['checkpoint'];
     return Query$GetTransaction$transaction$effects(
       status: l$status == null
           ? null
           : fromJson$Enum$ExecutionStatus((l$status as String)),
       timestamp: (l$timestamp as String?),
+      checkpoint: l$checkpoint == null
+          ? null
+          : Query$GetTransaction$transaction$effects$checkpoint.fromJson(
+              (l$checkpoint as Map<String, dynamic>),
+            ),
     );
   }
 
   final Enum$ExecutionStatus? status;
 
   final String? timestamp;
+
+  final Query$GetTransaction$transaction$effects$checkpoint? checkpoint;
 
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
@@ -5814,6 +5843,8 @@ class Query$GetTransaction$transaction$effects {
         : toJson$Enum$ExecutionStatus(l$status);
     final l$timestamp = timestamp;
     _resultData['timestamp'] = l$timestamp;
+    final l$checkpoint = checkpoint;
+    _resultData['checkpoint'] = l$checkpoint?.toJson();
     return _resultData;
   }
 
@@ -5821,7 +5852,8 @@ class Query$GetTransaction$transaction$effects {
   int get hashCode {
     final l$status = status;
     final l$timestamp = timestamp;
-    return Object.hashAll([l$status, l$timestamp]);
+    final l$checkpoint = checkpoint;
+    return Object.hashAll([l$status, l$timestamp, l$checkpoint]);
   }
 
   @override
@@ -5841,6 +5873,58 @@ class Query$GetTransaction$transaction$effects {
     final l$timestamp = timestamp;
     final lOther$timestamp = other.timestamp;
     if (l$timestamp != lOther$timestamp) {
+      return false;
+    }
+    final l$checkpoint = checkpoint;
+    final lOther$checkpoint = other.checkpoint;
+    if (l$checkpoint != lOther$checkpoint) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$GetTransaction$transaction$effects$checkpoint {
+  Query$GetTransaction$transaction$effects$checkpoint({
+    required this.sequenceNumber,
+  });
+
+  factory Query$GetTransaction$transaction$effects$checkpoint.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$sequenceNumber = json['sequenceNumber'];
+    return Query$GetTransaction$transaction$effects$checkpoint(
+      sequenceNumber: (l$sequenceNumber as int),
+    );
+  }
+
+  final int sequenceNumber;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$sequenceNumber = sequenceNumber;
+    _resultData['sequenceNumber'] = l$sequenceNumber;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$sequenceNumber = sequenceNumber;
+    return Object.hashAll([l$sequenceNumber]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Query$GetTransaction$transaction$effects$checkpoint ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$sequenceNumber = sequenceNumber;
+    final lOther$sequenceNumber = other.sequenceNumber;
+    if (l$sequenceNumber != lOther$sequenceNumber) {
       return false;
     }
     return true;
@@ -15947,6 +16031,23 @@ const documentNodeQueryListTransactions = DocumentNode(
                               directives: [],
                               selectionSet: null,
                             ),
+                            FieldNode(
+                              name: NameNode(value: 'checkpoint'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: SelectionSetNode(
+                                selections: [
+                                  FieldNode(
+                                    name: NameNode(value: 'sequenceNumber'),
+                                    alias: null,
+                                    arguments: [],
+                                    directives: [],
+                                    selectionSet: null,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -16196,6 +16297,7 @@ class Query$ListTransactions$transactions$nodes$effects {
   Query$ListTransactions$transactions$nodes$effects({
     this.status,
     this.timestamp,
+    this.checkpoint,
   });
 
   factory Query$ListTransactions$transactions$nodes$effects.fromJson(
@@ -16203,17 +16305,26 @@ class Query$ListTransactions$transactions$nodes$effects {
   ) {
     final l$status = json['status'];
     final l$timestamp = json['timestamp'];
+    final l$checkpoint = json['checkpoint'];
     return Query$ListTransactions$transactions$nodes$effects(
       status: l$status == null
           ? null
           : fromJson$Enum$ExecutionStatus((l$status as String)),
       timestamp: (l$timestamp as String?),
+      checkpoint: l$checkpoint == null
+          ? null
+          : Query$ListTransactions$transactions$nodes$effects$checkpoint.fromJson(
+              (l$checkpoint as Map<String, dynamic>),
+            ),
     );
   }
 
   final Enum$ExecutionStatus? status;
 
   final String? timestamp;
+
+  final Query$ListTransactions$transactions$nodes$effects$checkpoint?
+  checkpoint;
 
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
@@ -16223,6 +16334,8 @@ class Query$ListTransactions$transactions$nodes$effects {
         : toJson$Enum$ExecutionStatus(l$status);
     final l$timestamp = timestamp;
     _resultData['timestamp'] = l$timestamp;
+    final l$checkpoint = checkpoint;
+    _resultData['checkpoint'] = l$checkpoint?.toJson();
     return _resultData;
   }
 
@@ -16230,7 +16343,8 @@ class Query$ListTransactions$transactions$nodes$effects {
   int get hashCode {
     final l$status = status;
     final l$timestamp = timestamp;
-    return Object.hashAll([l$status, l$timestamp]);
+    final l$checkpoint = checkpoint;
+    return Object.hashAll([l$status, l$timestamp, l$checkpoint]);
   }
 
   @override
@@ -16250,6 +16364,59 @@ class Query$ListTransactions$transactions$nodes$effects {
     final l$timestamp = timestamp;
     final lOther$timestamp = other.timestamp;
     if (l$timestamp != lOther$timestamp) {
+      return false;
+    }
+    final l$checkpoint = checkpoint;
+    final lOther$checkpoint = other.checkpoint;
+    if (l$checkpoint != lOther$checkpoint) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$ListTransactions$transactions$nodes$effects$checkpoint {
+  Query$ListTransactions$transactions$nodes$effects$checkpoint({
+    required this.sequenceNumber,
+  });
+
+  factory Query$ListTransactions$transactions$nodes$effects$checkpoint.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$sequenceNumber = json['sequenceNumber'];
+    return Query$ListTransactions$transactions$nodes$effects$checkpoint(
+      sequenceNumber: (l$sequenceNumber as int),
+    );
+  }
+
+  final int sequenceNumber;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$sequenceNumber = sequenceNumber;
+    _resultData['sequenceNumber'] = l$sequenceNumber;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$sequenceNumber = sequenceNumber;
+    return Object.hashAll([l$sequenceNumber]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$ListTransactions$transactions$nodes$effects$checkpoint ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$sequenceNumber = sequenceNumber;
+    final lOther$sequenceNumber = other.sequenceNumber;
+    if (l$sequenceNumber != lOther$sequenceNumber) {
       return false;
     }
     return true;

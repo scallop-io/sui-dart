@@ -36,6 +36,11 @@ typedef _ListedEvent = generated.Query$ListEvents$events$nodes;
 /// GraphQL-backed [SuiCoreClient]. [executeTransaction] and
 /// [verifyZkLoginSignature] throw `UnsupportedError`; use the gRPC transport
 /// for those.
+
+/// Chunk size for `multiGetObjects`. The node caps request bytes, not key
+/// count, so this is a safe chunk rather than the node's own threshold.
+const _objectBatchSize = 40;
+
 class GraphQLCoreClient implements SuiCoreClient {
   GraphQLCoreClient(this._client);
 
@@ -344,27 +349,34 @@ class GraphQLCoreClient implements SuiCoreClient {
     ObjectIncludeOptions? include,
   }) async {
     if (objectIds.isEmpty) return const [];
-    final data = await _client.executeData(
-      _multiGetObjectsOperation,
-      generated.Variables$Query$MultiGetObjects(
-        keys: objectIds
-            .map((id) => schema.Input$ObjectKey(address: id))
-            .toList(),
-      ),
-    );
-    final objects = data.multiGetObjects;
-    return [
-      for (var i = 0; i < objects.length; i++)
-        if (objects[i] == null)
-          ObjectError(
-            'Object ${objectIds[i]} not found',
-            code: 'notExists',
-            reason: ObjectErrorReason.notFound,
-            objectId: objectIds[i],
-          )
-        else
-          ObjectSuccess(_mapObject(objects[i]!)),
-    ];
+    final results = <ObjectResult>[];
+    for (var start = 0; start < objectIds.length; start += _objectBatchSize) {
+      final stop = start + _objectBatchSize;
+      final batch = objectIds.sublist(
+        start,
+        stop < objectIds.length ? stop : objectIds.length,
+      );
+      final data = await _client.executeData(
+        _multiGetObjectsOperation,
+        generated.Variables$Query$MultiGetObjects(
+          keys: batch.map((id) => schema.Input$ObjectKey(address: id)).toList(),
+        ),
+      );
+      final objects = data.multiGetObjects;
+      for (var i = 0; i < objects.length; i++) {
+        results.add(
+          objects[i] == null
+              ? ObjectError(
+                  'Object ${batch[i]} not found',
+                  code: 'notExists',
+                  reason: ObjectErrorReason.notFound,
+                  objectId: batch[i],
+                )
+              : ObjectSuccess(_mapObject(objects[i]!)),
+        );
+      }
+    }
+    return results;
   }
 
   @override
@@ -509,6 +521,7 @@ class GraphQLCoreClient implements SuiCoreClient {
       timestampMs: timestamp == null
           ? null
           : DateTime.tryParse(timestamp)?.millisecondsSinceEpoch.toString(),
+      checkpoint: effects?.checkpoint?.sequenceNumber.toString(),
     );
   }
 
@@ -607,6 +620,7 @@ class GraphQLCoreClient implements SuiCoreClient {
           timestampMs: timestamp == null
               ? null
               : DateTime.tryParse(timestamp)?.millisecondsSinceEpoch.toString(),
+          checkpoint: effects?.checkpoint?.sequenceNumber.toString(),
         );
       }).toList(),
       descending: pagination.descending,
@@ -711,13 +725,12 @@ class GraphQLCoreClient implements SuiCoreClient {
       );
     }
 
-    final bcs = event.contents?.bcs;
     return Event(
       packageId: normalizeSuiAddress(packageId),
       module: module,
       sender: normalizeSuiAddress(sender),
       eventType: normalizeStructTagString(eventType),
-      bcs: bcs == null ? Uint8List(0) : base64Decode(bcs),
+      bcs: _decodeBcs(event.contents?.bcs),
       json: event.contents?.json,
       checkpoint: event.transaction?.effects?.checkpoint?.sequenceNumber
           .toString(),
