@@ -242,6 +242,11 @@ fragment TransactionHistoryFields on Transaction {
         }
         nodes {
           __typename
+          ... on MoveCallCommand {
+            function {
+              name
+            }
+          }
         }
       }
     }

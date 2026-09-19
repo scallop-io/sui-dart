@@ -241,6 +241,10 @@ void main() {
                   'commands': {
                     'pageInfo': {'hasNextPage': true},
                     'nodes': [
+                      {
+                        '__typename': 'MoveCallCommand',
+                        'function': {'name': 'open_obligation'},
+                      },
                       {'__typename': 'TransferObjectsCommand'},
                     ],
                   },
@@ -332,18 +336,23 @@ void main() {
     expect(document, contains('balanceChanges(first: 50)'));
     expect(document, contains('objectChanges(first: 50)'));
     expect(document, contains('events(first: 50)'));
+    expect(document, contains('MoveCallCommand'));
     expect(page.digests, ['D1']);
     expect(page.hasNextPage, isTrue);
     expect(page.endCursor, 'next-cursor');
     expect(page.transactions.single.success, isTrue);
     expect(page.transactions.single.senderAddress, '0xabc');
     expect(page.transactions.single.isProgrammableTransaction, isTrue);
-    expect(page.transactions.single.commandTypes, ['TransferObjectsCommand']);
+    expect(page.transactions.single.commandTypes, [
+      'MoveCallCommand',
+      'TransferObjectsCommand',
+    ]);
     expect(page.transactions.single.commandTypesTruncated, isTrue);
     expect(page.transactions.single.gasSummary?.netCost, BigInt.from(1200));
     expect(page.transactions.single.balanceChanges.single.amount, '-10');
     expect(page.transactions.single.balanceChangesTruncated, isTrue);
     expect(page.transactions.single.objectChangesTruncated, isFalse);
+    expect(page.transactions.single.moveCallNames, ['open_obligation']);
     expect(page.transactions.single.eventTypes, [
       '0xefe8b36d5b2e43728cc323298626b83177803521d195cfb11e15b910e892fddf::mint::MintEvent',
     ]);

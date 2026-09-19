@@ -1,3 +1,11 @@
+## 0.11.3
+
+### Added
+
+* Move call names on transaction history. `TransactionHistoryFields` selects
+  `MoveCallCommand.function.name`, and `SenderTransaction.moveCallNames` carries
+  them in call order.
+
 ## 0.11.2
 
 ### Added

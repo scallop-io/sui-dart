@@ -1119,6 +1119,36 @@ const fragmentDefinitionTransactionHistoryFields = FragmentDefinitionNode(
                                 directives: [],
                                 selectionSet: null,
                               ),
+                              InlineFragmentNode(
+                                typeCondition: TypeConditionNode(
+                                  on: NamedTypeNode(
+                                    name: NameNode(value: 'MoveCallCommand'),
+                                    isNonNull: false,
+                                  ),
+                                ),
+                                directives: [],
+                                selectionSet: SelectionSetNode(
+                                  selections: [
+                                    FieldNode(
+                                      name: NameNode(value: 'function'),
+                                      alias: null,
+                                      arguments: [],
+                                      directives: [],
+                                      selectionSet: SelectionSetNode(
+                                        selections: [
+                                          FieldNode(
+                                            name: NameNode(value: 'name'),
+                                            alias: null,
+                                            arguments: [],
+                                            directives: [],
+                                            selectionSet: null,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -2123,6 +2153,11 @@ class Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$n
     Map<String, dynamic> json,
   ) {
     switch (json["__typename"] as String) {
+      case "MoveCallCommand":
+        return Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand.fromJson(
+          json,
+        );
+
       case "MakeMoveVecCommand":
         return Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MakeMoveVecCommand.fromJson(
           json,
@@ -2130,11 +2165,6 @@ class Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$n
 
       case "MergeCoinsCommand":
         return Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MergeCoinsCommand.fromJson(
-          json,
-        );
-
-      case "MoveCallCommand":
-        return Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand.fromJson(
           json,
         );
 
@@ -2209,6 +2239,10 @@ extension UtilityExtension$Fragment$TransactionHistoryFields$kind$$ProgrammableT
     on Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes {
   _T when<_T>({
     required _T Function(
+      Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand,
+    )
+    moveCallCommand,
+    required _T Function(
       Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MakeMoveVecCommand,
     )
     makeMoveVecCommand,
@@ -2216,10 +2250,6 @@ extension UtilityExtension$Fragment$TransactionHistoryFields$kind$$ProgrammableT
       Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MergeCoinsCommand,
     )
     mergeCoinsCommand,
-    required _T Function(
-      Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand,
-    )
-    moveCallCommand,
     required _T Function(
       Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$PublishCommand,
     )
@@ -2243,6 +2273,12 @@ extension UtilityExtension$Fragment$TransactionHistoryFields$kind$$ProgrammableT
     required _T Function() orElse,
   }) {
     switch ($__typename) {
+      case "MoveCallCommand":
+        return moveCallCommand(
+          this
+              as Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand,
+        );
+
       case "MakeMoveVecCommand":
         return makeMoveVecCommand(
           this
@@ -2253,12 +2289,6 @@ extension UtilityExtension$Fragment$TransactionHistoryFields$kind$$ProgrammableT
         return mergeCoinsCommand(
           this
               as Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MergeCoinsCommand,
-        );
-
-      case "MoveCallCommand":
-        return moveCallCommand(
-          this
-              as Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand,
         );
 
       case "PublishCommand":
@@ -2298,6 +2328,10 @@ extension UtilityExtension$Fragment$TransactionHistoryFields$kind$$ProgrammableT
 
   _T maybeWhen<_T>({
     _T Function(
+      Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand,
+    )?
+    moveCallCommand,
+    _T Function(
       Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MakeMoveVecCommand,
     )?
     makeMoveVecCommand,
@@ -2305,10 +2339,6 @@ extension UtilityExtension$Fragment$TransactionHistoryFields$kind$$ProgrammableT
       Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MergeCoinsCommand,
     )?
     mergeCoinsCommand,
-    _T Function(
-      Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand,
-    )?
-    moveCallCommand,
     _T Function(
       Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$PublishCommand,
     )?
@@ -2332,6 +2362,16 @@ extension UtilityExtension$Fragment$TransactionHistoryFields$kind$$ProgrammableT
     required _T Function() orElse,
   }) {
     switch ($__typename) {
+      case "MoveCallCommand":
+        if (moveCallCommand != null) {
+          return moveCallCommand(
+            this
+                as Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand,
+          );
+        } else {
+          return orElse();
+        }
+
       case "MakeMoveVecCommand":
         if (makeMoveVecCommand != null) {
           return makeMoveVecCommand(
@@ -2347,16 +2387,6 @@ extension UtilityExtension$Fragment$TransactionHistoryFields$kind$$ProgrammableT
           return mergeCoinsCommand(
             this
                 as Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MergeCoinsCommand,
-          );
-        } else {
-          return orElse();
-        }
-
-      case "MoveCallCommand":
-        if (moveCallCommand != null) {
-          return moveCallCommand(
-            this
-                as Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand,
           );
         } else {
           return orElse();
@@ -2415,6 +2445,121 @@ extension UtilityExtension$Fragment$TransactionHistoryFields$kind$$ProgrammableT
       default:
         return orElse();
     }
+  }
+}
+
+class Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand
+    implements
+        Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes {
+  Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand({
+    required this.function,
+    this.$__typename = 'MoveCallCommand',
+  });
+
+  factory Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$function = json['function'];
+    final l$$__typename = json['__typename'];
+    return Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand(
+      function:
+          Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand$function.fromJson(
+            (l$function as Map<String, dynamic>),
+          ),
+      $__typename: (l$$__typename as String),
+    );
+  }
+
+  final Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand$function
+  function;
+
+  final String $__typename;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$function = function;
+    _resultData['function'] = l$function.toJson();
+    final l$$__typename = $__typename;
+    _resultData['__typename'] = l$$__typename;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$function = function;
+    final l$$__typename = $__typename;
+    return Object.hashAll([l$function, l$$__typename]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$function = function;
+    final lOther$function = other.function;
+    if (l$function != lOther$function) {
+      return false;
+    }
+    final l$$__typename = $__typename;
+    final lOther$$__typename = other.$__typename;
+    if (l$$__typename != lOther$$__typename) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand$function {
+  Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand$function({
+    required this.name,
+  });
+
+  factory Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand$function.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$name = json['name'];
+    return Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand$function(
+      name: (l$name as String),
+    );
+  }
+
+  final String name;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$name = name;
+    _resultData['name'] = l$name;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$name = name;
+    return Object.hashAll([l$name]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand$function ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$name = name;
+    final lOther$name = other.name;
+    if (l$name != lOther$name) {
+      return false;
+    }
+    return true;
   }
 }
 
@@ -2506,56 +2651,6 @@ class Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$n
     }
     if (other
             is! Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MergeCoinsCommand ||
-        runtimeType != other.runtimeType) {
-      return false;
-    }
-    final l$$__typename = $__typename;
-    final lOther$$__typename = other.$__typename;
-    if (l$$__typename != lOther$$__typename) {
-      return false;
-    }
-    return true;
-  }
-}
-
-class Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand
-    implements
-        Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes {
-  Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand({
-    this.$__typename = 'MoveCallCommand',
-  });
-
-  factory Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final l$$__typename = json['__typename'];
-    return Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand(
-      $__typename: (l$$__typename as String),
-    );
-  }
-
-  final String $__typename;
-
-  Map<String, dynamic> toJson() {
-    final _resultData = <String, dynamic>{};
-    final l$$__typename = $__typename;
-    _resultData['__typename'] = l$$__typename;
-    return _resultData;
-  }
-
-  @override
-  int get hashCode {
-    final l$$__typename = $__typename;
-    return Object.hashAll([l$$__typename]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other
-            is! Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand ||
         runtimeType != other.runtimeType) {
       return false;
     }

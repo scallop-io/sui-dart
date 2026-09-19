@@ -694,6 +694,7 @@ class SenderTransaction {
     this.balanceChangesTruncated = false,
     this.objectChangesTruncated = false,
     this.eventTypes = const [],
+    this.moveCallNames = const [],
   });
 
   final String digest;
@@ -709,6 +710,10 @@ class SenderTransaction {
   final bool balanceChangesTruncated;
   final bool objectChangesTruncated;
   final List<String> eventTypes;
+
+  /// Unqualified names of the Move functions this transaction called, in call
+  /// order. Empty for a transaction with no move call.
+  final List<String> moveCallNames;
 
   factory SenderTransaction._fromNode(
     generated.Fragment$TransactionHistoryFields node,
@@ -764,6 +769,12 @@ class SenderTransaction {
       eventTypes: [
         for (final event in events)
           if (event.contents?.type?.repr case final repr?) repr,
+      ],
+      moveCallNames: [
+        for (final command in programmable?.commands?.nodes ?? const [])
+          if (command
+              is generated.Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand)
+            command.function.name,
       ],
     );
   }
