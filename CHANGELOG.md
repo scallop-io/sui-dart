@@ -1,3 +1,12 @@
+## 0.11.2
+
+### Added
+
+* Events on transaction history. `TransactionHistoryFields` now selects
+  `effects.events`, and `SenderTransaction.eventTypes` carries the fully
+  qualified struct types a transaction emitted. Filled by both
+  `queryTransactionsByAddress` and `queryTransactionsBySender`.
+
 ## 0.11.1
 
 Synced to `1056b78`.

@@ -292,6 +292,18 @@ void main() {
                       },
                     ],
                   },
+                  'events': {
+                    'nodes': [
+                      {
+                        'contents': {
+                          'type': {
+                            'repr':
+                                '0xefe8b36d5b2e43728cc323298626b83177803521d195cfb11e15b910e892fddf::mint::MintEvent',
+                          },
+                        },
+                      },
+                    ],
+                  },
                 },
               },
             ],
@@ -319,6 +331,7 @@ void main() {
     expect(document, contains('objectChanges'));
     expect(document, contains('balanceChanges(first: 50)'));
     expect(document, contains('objectChanges(first: 50)'));
+    expect(document, contains('events(first: 50)'));
     expect(page.digests, ['D1']);
     expect(page.hasNextPage, isTrue);
     expect(page.endCursor, 'next-cursor');
@@ -331,6 +344,9 @@ void main() {
     expect(page.transactions.single.balanceChanges.single.amount, '-10');
     expect(page.transactions.single.balanceChangesTruncated, isTrue);
     expect(page.transactions.single.objectChangesTruncated, isFalse);
+    expect(page.transactions.single.eventTypes, [
+      '0xefe8b36d5b2e43728cc323298626b83177803521d195cfb11e15b910e892fddf::mint::MintEvent',
+    ]);
     expect(page.transactions.single.objectChanges.single.toJson(), {
       'objectId': '0xobject',
       'type': '0x1::nft::Nft',

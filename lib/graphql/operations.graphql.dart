@@ -1518,6 +1518,58 @@ const fragmentDefinitionTransactionHistoryFields = FragmentDefinitionNode(
                 ],
               ),
             ),
+            FieldNode(
+              name: NameNode(value: 'events'),
+              alias: null,
+              arguments: [
+                ArgumentNode(
+                  name: NameNode(value: 'first'),
+                  value: IntValueNode(value: '50'),
+                ),
+              ],
+              directives: [],
+              selectionSet: SelectionSetNode(
+                selections: [
+                  FieldNode(
+                    name: NameNode(value: 'nodes'),
+                    alias: null,
+                    arguments: [],
+                    directives: [],
+                    selectionSet: SelectionSetNode(
+                      selections: [
+                        FieldNode(
+                          name: NameNode(value: 'contents'),
+                          alias: null,
+                          arguments: [],
+                          directives: [],
+                          selectionSet: SelectionSetNode(
+                            selections: [
+                              FieldNode(
+                                name: NameNode(value: 'type'),
+                                alias: null,
+                                arguments: [],
+                                directives: [],
+                                selectionSet: SelectionSetNode(
+                                  selections: [
+                                    FieldNode(
+                                      name: NameNode(value: 'repr'),
+                                      alias: null,
+                                      arguments: [],
+                                      directives: [],
+                                      selectionSet: null,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -3115,6 +3167,7 @@ class Fragment$TransactionHistoryFields$effects {
     this.gasEffects,
     this.balanceChanges,
     this.objectChanges,
+    this.events,
   });
 
   factory Fragment$TransactionHistoryFields$effects.fromJson(
@@ -3125,6 +3178,7 @@ class Fragment$TransactionHistoryFields$effects {
     final l$gasEffects = json['gasEffects'];
     final l$balanceChanges = json['balanceChanges'];
     final l$objectChanges = json['objectChanges'];
+    final l$events = json['events'];
     return Fragment$TransactionHistoryFields$effects(
       timestamp: (l$timestamp as String?),
       status: l$status == null
@@ -3145,6 +3199,11 @@ class Fragment$TransactionHistoryFields$effects {
           : Fragment$TransactionHistoryFields$effects$objectChanges.fromJson(
               (l$objectChanges as Map<String, dynamic>),
             ),
+      events: l$events == null
+          ? null
+          : Fragment$TransactionHistoryFields$effects$events.fromJson(
+              (l$events as Map<String, dynamic>),
+            ),
     );
   }
 
@@ -3158,6 +3217,8 @@ class Fragment$TransactionHistoryFields$effects {
   balanceChanges;
 
   final Fragment$TransactionHistoryFields$effects$objectChanges? objectChanges;
+
+  final Fragment$TransactionHistoryFields$effects$events? events;
 
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
@@ -3173,6 +3234,8 @@ class Fragment$TransactionHistoryFields$effects {
     _resultData['balanceChanges'] = l$balanceChanges?.toJson();
     final l$objectChanges = objectChanges;
     _resultData['objectChanges'] = l$objectChanges?.toJson();
+    final l$events = events;
+    _resultData['events'] = l$events?.toJson();
     return _resultData;
   }
 
@@ -3183,12 +3246,14 @@ class Fragment$TransactionHistoryFields$effects {
     final l$gasEffects = gasEffects;
     final l$balanceChanges = balanceChanges;
     final l$objectChanges = objectChanges;
+    final l$events = events;
     return Object.hashAll([
       l$timestamp,
       l$status,
       l$gasEffects,
       l$balanceChanges,
       l$objectChanges,
+      l$events,
     ]);
   }
 
@@ -3224,6 +3289,11 @@ class Fragment$TransactionHistoryFields$effects {
     final l$objectChanges = objectChanges;
     final lOther$objectChanges = other.objectChanges;
     if (l$objectChanges != lOther$objectChanges) {
+      return false;
+    }
+    final l$events = events;
+    final lOther$events = other.events;
+    if (l$events != lOther$events) {
       return false;
     }
     return true;
@@ -5237,6 +5307,214 @@ class Fragment$TransactionHistoryFields$effects$objectChanges$nodes$outputState$
     }
     if (other
             is! Fragment$TransactionHistoryFields$effects$objectChanges$nodes$outputState$asMoveObject$contents$type ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$repr = repr;
+    final lOther$repr = other.repr;
+    if (l$repr != lOther$repr) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Fragment$TransactionHistoryFields$effects$events {
+  Fragment$TransactionHistoryFields$effects$events({required this.nodes});
+
+  factory Fragment$TransactionHistoryFields$effects$events.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$nodes = json['nodes'];
+    return Fragment$TransactionHistoryFields$effects$events(
+      nodes: (l$nodes as List<dynamic>)
+          .map(
+            (e) =>
+                Fragment$TransactionHistoryFields$effects$events$nodes.fromJson(
+                  (e as Map<String, dynamic>),
+                ),
+          )
+          .toList(),
+    );
+  }
+
+  final List<Fragment$TransactionHistoryFields$effects$events$nodes> nodes;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$nodes = nodes;
+    _resultData['nodes'] = l$nodes.map((e) => e.toJson()).toList();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$nodes = nodes;
+    return Object.hashAll([Object.hashAll(l$nodes.map((v) => v))]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Fragment$TransactionHistoryFields$effects$events ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$nodes = nodes;
+    final lOther$nodes = other.nodes;
+    if (l$nodes.length != lOther$nodes.length) {
+      return false;
+    }
+    for (int i = 0; i < l$nodes.length; i++) {
+      final l$nodes$entry = l$nodes[i];
+      final lOther$nodes$entry = lOther$nodes[i];
+      if (l$nodes$entry != lOther$nodes$entry) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
+class Fragment$TransactionHistoryFields$effects$events$nodes {
+  Fragment$TransactionHistoryFields$effects$events$nodes({this.contents});
+
+  factory Fragment$TransactionHistoryFields$effects$events$nodes.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$contents = json['contents'];
+    return Fragment$TransactionHistoryFields$effects$events$nodes(
+      contents: l$contents == null
+          ? null
+          : Fragment$TransactionHistoryFields$effects$events$nodes$contents.fromJson(
+              (l$contents as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final Fragment$TransactionHistoryFields$effects$events$nodes$contents?
+  contents;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$contents = contents;
+    _resultData['contents'] = l$contents?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$contents = contents;
+    return Object.hashAll([l$contents]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Fragment$TransactionHistoryFields$effects$events$nodes ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$contents = contents;
+    final lOther$contents = other.contents;
+    if (l$contents != lOther$contents) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Fragment$TransactionHistoryFields$effects$events$nodes$contents {
+  Fragment$TransactionHistoryFields$effects$events$nodes$contents({this.type});
+
+  factory Fragment$TransactionHistoryFields$effects$events$nodes$contents.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$type = json['type'];
+    return Fragment$TransactionHistoryFields$effects$events$nodes$contents(
+      type: l$type == null
+          ? null
+          : Fragment$TransactionHistoryFields$effects$events$nodes$contents$type.fromJson(
+              (l$type as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final Fragment$TransactionHistoryFields$effects$events$nodes$contents$type?
+  type;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$type = type;
+    _resultData['type'] = l$type?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$type = type;
+    return Object.hashAll([l$type]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Fragment$TransactionHistoryFields$effects$events$nodes$contents ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$type = type;
+    final lOther$type = other.type;
+    if (l$type != lOther$type) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Fragment$TransactionHistoryFields$effects$events$nodes$contents$type {
+  Fragment$TransactionHistoryFields$effects$events$nodes$contents$type({
+    required this.repr,
+  });
+
+  factory Fragment$TransactionHistoryFields$effects$events$nodes$contents$type.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$repr = json['repr'];
+    return Fragment$TransactionHistoryFields$effects$events$nodes$contents$type(
+      repr: (l$repr as String),
+    );
+  }
+
+  final String repr;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$repr = repr;
+    _resultData['repr'] = l$repr;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$repr = repr;
+    return Object.hashAll([l$repr]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Fragment$TransactionHistoryFields$effects$events$nodes$contents$type ||
         runtimeType != other.runtimeType) {
       return false;
     }

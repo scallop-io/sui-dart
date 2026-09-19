@@ -693,6 +693,7 @@ class SenderTransaction {
     this.objectChanges = const [],
     this.balanceChangesTruncated = false,
     this.objectChangesTruncated = false,
+    this.eventTypes = const [],
   });
 
   final String digest;
@@ -707,6 +708,7 @@ class SenderTransaction {
   final List<TxObjectChange> objectChanges;
   final bool balanceChangesTruncated;
   final bool objectChangesTruncated;
+  final List<String> eventTypes;
 
   factory SenderTransaction._fromNode(
     generated.Fragment$TransactionHistoryFields node,
@@ -722,6 +724,7 @@ class SenderTransaction {
     final gas = effects?.gasEffects?.gasSummary;
     final balances = effects?.balanceChanges?.nodes ?? const [];
     final objects = effects?.objectChanges?.nodes ?? const [];
+    final events = effects?.events?.nodes ?? const [];
     return SenderTransaction(
       digest: node.digest,
       timestampMs: timestamp == null
@@ -758,6 +761,10 @@ class SenderTransaction {
           effects?.balanceChanges?.pageInfo.hasNextPage ?? false,
       objectChangesTruncated:
           effects?.objectChanges?.pageInfo.hasNextPage ?? false,
+      eventTypes: [
+        for (final event in events)
+          if (event.contents?.type?.repr case final repr?) repr,
+      ],
     );
   }
 }
