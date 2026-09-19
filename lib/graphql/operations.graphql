@@ -245,6 +245,7 @@ fragment TransactionHistoryFields on Transaction {
           ... on MoveCallCommand {
             function {
               name
+              fullyQualifiedName
             }
           }
         }

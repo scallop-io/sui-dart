@@ -1143,6 +1143,15 @@ const fragmentDefinitionTransactionHistoryFields = FragmentDefinitionNode(
                                             directives: [],
                                             selectionSet: null,
                                           ),
+                                          FieldNode(
+                                            name: NameNode(
+                                              value: 'fullyQualifiedName',
+                                            ),
+                                            alias: null,
+                                            arguments: [],
+                                            directives: [],
+                                            selectionSet: null,
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -2518,30 +2527,38 @@ class Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$n
 class Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand$function {
   Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand$function({
     required this.name,
+    required this.fullyQualifiedName,
   });
 
   factory Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand$function.fromJson(
     Map<String, dynamic> json,
   ) {
     final l$name = json['name'];
+    final l$fullyQualifiedName = json['fullyQualifiedName'];
     return Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand$function(
       name: (l$name as String),
+      fullyQualifiedName: (l$fullyQualifiedName as String),
     );
   }
 
   final String name;
 
+  final String fullyQualifiedName;
+
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
     final l$name = name;
     _resultData['name'] = l$name;
+    final l$fullyQualifiedName = fullyQualifiedName;
+    _resultData['fullyQualifiedName'] = l$fullyQualifiedName;
     return _resultData;
   }
 
   @override
   int get hashCode {
     final l$name = name;
-    return Object.hashAll([l$name]);
+    final l$fullyQualifiedName = fullyQualifiedName;
+    return Object.hashAll([l$name, l$fullyQualifiedName]);
   }
 
   @override
@@ -2557,6 +2574,11 @@ class Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$n
     final l$name = name;
     final lOther$name = other.name;
     if (l$name != lOther$name) {
+      return false;
+    }
+    final l$fullyQualifiedName = fullyQualifiedName;
+    final lOther$fullyQualifiedName = other.fullyQualifiedName;
+    if (l$fullyQualifiedName != lOther$fullyQualifiedName) {
       return false;
     }
     return true;

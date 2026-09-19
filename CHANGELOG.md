@@ -1,3 +1,12 @@
+## 0.11.4
+
+### Added
+
+* Move call packages on transaction history. `TransactionHistoryFields` selects
+  `MoveCallCommand.function.fullyQualifiedName`, and
+  `SenderTransaction.moveCallPackages` carries the package each call targeted,
+  in the same order as `moveCallNames`.
+
 ## 0.11.3
 
 ### Added

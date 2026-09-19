@@ -243,7 +243,11 @@ void main() {
                     'nodes': [
                       {
                         '__typename': 'MoveCallCommand',
-                        'function': {'name': 'open_obligation'},
+                        'function': {
+                          'name': 'open_obligation',
+                          'fullyQualifiedName':
+                              '0xefe8b36d5b2e43728cc323298626b83177803521d195cfb11e15b910e892fddf::open_obligation::open_obligation',
+                        },
                       },
                       {'__typename': 'TransferObjectsCommand'},
                     ],
@@ -353,6 +357,9 @@ void main() {
     expect(page.transactions.single.balanceChangesTruncated, isTrue);
     expect(page.transactions.single.objectChangesTruncated, isFalse);
     expect(page.transactions.single.moveCallNames, ['open_obligation']);
+    expect(page.transactions.single.moveCallPackages, [
+      '0xefe8b36d5b2e43728cc323298626b83177803521d195cfb11e15b910e892fddf',
+    ]);
     expect(page.transactions.single.eventTypes, [
       '0xefe8b36d5b2e43728cc323298626b83177803521d195cfb11e15b910e892fddf::mint::MintEvent',
     ]);
