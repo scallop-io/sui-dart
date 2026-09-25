@@ -320,4 +320,82 @@ void main() {
       expect(() => tx.prepareForSerialization(), throwsA(isA<ArgumentError>()));
     });
   });
+
+  group('assumeSufficientAddressBalances', () {
+    final offline = BuildOptions(assumeSufficientAddressBalances: true);
+
+    Transaction windowed() {
+      final tx = Transaction();
+      tx.setSender(_owner);
+      tx.setGasPrice(BigInt.from(1000));
+      tx.setGasBudget(BigInt.from(2000000));
+      tx.setTransactionExpiration(
+        TransactionExpiration(
+          validDuring: {
+            'minEpoch': '1',
+            'maxEpoch': '2',
+            'minTimestamp': null,
+            'maxTimestamp': null,
+            'chain': '4btiuiMPvEENsttpZC7CZ53DruC3MAgfznDbASZ7DR6S',
+            'nonce': 7,
+          },
+        ),
+      );
+      final coin = tx.add(coinWithBalance(type: _fooType, balance: 50));
+      tx.transferObjects([coin], _recipient);
+      return tx;
+    }
+
+    test(
+      'builds with no client and pays gas from the address balance',
+      () async {
+        final tx = windowed();
+        final bytes = await tx.build(offline);
+
+        expect(tx.getData().gasData.payment, isEmpty);
+        final withdrawal = tx.getData().inputs!.singleWhere(
+          (input) => input['FundsWithdrawal'] != null,
+        )['FundsWithdrawal'];
+        expect(withdrawal['reservation']['MaxAmountU64'], '50');
+        expect(await Transaction.fromBytes(bytes).build(), bytes);
+      },
+    );
+
+    test('a kind-only build needs no client either', () async {
+      final tx = Transaction();
+      tx.setSender(_owner);
+      final coin = tx.add(coinWithBalance(type: _fooType, balance: 50));
+      tx.transferObjects([coin], _recipient);
+
+      await tx.build(
+        BuildOptions(
+          onlyTransactionKind: true,
+          assumeSufficientAddressBalances: true,
+        ),
+      );
+
+      final targets = tx
+          .getData()
+          .commands!
+          .where((c) => c['MoveCall'] != null)
+          .map((c) => c['MoveCall']['function'])
+          .toList();
+      expect(targets, ['redeem_funds', 'send_funds']);
+    });
+
+    test('a transaction that uses tx.gas still needs a client', () async {
+      final tx = windowed();
+      tx.splitCoins(tx.gas, [tx.pure.u64(BigInt.one)]);
+
+      await expectLater(tx.build(offline), throwsArgumentError);
+      expect(tx.getData().gasData.payment, isNull);
+    });
+
+    test('an epoch expiration does not count as a window', () async {
+      final tx = windowed()..setExpiration(5);
+
+      await expectLater(tx.build(offline), throwsArgumentError);
+      expect(tx.getData().gasData.payment, isNull);
+    });
+  });
 }

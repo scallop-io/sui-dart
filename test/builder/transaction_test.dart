@@ -1,17 +1,23 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:bcs_dart/utils.dart';
 import 'package:test/test.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction.pbenum.dart';
 import 'package:sui_dart/grpc/types.dart'
     show
+        AddressOwner,
+        CoinData,
         ExecutionStatus,
         GasUsed,
+        Page,
         SystemState,
         TransactionEffects,
         TransactionIncludeOptions,
         TransactionResponse;
-import 'package:sui_dart/sui.dart' hide ExecutionStatus, TransactionEffects;
+import 'package:sui_dart/sui.dart'
+    hide AddressOwner, ExecutionStatus, TransactionEffects;
 
 void main() {
   test('can construct and serialize an empty transaction', () {
@@ -287,14 +293,165 @@ void main() {
       // Only the simulate needed the window: real gas coins bound the transaction.
       expect(tx.getData().expiration?.validDuring, isNull);
     });
+
+    test('keeps a Validity the caller set', () async {
+      final tx = Transaction();
+      tx.setSender(normalizeSuiAddress('0xaaaa'));
+      tx.setGasPrice(BigInt.from(1000));
+      tx.setGasBudget(BigInt.from(2000000));
+      tx.setGasPayment([]);
+      tx.setTransactionExpiration(_validity());
+
+      await tx.build(BuildOptions(client: _StubCoreClient()));
+
+      expect(tx.getData().expiration!.validity, isNotNull);
+      expect(tx.getData().expiration!.validDuring, isNull);
+    });
+  });
+
+  test('gas selection takes up to 256 coins not used as inputs', () async {
+    final coins = [
+      for (var i = 1; i <= 300; i++)
+        CoinData(
+          objectId: normalizeSuiAddress(i.toRadixString(16)),
+          version: '1',
+          digest: 'Bfm2Z4dXysM9Vu1X5p8oR4z7mFs2pT8w9X1y2Z3a4B5c',
+          owner: AddressOwner(normalizeSuiAddress('0xaaaa')),
+          type: '0x2::sui::SUI',
+          balance: '1000',
+        ),
+    ];
+    final tx = Transaction();
+    tx.setSender(normalizeSuiAddress('0xaaaa'));
+    tx.setGasPrice(BigInt.from(1000));
+    tx.setGasBudget(BigInt.from(2000000));
+
+    Map<String, dynamic> input(CoinData coin) => tx.object(
+      Inputs.objectRef(SuiObjectRef(coin.digest, coin.objectId, coin.version)),
+    );
+    tx.mergeCoins(input(coins[0]), [input(coins[1])]);
+
+    await tx.build(BuildOptions(client: _StubCoreClient(coins: coins)));
+
+    final payment = tx.getData().gasData.payment!;
+    expect(payment.length, 256);
+    expect(payment.first.objectId, coins[2].objectId);
+    expect(payment.last.objectId, coins[257].objectId);
+  });
+
+  group('windowed expiration', () {
+    test('survives both JSON formats', () {
+      for (final expiration in [
+        _validity(),
+        TransactionExpiration(validDuring: _window()),
+      ]) {
+        final tx = setup()..setTransactionExpiration(expiration);
+        final expected = expiration.toJson();
+
+        expect(
+          Transaction.from(tx.serialize()).getData().expiration!.toJson(),
+          expected,
+        );
+        expect(
+          Transaction.from(tx.toJson()).getData().expiration!.toJson(),
+          expected,
+        );
+      }
+    });
+
+    test('an unknown kind throws instead of reading as None', () {
+      final v1 = jsonDecode(setup().serialize()) as Map<String, dynamic>;
+      v1['expiration'] = {'Future': true};
+
+      expect(() => Transaction.from(jsonEncode(v1)), throwsArgumentError);
+    });
+
+    test('serializes after a round trip through bytes', () async {
+      final tx = setup()..setTransactionExpiration(_validity());
+      final restored = Transaction.fromBytes(await tx.build());
+
+      // BCS reads u64s back as BigInt, which plain jsonEncode rejects.
+      final expiration = Transaction.from(
+        restored.serialize(),
+      ).getData().expiration!;
+      expect(expiration.validity!['allowedProposers']['proposers'], [0, 2, 5]);
+    });
+
+    test('goes to gRPC with its timestamps and proposers', () {
+      final tx = setup()..setTransactionExpiration(_validity());
+      final expiration = tx.toGrpcTransaction().expiration;
+
+      expect(
+        expiration.kind,
+        TransactionExpiration_TransactionExpirationKind.VALIDITY,
+      );
+      expect(expiration.minEpoch.toInt(), 1);
+      expect(expiration.epoch.toInt(), 2);
+      expect(expiration.minTimestamp.seconds.toInt(), 1700000000);
+      expect(expiration.minTimestamp.nanos, 123000000);
+      expect(expiration.hasMaxTimestamp(), isFalse);
+      expect(expiration.allowedProposers.proposers, [0, 2, 5]);
+    });
+
+    test('gRPC rejects unsorted proposers', () {
+      final tx = setup()
+        ..setTransactionExpiration(_validity(proposers: [5, 2]));
+
+      expect(() => tx.toGrpcTransaction(), throwsArgumentError);
+    });
+
+    test('a ValidDuring with no epochs goes to gRPC', () {
+      final tx = setup()
+        ..setTransactionExpiration(
+          TransactionExpiration(
+            validDuring: {..._window(), 'minEpoch': null, 'maxEpoch': null},
+          ),
+        );
+      final expiration = tx.toGrpcTransaction().expiration;
+
+      expect(
+        expiration.kind,
+        TransactionExpiration_TransactionExpirationKind.VALID_DURING,
+      );
+      expect(expiration.hasMinEpoch(), isFalse);
+      expect(expiration.hasEpoch(), isFalse);
+    });
   });
 }
+
+Map<String, dynamic> _window() => {
+  'minEpoch': '1',
+  'maxEpoch': '2',
+  'minTimestamp': '1700000000123',
+  'maxTimestamp': null,
+  'chain': _StubCoreClient.chainId,
+  'nonce': 7,
+};
+
+TransactionExpiration _validity({List<int> proposers = const [0, 2, 5]}) =>
+    TransactionExpiration(
+      validity: {
+        ..._window(),
+        'allowedProposers': {'epoch': '2', 'proposers': proposers},
+      },
+    );
 
 class _StubCoreClient implements SuiCoreClient {
   static const chainId = '4btiuiMPvEENsttpZC7CZ53DruC3MAgfznDbASZ7DR6S';
 
+  final List<CoinData> coins;
+  _StubCoreClient({this.coins = const []});
+
   bool? simulateGasSelection;
   Map<String, dynamic>? simulateValidDuring;
+
+  @override
+  Future<Page<CoinData>> getCoins(
+    String address, {
+    String coinType = '0x2::sui::SUI',
+    String? cursor,
+    int? limit,
+  }) async => Page(data: coins, hasNextPage: true);
 
   @override
   Future<TransactionResponse> simulateTransaction(

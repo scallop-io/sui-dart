@@ -20,11 +20,8 @@ command -v protoc >/dev/null || {
 }
 
 # A different plugin version reflows all 41 files instead of the few that changed.
-command -v protoc-gen-dart >/dev/null || {
-  echo "protoc-gen-dart is missing. Install it with:" >&2
-  echo "  dart pub global activate protoc_plugin $PLUGIN_VERSION" >&2
-  exit 1
-}
+# Also rebuilds it after a Dart upgrade (stale builds break protoc).
+dart pub global activate protoc_plugin "$PLUGIN_VERSION" >/dev/null
 
 # porcelain, not `git diff`: staged changes are invisible to a working-tree diff,
 # and they would also skew the deletion count below.

@@ -58,6 +58,7 @@ class SuiEffects {
     'CannotMoveBorrowedValue': null,
     'CannotWriteToExtendedReference': null,
     'InvalidReferenceArgument': null,
+    'InvalidTxContext': null,
   });
 
   static final TypeArgumentError = Bcs.enumeration('TypeArgumentError', {

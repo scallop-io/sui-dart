@@ -1,3 +1,34 @@
+## 0.12.0
+
+Synced to `df494cd`.
+
+### Added
+
+* `Validity` expirations with optional `allowedProposers` (strictly increasing),
+  in BCS, JSON, and gRPC. `Transaction.setTransactionExpiration` sets any kind.
+* `SenderAllowance` withdrawals: `Inputs.fundsWithdrawal(funder:, allowance:)`.
+* `BuildOptions.assumeSufficientAddressBalances` resolves `coinWithBalance` and
+  `createBalance` without a client. A transaction that is otherwise complete,
+  avoids `tx.gas`, and has a `ValidDuring` or `Validity` expiration also pays
+  gas from the address balance.
+* BCS variants `EndOfEpochTransactionKind.ForwardingAddressRegistryCreate` and
+  `CommandArgumentError.InvalidTxContext`.
+
+### Fixed
+
+* Restoring v1 JSON turned a `ValidDuring` expiration into `None`, changing the
+  signed bytes.
+* gRPC encoding of a `ValidDuring` threw on a null epoch and dropped timestamps.
+* `serialize()` threw on a transaction read from bytes.
+
+### Changed
+
+* An unknown expiration or withdrawal source now throws, instead of becoming
+  `None` or `SENDER`.
+* Gas selection takes up to `maxGasObjects` coins (256), not one fewer.
+* Vendored protos refreshed from `sui-apis` `187995d`, adding a `version` or
+  `at_checkpoint` selector to `GetPackageRequest`.
+
 ## 0.11.4
 
 ### Added

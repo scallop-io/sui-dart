@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:fixnum/fixnum.dart';
+import 'package:protobuf/well_known_types/google/protobuf/timestamp.pb.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/argument.pb.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/input.pb.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/object_reference.pb.dart';
@@ -18,6 +19,19 @@ String? _variantKind(Map<dynamic, dynamic> value) {
     if (key != '\$kind') return key as String;
   }
   return null;
+}
+
+Int64? _int64OrNull(dynamic value) =>
+    value == null ? null : Int64.parseRadix(value.toString(), 10);
+
+Timestamp? _grpcTimestampOrNull(dynamic milliseconds) {
+  if (milliseconds == null) return null;
+  final ms = BigInt.parse(milliseconds.toString());
+  final thousand = BigInt.from(1000);
+  return Timestamp(
+    seconds: Int64.parseRadix((ms ~/ thousand).toString(), 10),
+    nanos: (ms % thousand).toInt() * 1000000,
+  );
 }
 
 Input callArgToGrpcInput(Map<String, dynamic> arg) {
@@ -83,6 +97,8 @@ Input callArgToGrpcInput(Map<String, dynamic> arg) {
       );
     case 'FundsWithdrawal':
       final withdrawal = arg['FundsWithdrawal'];
+      final withdrawFrom = withdrawal['withdrawFrom'] as Map;
+      final allowance = withdrawFrom['SenderAllowance'];
 
       return Input(
         kind: Input_InputKind.FUNDS_WITHDRAWAL,
@@ -96,9 +112,14 @@ Input callArgToGrpcInput(Map<String, dynamic> arg) {
           coinType: _variantKind(withdrawal['typeArg']) == 'Balance'
               ? withdrawal['typeArg']['Balance']
               : null,
-          source: _variantKind(withdrawal['withdrawFrom']) == 'Sponsor'
-              ? .SPONSOR
-              : .SENDER,
+          source: switch (_variantKind(withdrawFrom)) {
+            'Sender' => .SENDER,
+            'Sponsor' => .SPONSOR,
+            'SenderAllowance' => .SENDER_ALLOWANCE,
+            final kind => throw Exception("Unknown WithdrawFrom kind: $kind"),
+          },
+          funder: allowance?['funder'],
+          allowance: allowance?['allowance'],
         ),
       );
     default:
@@ -245,16 +266,30 @@ grpc_transaction.Transaction transactionDataToGrpcTransaction(
   );
 
   if (data.expiration != null) {
-    final validDuring = data.expiration?.validDuring;
-    if (validDuring != null) {
-      tx.expiration = (grpc_transaction.TransactionExpiration()
-        ..kind = grpc_transaction
-            .TransactionExpiration_TransactionExpirationKind
-            .VALID_DURING
-        ..epoch = Int64.parseRadix(validDuring['maxEpoch'].toString(), 10)
-        ..minEpoch = Int64.parseRadix(validDuring['minEpoch'].toString(), 10)
-        ..chain = validDuring['chain'] as String
-        ..nonce = validDuring['nonce'] as int);
+    final validity = data.expiration!.validity;
+    final window = validity ?? data.expiration!.validDuring;
+    if (window != null) {
+      final allowedProposers = validity?['allowedProposers'];
+      tx.expiration = grpc_transaction.TransactionExpiration(
+        kind: validity != null ? .VALIDITY : .VALID_DURING,
+        minEpoch: _int64OrNull(window['minEpoch']),
+        epoch: _int64OrNull(window['maxEpoch']),
+        minTimestamp: _grpcTimestampOrNull(window['minTimestamp']),
+        maxTimestamp: _grpcTimestampOrNull(window['maxTimestamp']),
+        chain: window['chain'] as String,
+        nonce: window['nonce'] as int,
+        allowedProposers: allowedProposers == null
+            ? null
+            : grpc_transaction.AllowedProposers(
+                epoch: Int64.parseRadix(
+                  allowedProposers['epoch'].toString(),
+                  10,
+                ),
+                proposers: SuiBcs.assertAllowedProposersStrictlyIncreasing(
+                  allowedProposers['proposers'] as List,
+                ).cast<int>(),
+              ),
+      );
     } else if (data.expiration?.epoch == null) {
       tx.expiration = (grpc_transaction.TransactionExpiration()
         ..kind = grpc_transaction

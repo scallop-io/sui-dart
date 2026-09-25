@@ -84,4 +84,67 @@ void main() {
       expect(grpc.expiration.nonce, isNonZero);
     },
   );
+
+  group('SenderAllowance withdrawal', () {
+    final funder = normalizeSuiAddress('0xf00d');
+    final allowance = normalizeSuiAddress('0xa11');
+
+    test('survives JSON and BCS round trips into gRPC', () async {
+      final tx = Transaction();
+      tx.object(
+        Inputs.fundsWithdrawal(
+          maxAmount: BigInt.from(20000000),
+          coinType: _fooType,
+          funder: '0xf00d',
+          allowance: '0xa11',
+        ),
+      );
+
+      final bytes = await Transaction.from(
+        tx.toJson(),
+      ).build(BuildOptions(onlyTransactionKind: true));
+      final withdrawal = Transaction.fromKind(bytes)
+          .toGrpcTransaction()
+          .kind
+          .programmableTransaction
+          .inputs
+          .single
+          .fundsWithdrawal;
+
+      expect(withdrawal.source, FundsWithdrawal_Source.SENDER_ALLOWANCE);
+      expect(withdrawal.funder, funder);
+      expect(withdrawal.allowance, allowance);
+    });
+
+    test('takes the funder and allowance together, never a sponsor', () {
+      expect(
+        () => Inputs.fundsWithdrawal(
+          maxAmount: BigInt.one,
+          coinType: _fooType,
+          funder: funder,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => Inputs.fundsWithdrawal(
+          maxAmount: BigInt.one,
+          coinType: _fooType,
+          funder: funder,
+          allowance: allowance,
+          fromSponsor: true,
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('an unknown source throws instead of encoding as SENDER', () {
+      final input = Inputs.fundsWithdrawal(
+        maxAmount: BigInt.one,
+        coinType: _fooType,
+      );
+      input['FundsWithdrawal']['withdrawFrom'] = {'FutureSource': true};
+
+      expect(() => callArgToGrpcInput(input), throwsException);
+    });
+  });
 }

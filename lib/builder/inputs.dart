@@ -78,11 +78,23 @@ class Inputs {
 
   /// Reserves [maxAmount] of [coinType] from the sender's (or sponsor's) address
   /// balance. A matching `0x2::coin::redeem_funds` turns it into a `Coin<T>`.
+  /// With [funder] and [allowance], draws on the funder's balance instead.
   static Map<String, dynamic> fundsWithdrawal({
     required BigInt maxAmount,
     required String coinType,
     bool fromSponsor = false,
+    String? funder,
+    String? allowance,
   }) {
+    if ((funder == null) != (allowance == null)) {
+      throw ArgumentError('funder and allowance must be set together');
+    }
+    if (allowance != null && fromSponsor) {
+      throw ArgumentError(
+        'An allowance withdrawal cannot come from the sponsor',
+      );
+    }
+
     return {
       "\$kind": 'FundsWithdrawal',
       "FundsWithdrawal": {
@@ -91,7 +103,15 @@ class Inputs {
           "MaxAmountU64": maxAmount.toString(),
         },
         "typeArg": {"\$kind": 'Balance', "Balance": coinType},
-        "withdrawFrom": fromSponsor
+        "withdrawFrom": allowance != null
+            ? {
+                "\$kind": 'SenderAllowance',
+                "SenderAllowance": {
+                  "funder": normalizeSuiAddress(funder!),
+                  "allowance": normalizeSuiAddress(allowance),
+                },
+              }
+            : fromSponsor
             ? {"\$kind": 'Sponsor', "Sponsor": true}
             : {"\$kind": 'Sender', "Sender": true},
       },

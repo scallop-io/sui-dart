@@ -154,11 +154,16 @@ class BuildOptions {
   /// Define limits that are used when building the transaction. In general, we recommend using the protocol configuration instead of defining limits.
   Limits? limits;
 
+  /// Resolves `coinWithBalance` from the address balance, no lookups. With price,
+  /// budget, a `ValidDuring`/`Validity` expiry and no `tx.gas`, payment is `[]`.
+  bool assumeSufficientAddressBalances;
+
   BuildOptions({
     this.client,
     this.onlyTransactionKind = false,
     this.protocolConfig,
     this.limits,
+    this.assumeSufficientAddressBalances = false,
   });
 }
 
@@ -171,6 +176,7 @@ class SerializeTransactionOptions extends BuildOptions {
     super.onlyTransactionKind,
     super.protocolConfig,
     super.limits,
+    super.assumeSufficientAddressBalances,
   });
 }
 
@@ -183,6 +189,7 @@ class SignOptions extends BuildOptions {
     super.onlyTransactionKind,
     super.protocolConfig,
     super.limits,
+    super.assumeSufficientAddressBalances,
   });
 }
 
@@ -231,6 +238,10 @@ class Transaction {
 
   void setExpiration(int? epoch) {
     _blockData.expiration = TransactionExpiration(epoch: epoch);
+  }
+
+  void setTransactionExpiration(TransactionExpiration? expiration) {
+    _blockData.expiration = expiration;
   }
 
   void setGasPrice(BigInt price) {
@@ -555,7 +566,10 @@ class Transaction {
   /// can be passed around and finished elsewhere.
   @Deprecated('Use toJson() instead')
   String serialize() {
-    return jsonEncode(serializeV1TransactionData(_blockData.snapshot()));
+    return jsonEncode(
+      serializeV1TransactionData(_blockData.snapshot()).toJson(),
+      toEncodable: _jsonEncodable,
+    );
   }
 
   /// [toJsonAsync] resolves intents first; prefer it when the block may hold any.
@@ -947,7 +961,7 @@ class Transaction {
 
     int end = min(
       paymentCoins.length,
-      int.parse(_getConfig('maxGasObjects', options)) - 1,
+      int.parse(_getConfig('maxGasObjects', options)),
     );
 
     final usePaymentCoins = paymentCoins
@@ -1176,6 +1190,8 @@ class Transaction {
 
     await _resolveIntents(options);
 
+    if (_assumesAddressBalanceGas(options)) setGasPayment(const []);
+
     await normalizeInputs(options);
     await resolveObjectReferences(options);
 
@@ -1255,7 +1271,42 @@ class Transaction {
 
   bool get _hasExpiration {
     final expiration = _blockData.expiration;
-    return expiration?.epoch != null || expiration?.validDuring != null;
+    return expiration?.epoch != null ||
+        expiration?.validDuring != null ||
+        expiration?.validity != null;
+  }
+
+  bool _assumesAddressBalanceGas(BuildOptions options) {
+    if (!options.assumeSufficientAddressBalances ||
+        options.onlyTransactionKind) {
+      return false;
+    }
+
+    final gasData = _blockData.gasData;
+    if (gasData.payment != null ||
+        gasData.price == null ||
+        gasData.budget == null) {
+      return false;
+    }
+
+    // empty payment has no replay guard: needs ValidDuring/Validity, not Epoch
+    final expiration = _blockData.expiration;
+    if (expiration?.validDuring == null && expiration?.validity == null) {
+      return false;
+    }
+
+    final unresolved = _blockData.inputs.any(
+      (input) =>
+          input['UnresolvedObject'] != null || input['UnresolvedPure'] != null,
+    );
+    if (unresolved) return false;
+
+    var usesGasCoin = false;
+    _blockData.mapArguments((arg, command, index) {
+      if (arg is Map && arg['GasCoin'] != null) usesGasCoin = true;
+      return arg;
+    });
+    return !usesGasCoin;
   }
 
   Future<TransactionExpiration> _buildValidDuringExpiration(

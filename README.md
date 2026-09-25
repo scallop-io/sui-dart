@@ -25,7 +25,7 @@ Or add it to `pubspec.yaml` directly:
 
 ```yaml
 dependencies:
-  sui_dart: ^0.10.0
+  sui_dart: ^0.12.0
 ```
 
 ## Demo

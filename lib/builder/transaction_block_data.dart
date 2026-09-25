@@ -11,26 +11,41 @@ import 'package:sui_dart/types/sui_bcs.dart';
 class TransactionExpiration {
   final int? epoch;
   final Map<String, dynamic>? validDuring;
-  TransactionExpiration({this.epoch, this.validDuring});
+
+  /// `ValidDuring` keys plus optional `allowedProposers`: `{epoch, proposers}`.
+  final Map<String, dynamic>? validity;
+
+  TransactionExpiration({this.epoch, this.validDuring, this.validity});
 
   Map<String, dynamic> toJson() {
+    if (validity != null) return {"Validity": validity};
     if (validDuring != null) return {"ValidDuring": validDuring};
     if (epoch == null) return {"None": true};
     return {"Epoch": epoch};
   }
 
+  /// Unknown kinds throw: read as `None`, they would sign fewer restrictions.
   factory TransactionExpiration.fromJson(Map<String, dynamic>? json) {
-    if (json?["ValidDuring"] != null) {
+    if (json == null || json.containsKey("None")) {
+      return TransactionExpiration();
+    }
+    if (json["Validity"] != null) {
       return TransactionExpiration(
-        validDuring: Map<String, dynamic>.from(json!["ValidDuring"]),
+        validity: Map<String, dynamic>.from(json["Validity"]),
       );
     }
-    dynamic epoch = json?["Epoch"];
-    if (epoch != null) {
-      return TransactionExpiration(epoch: int.parse(epoch.toString()));
-    } else {
-      return TransactionExpiration(epoch: null);
+    if (json["ValidDuring"] != null) {
+      return TransactionExpiration(
+        validDuring: Map<String, dynamic>.from(json["ValidDuring"]),
+      );
     }
+    if (json["Epoch"] != null) {
+      return TransactionExpiration(epoch: int.parse(json["Epoch"].toString()));
+    }
+    throw ArgumentError(
+      'Unknown transaction expiration: '
+      '${json.keys.where((key) => key != '\$kind').join(', ')}',
+    );
   }
 }
 

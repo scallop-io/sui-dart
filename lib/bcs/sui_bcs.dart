@@ -100,6 +100,10 @@ class SuiBcs {
   static final WithdrawFrom = Bcs.enumeration('WithdrawFrom', {
     'Sender': null,
     'Sponsor': null,
+    'SenderAllowance': Bcs.struct('SenderAllowance', {
+      'funder': Address,
+      'allowance': Address,
+    }),
   });
 
   static final FundsWithdrawal = Bcs.struct('FundsWithdrawal', {
@@ -378,6 +382,7 @@ class SuiBcs {
       'DisplayRegistryCreate': null,
       'AddressAliasStateCreate': null,
       'WriteAccumulatorStorageCost': WriteAccumulatorStorageCost,
+      'ForwardingAddressRegistryCreate': null,
     },
   );
 
@@ -404,10 +409,55 @@ class SuiBcs {
     'nonce': Bcs.u32(),
   });
 
-  static final TransactionExpiration = Bcs.enumeration(
-    'TransactionExpiration',
-    {'None': null, 'Epoch': unsafe_u64(), 'ValidDuring': ValidDuring},
-  );
+  static List<dynamic> assertAllowedProposersNotEmpty(List<dynamic> proposers) {
+    if (proposers.isEmpty) {
+      throw ArgumentError('Allowed proposers must not be empty');
+    }
+    return proposers;
+  }
+
+  static List<dynamic> assertAllowedProposersStrictlyIncreasing(
+    List<dynamic> proposers,
+  ) {
+    assertAllowedProposersNotEmpty(proposers);
+    for (var i = 1; i < proposers.length; i++) {
+      if ((proposers[i] as num) <= (proposers[i - 1] as num)) {
+        throw ArgumentError('Allowed proposers must be strictly increasing');
+      }
+    }
+    return proposers;
+  }
+
+  static final AllowedProposers = Bcs.struct('AllowedProposers', {
+    'epoch': Bcs.u64(),
+    // decode allows unsorted (chain checks order at submit), never empty
+    'proposers': Bcs.vector(Bcs.u32()).transform(
+      input: (dynamic proposers) =>
+          assertAllowedProposersStrictlyIncreasing(proposers as List),
+      output: (List<int> proposers) {
+        assertAllowedProposersNotEmpty(proposers);
+        return proposers;
+      },
+    ),
+  });
+
+  static final Validity = Bcs.struct('Validity', {
+    'minEpoch': Bcs.option(Bcs.u64()),
+    'maxEpoch': Bcs.option(Bcs.u64()),
+    'minTimestamp': Bcs.option(Bcs.u64()),
+    'maxTimestamp': Bcs.option(Bcs.u64()),
+    'chain': ObjectDigest,
+    'nonce': Bcs.u32(),
+    'allowedProposers': Bcs.option(AllowedProposers),
+  });
+
+  static final TransactionExpiration =
+      Bcs.enumeration('TransactionExpiration', {
+        'None': null,
+        'Epoch': unsafe_u64(),
+        'ValidDuring': ValidDuring,
+        'Validity': Validity,
+      });
 
   static final StructTag = Bcs.struct('StructTag', {
     'address': Address,

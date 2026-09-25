@@ -149,30 +149,34 @@ Future<void> resolveCoinBalance(
     );
   }
 
-  final client = expectClient(options);
-
-  final usedIds = <String>{};
-  for (final input in transactionData.inputs) {
-    final objectId =
-        input['Object']?['ImmOrOwnedObject']?['objectId'] ??
-        input['UnresolvedObject']?['objectId'];
-    if (objectId != null) usedIds.add(normalizeSuiAddress(objectId));
-  }
-
   final coinsByType = <String, List<CoinData>>{};
   final addressBalanceByType = <String, BigInt>{};
-  for (final entry in totalByType.entries) {
-    final isGas = entry.key == 'gas';
-    final source = await _loadSources(
-      client,
-      sender,
-      isGas ? SUI_TYPE : entry.key,
-      entry.value,
-      usedIds,
-      withCoins: !isGas,
-    );
-    addressBalanceByType[entry.key] = source.addressBalance;
-    if (!isGas) coinsByType[entry.key] = source.coins;
+  if (options.assumeSufficientAddressBalances) {
+    addressBalanceByType.addAll(totalByType);
+  } else {
+    final client = expectClient(options);
+
+    final usedIds = <String>{};
+    for (final input in transactionData.inputs) {
+      final objectId =
+          input['Object']?['ImmOrOwnedObject']?['objectId'] ??
+          input['UnresolvedObject']?['objectId'];
+      if (objectId != null) usedIds.add(normalizeSuiAddress(objectId));
+    }
+
+    for (final entry in totalByType.entries) {
+      final isGas = entry.key == 'gas';
+      final source = await _loadSources(
+        client,
+        sender,
+        isGas ? SUI_TYPE : entry.key,
+        entry.value,
+        usedIds,
+        withCoins: !isGas,
+      );
+      addressBalanceByType[entry.key] = source.addressBalance;
+      if (!isGas) coinsByType[entry.key] = source.coins;
+    }
   }
 
   // Per-type split results, computed when the first intent of a type is seen.

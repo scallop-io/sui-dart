@@ -331,6 +331,99 @@ void main() {
       expect(SuiBcs.TransactionKind.serialize(parsed).toBytes(), bytes);
     });
   });
+
+  group('Validity expiration', () {
+    Map<String, dynamic> validity(List<int>? proposers) => {
+      'minEpoch': '1',
+      'maxEpoch': '2',
+      'minTimestamp': null,
+      'maxTimestamp': '1700000000123',
+      'chain': '4btiuiMPvEENsttpZC7CZ53DruC3MAgfznDbASZ7DR6S',
+      'nonce': 7,
+      'allowedProposers': proposers == null
+          ? null
+          : {'epoch': '2', 'proposers': proposers},
+    };
+
+    test('round-trips as variant 3', () {
+      for (final proposers in [
+        [0, 2, 5],
+        null,
+      ]) {
+        final bytes = SuiBcs.TransactionExpiration.serialize({
+          'Validity': validity(proposers),
+        }).toBytes();
+        expect(bytes.first, 3);
+
+        final parsed = SuiBcs.TransactionExpiration.parse(bytes);
+        expect(parsed['Validity']['allowedProposers']?['proposers'], proposers);
+        expect(SuiBcs.TransactionExpiration.serialize(parsed).toBytes(), bytes);
+      }
+    });
+
+    test('encoding rejects empty or unsorted proposers', () {
+      for (final proposers in [
+        <int>[],
+        [2, 2],
+        [2, 1],
+      ]) {
+        expect(
+          () => SuiBcs.TransactionExpiration.serialize({
+            'Validity': validity(proposers),
+          }),
+          throwsArgumentError,
+          reason: '$proposers',
+        );
+      }
+    });
+
+    test('decoding accepts unsorted proposers but not an empty set', () {
+      final bytes = SuiBcs.AllowedProposers.serialize({
+        'epoch': '2',
+        'proposers': [1, 2],
+      }).toBytes();
+
+      // epoch (8 bytes), length (1), then two u32s: swap them.
+      final unsorted = Uint8List.fromList([
+        ...bytes.sublist(0, 9),
+        ...bytes.sublist(13),
+        ...bytes.sublist(9, 13),
+      ]);
+      expect(SuiBcs.AllowedProposers.parse(unsorted)['proposers'], [2, 1]);
+
+      final empty = Uint8List.fromList([...bytes.sublist(0, 8), 0]);
+      expect(() => SuiBcs.AllowedProposers.parse(empty), throwsArgumentError);
+    });
+  });
+
+  test('a SenderAllowance withdrawal is WithdrawFrom variant 2', () {
+    final source = {
+      'funder': normalizeSuiAddress('0xf00d'),
+      'allowance': normalizeSuiAddress('0xa11'),
+    };
+    final bytes = SuiBcs.WithdrawFrom.serialize({
+      'SenderAllowance': source,
+    }).toBytes();
+
+    expect(bytes.length, 65);
+    expect(bytes.first, 2);
+    expect(SuiBcs.WithdrawFrom.parse(bytes)['SenderAllowance'], source);
+  });
+
+  test('knows the newest end-of-epoch and argument error variants', () {
+    expect(
+      SuiBcs.EndOfEpochTransactionKind.serialize({
+        'ForwardingAddressRegistryCreate': true,
+      }).toBytes(),
+      [13],
+    );
+    expect(
+      SuiEffects.CommandArgumentError.serialize({
+        'InvalidTxContext': true,
+      }).toBytes(),
+      [19],
+    );
+  });
 }
 
 SuiObjectRef ref() {

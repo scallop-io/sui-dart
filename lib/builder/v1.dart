@@ -223,19 +223,10 @@ dynamic convertTransactionArgument(dynamic arg, dynamic inputs) {
 }
 
 dynamic transactionDataFromV1(dynamic data) {
-  dynamic expiration;
-  if (data["expiration"] != null) {
-    if (data["expiration"]["Epoch"] != null) {
-      expiration = {"Epoch": data["expiration"]["Epoch"]};
-    } else {
-      expiration = {"None": true};
-    }
-  }
-
   return {
     "version": 2,
     "sender": data["sender"],
-    "expiration": expiration,
+    "expiration": data["expiration"],
     "gasData": {
       "owner": data["gasConfig"]?["owner"],
       "budget": data["gasConfig"]?["budget"]?.toString(),
