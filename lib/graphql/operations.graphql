@@ -42,6 +42,11 @@ query SimulateTransaction($tx: JSON!, $checksEnabled: Boolean, $doGasSelection: 
   simulateTransaction(transaction: $tx, checksEnabled: $checksEnabled, doGasSelection: $doGasSelection) {
     effects {
       status
+      gasEffects {
+        gasObject {
+          address
+        }
+      }
       events(first: 50) {
         nodes {
           transactionModule {

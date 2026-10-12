@@ -7062,6 +7062,33 @@ const documentNodeQuerySimulateTransaction = DocumentNode(
                         selectionSet: null,
                       ),
                       FieldNode(
+                        name: NameNode(value: 'gasEffects'),
+                        alias: null,
+                        arguments: [],
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'gasObject'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: SelectionSetNode(
+                                selections: [
+                                  FieldNode(
+                                    name: NameNode(value: 'address'),
+                                    alias: null,
+                                    arguments: [],
+                                    directives: [],
+                                    selectionSet: null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      FieldNode(
                         name: NameNode(value: 'events'),
                         alias: null,
                         arguments: [
@@ -7322,6 +7349,7 @@ class Query$SimulateTransaction$simulateTransaction {
 class Query$SimulateTransaction$simulateTransaction$effects {
   Query$SimulateTransaction$simulateTransaction$effects({
     this.status,
+    this.gasEffects,
     this.events,
   });
 
@@ -7329,11 +7357,17 @@ class Query$SimulateTransaction$simulateTransaction$effects {
     Map<String, dynamic> json,
   ) {
     final l$status = json['status'];
+    final l$gasEffects = json['gasEffects'];
     final l$events = json['events'];
     return Query$SimulateTransaction$simulateTransaction$effects(
       status: l$status == null
           ? null
           : fromJson$Enum$ExecutionStatus((l$status as String)),
+      gasEffects: l$gasEffects == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$gasEffects.fromJson(
+              (l$gasEffects as Map<String, dynamic>),
+            ),
       events: l$events == null
           ? null
           : Query$SimulateTransaction$simulateTransaction$effects$events.fromJson(
@@ -7344,6 +7378,9 @@ class Query$SimulateTransaction$simulateTransaction$effects {
 
   final Enum$ExecutionStatus? status;
 
+  final Query$SimulateTransaction$simulateTransaction$effects$gasEffects?
+  gasEffects;
+
   final Query$SimulateTransaction$simulateTransaction$effects$events? events;
 
   Map<String, dynamic> toJson() {
@@ -7352,6 +7389,8 @@ class Query$SimulateTransaction$simulateTransaction$effects {
     _resultData['status'] = l$status == null
         ? null
         : toJson$Enum$ExecutionStatus(l$status);
+    final l$gasEffects = gasEffects;
+    _resultData['gasEffects'] = l$gasEffects?.toJson();
     final l$events = events;
     _resultData['events'] = l$events?.toJson();
     return _resultData;
@@ -7360,8 +7399,9 @@ class Query$SimulateTransaction$simulateTransaction$effects {
   @override
   int get hashCode {
     final l$status = status;
+    final l$gasEffects = gasEffects;
     final l$events = events;
-    return Object.hashAll([l$status, l$events]);
+    return Object.hashAll([l$status, l$gasEffects, l$events]);
   }
 
   @override
@@ -7378,9 +7418,115 @@ class Query$SimulateTransaction$simulateTransaction$effects {
     if (l$status != lOther$status) {
       return false;
     }
+    final l$gasEffects = gasEffects;
+    final lOther$gasEffects = other.gasEffects;
+    if (l$gasEffects != lOther$gasEffects) {
+      return false;
+    }
     final l$events = events;
     final lOther$events = other.events;
     if (l$events != lOther$events) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$gasEffects {
+  Query$SimulateTransaction$simulateTransaction$effects$gasEffects({
+    this.gasObject,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$gasEffects.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$gasObject = json['gasObject'];
+    return Query$SimulateTransaction$simulateTransaction$effects$gasEffects(
+      gasObject: l$gasObject == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject.fromJson(
+              (l$gasObject as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject?
+  gasObject;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$gasObject = gasObject;
+    _resultData['gasObject'] = l$gasObject?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$gasObject = gasObject;
+    return Object.hashAll([l$gasObject]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$gasEffects ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$gasObject = gasObject;
+    final lOther$gasObject = other.gasObject;
+    if (l$gasObject != lOther$gasObject) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject {
+  Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject({
+    required this.address,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$address = json['address'];
+    return Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject(
+      address: (l$address as String),
+    );
+  }
+
+  final String address;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$address = address;
+    _resultData['address'] = l$address;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$address = address;
+    return Object.hashAll([l$address]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$address = address;
+    final lOther$address = other.address;
+    if (l$address != lOther$address) {
       return false;
     }
     return true;

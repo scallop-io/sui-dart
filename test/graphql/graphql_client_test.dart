@@ -977,4 +977,71 @@ void main() {
       ).millisecondsSinceEpoch.toString(),
     );
   });
+
+  test('requests carry the client protocol version unless set', () async {
+    final adapter = _MockAdapter(
+      (_) => {
+        'data': {'chainIdentifier': 'chain-id'},
+      },
+    );
+
+    await SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    ).getChainIdentifier();
+    expect(
+      adapter.lastHeaders![CLIENT_PROTOCOL_VERSION_HEADER],
+      '$MAX_PROTOCOL_VERSION',
+    );
+
+    await SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+      headers: const {CLIENT_PROTOCOL_VERSION_HEADER: '1'},
+    ).getChainIdentifier();
+    expect(adapter.lastHeaders![CLIENT_PROTOCOL_VERSION_HEADER], '1');
+
+    final dio = _dioWith(adapter)
+      ..options.headers['X-Sui-Client-Protocol-Version'] = '2';
+    await SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: dio,
+    ).getChainIdentifier();
+    expect(adapter.lastHeaders![CLIENT_PROTOCOL_VERSION_HEADER], '2');
+  });
+
+  test('simulate reports whether the node mocked the gas coin', () async {
+    for (final (gasObject, mocked) in [
+      (MOCKED_GAS_OBJECT_ID, true),
+      (normalizeSuiAddress('0x5'), false),
+    ]) {
+      final adapter = _MockAdapter(
+        (_) => {
+          'data': {
+            'simulateTransaction': {
+              'effects': {
+                'status': 'SUCCESS',
+                'gasEffects': {
+                  'gasObject': {'address': gasObject},
+                },
+                'events': {'nodes': []},
+              },
+              'outputs': null,
+            },
+          },
+        },
+      );
+      final client = SuiGraphQLClient(
+        endpoint: 'https://example.test/graphql',
+        dio: _dioWith(adapter),
+      );
+
+      final result = await client.core.simulateTransaction(
+        Transaction()..setSender(normalizeSuiAddress('0xa')),
+      );
+
+      expect(adapter.lastBody!['query'], contains('gasObject'));
+      expect(result.gasPaymentMocked, mocked);
+    }
+  });
 }

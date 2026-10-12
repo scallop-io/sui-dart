@@ -134,7 +134,7 @@ class UserSignature extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   void clearScheme() => $_clearField(2);
 
-  /// Simple signature if scheme is ed25519 | secp256k1 | secp256r1.
+  /// Simple signature if scheme is ed25519 | secp256k1 | secp256r1 | mldsa65.
   @$pb.TagNumber(3)
   SimpleSignature get simple => $_getN(2);
   @$pb.TagNumber(3)
@@ -183,7 +183,7 @@ class UserSignature extends $pb.GeneratedMessage {
   PasskeyAuthenticator ensurePasskey() => $_ensure(5);
 }
 
-/// Either an ed25519, secp256k1 or secp256r1 signature
+/// Either an ed25519, secp256k1, secp256r1 or mldsa65 signature
 class SimpleSignature extends $pb.GeneratedMessage {
   factory SimpleSignature({
     $2.SignatureScheme? scheme,
@@ -402,7 +402,7 @@ class MultisigMemberPublicKey extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearScheme() => $_clearField(1);
 
-  /// Public key bytes if scheme is ed25519 | secp256k1 | secp256r1 | passkey.
+  /// Public key bytes if scheme is ed25519 | secp256k1 | secp256r1 | passkey | mldsa65.
   @$pb.TagNumber(2)
   $core.List<$core.int> get publicKey => $_getN(1);
   @$pb.TagNumber(2)
@@ -732,7 +732,7 @@ class MultisigMemberSignature extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearScheme() => $_clearField(1);
 
-  /// Signature bytes if scheme is ed25519 | secp256k1 | secp256r1.
+  /// Signature bytes if scheme is ed25519 | secp256k1 | secp256r1 | mldsa65.
   @$pb.TagNumber(2)
   $core.List<$core.int> get signature => $_getN(1);
   @$pb.TagNumber(2)

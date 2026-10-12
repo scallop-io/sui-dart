@@ -267,6 +267,9 @@ class TransactionResponse {
   final String? timestampMs;
   final List<CommandResult>? commandResults;
 
+  /// Simulate only: the node mocked the gas coin (no gas payment given).
+  final bool? gasPaymentMocked;
+
   const TransactionResponse({
     required this.digest,
     this.signatures = const [],
@@ -281,6 +284,7 @@ class TransactionResponse {
     this.checkpoint,
     this.timestampMs,
     this.commandResults,
+    this.gasPaymentMocked,
   });
 
   TransactionResponse copyWith({
@@ -297,6 +301,7 @@ class TransactionResponse {
     String? checkpoint,
     String? timestampMs,
     List<CommandResult>? commandResults,
+    bool? gasPaymentMocked,
   }) {
     return TransactionResponse(
       digest: digest ?? this.digest,
@@ -312,6 +317,7 @@ class TransactionResponse {
       checkpoint: checkpoint ?? this.checkpoint,
       timestampMs: timestampMs ?? this.timestampMs,
       commandResults: commandResults ?? this.commandResults,
+      gasPaymentMocked: gasPaymentMocked ?? this.gasPaymentMocked,
     );
   }
 }

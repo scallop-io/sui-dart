@@ -6,6 +6,7 @@ import 'package:sui_dart/core/sui_core_client.dart';
 import 'package:sui_dart/grpc/types.dart';
 import 'package:sui_dart/types/common.dart'
     show normalizeStructTagString, normalizeSuiAddress;
+import 'package:sui_dart/types/framework.dart' show MOCKED_GAS_OBJECT_ID;
 
 import 'graphql_operation.dart';
 import 'operations.graphql.dart' as generated;
@@ -553,6 +554,7 @@ class GraphQLCoreClient implements SuiCoreClient {
     );
     final result = data.simulateTransaction;
     final effects = result.effects;
+    final gasObjectId = effects?.gasEffects?.gasObject?.address;
     return TransactionResponse(
       digest: '',
       status: ExecutionStatus(
@@ -560,6 +562,9 @@ class GraphQLCoreClient implements SuiCoreClient {
       ),
       events: effects?.events?.nodes.map(_mapSimEvent).toList(),
       commandResults: result.outputs?.map(_mapSimCommand).toList(),
+      gasPaymentMocked:
+          gasObjectId != null &&
+          normalizeSuiAddress(gasObjectId) == MOCKED_GAS_OBJECT_ID,
     );
   }
 

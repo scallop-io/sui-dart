@@ -58,14 +58,34 @@ class SuiGrpcClient {
           options: ChannelOptions(credentials: ChannelCredentials.secure()),
         );
 
-    transactionExecutionService = TransactionExecutionServiceClient(_channel);
-    ledgerService = LedgerServiceClient(_channel);
-    stateService = StateServiceClient(_channel);
-    subscriptionService = SubscriptionServiceClient(_channel);
-    movePackageService = MovePackageServiceClient(_channel);
-    signatureVerificationService = SignatureVerificationServiceClient(_channel);
-    nameService = NameServiceClient(_channel);
-    forkingService = ForkingServiceClient(_channel);
+    // Per-call metadata still overrides it.
+    final callOptions = CallOptions(
+      metadata: {
+        sui_dart.CLIENT_PROTOCOL_VERSION_HEADER:
+            '${sui_dart.MAX_PROTOCOL_VERSION}',
+      },
+    );
+
+    transactionExecutionService = TransactionExecutionServiceClient(
+      _channel,
+      options: callOptions,
+    );
+    ledgerService = LedgerServiceClient(_channel, options: callOptions);
+    stateService = StateServiceClient(_channel, options: callOptions);
+    subscriptionService = SubscriptionServiceClient(
+      _channel,
+      options: callOptions,
+    );
+    movePackageService = MovePackageServiceClient(
+      _channel,
+      options: callOptions,
+    );
+    signatureVerificationService = SignatureVerificationServiceClient(
+      _channel,
+      options: callOptions,
+    );
+    nameService = NameServiceClient(_channel, options: callOptions);
+    forkingService = ForkingServiceClient(_channel, options: callOptions);
 
     core = GrpcCoreClient(this);
   }

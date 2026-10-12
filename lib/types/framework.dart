@@ -23,6 +23,14 @@ final NORMALIZE_SUI_TYPE_ARG =
     "${normalizeSuiObjectId(SUI_FRAMEWORK_ADDRESS)}::sui::SUI";
 const COIN_TYPE = "$SUI_FRAMEWORK_ADDRESS::coin::Coin";
 
+/// Gas coin id the node mocks when simulating with no gas payment.
+const MOCKED_GAS_OBJECT_ID =
+    '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+
+/// Newest protocol whose types the BCS here decodes; raise it with new types.
+const MAX_PROTOCOL_VERSION = 138;
+const CLIENT_PROTOCOL_VERSION_HEADER = 'x-sui-client-protocol-version';
+
 const PAY_MODULE_NAME = 'pay';
 const PAY_SPLIT_COIN_VEC_FUNC_NAME = 'split_vec';
 const PAY_JOIN_COIN_FUNC_NAME = 'join';

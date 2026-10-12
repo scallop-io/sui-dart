@@ -426,7 +426,13 @@ class GrpcCoreClient implements SuiCoreClient {
           ),
         );
 
-    var result = _parseTransaction(response.transaction, include);
+    final gasObject = response.transaction.effects.gasObject;
+    var result = _parseTransaction(response.transaction, include).copyWith(
+      gasPaymentMocked:
+          gasObject.hasObjectId() &&
+          sui_dart.normalizeSuiAddress(gasObject.objectId) ==
+              sui_dart.MOCKED_GAS_OBJECT_ID,
+    );
 
     if (include?.commandResults == true) {
       result = result.copyWith(
@@ -749,8 +755,9 @@ class GrpcCoreClient implements SuiCoreClient {
         return response.record.name;
       }
       return null;
-    } catch (_) {
-      return null;
+    } on GrpcError catch (error) {
+      if (_isNameServiceMiss(error)) return null;
+      rethrow;
     }
   }
 
@@ -764,11 +771,17 @@ class GrpcCoreClient implements SuiCoreClient {
         return response.record.targetAddress;
       }
       return null;
-    } catch (_) {
-      // Unregistered names come back NOT_FOUND, expired ones RESOURCE_EXHAUSTED.
-      return null;
+    } on GrpcError catch (error) {
+      if (_isNameServiceMiss(error)) return null;
+      rethrow;
     }
   }
+
+  // expired names are RESOURCE_EXHAUSTED, like throttling, so match the text
+  static bool _isNameServiceMiss(GrpcError error) =>
+      error.code == StatusCode.notFound ||
+      (error.code == StatusCode.resourceExhausted &&
+          error.message == 'name has expired');
 
   @override
   Future<MoveFunction> getMoveFunction(
@@ -851,10 +864,19 @@ class GrpcCoreClient implements SuiCoreClient {
   }
 
   FieldMask _simulateReadMask(TransactionIncludeOptions? include) {
-    final paths = <String>['transaction.digest', 'transaction.signatures'];
+    // Without status a failed simulation reads as successful.
+    final paths = <String>[
+      'transaction.digest',
+      'transaction.signatures',
+      'transaction.effects.status',
+    ];
 
     if (include?.transaction == true) paths.add('transaction.transaction');
-    if (include?.effects == true) paths.add('transaction.effects');
+    if (include?.effects == true) {
+      paths.add('transaction.effects');
+    } else {
+      paths.add('transaction.effects.gas_object.object_id');
+    }
     if (include?.events == true) {
       paths.add('transaction.events');
       paths.add('transaction.events.events.json');

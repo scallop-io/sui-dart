@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:sui_dart/types/framework.dart';
 
 /// GraphQL-over-HTTP transport for Sui queries.
 class GraphQLTransport {
@@ -41,7 +42,15 @@ class GraphQLTransport {
         options: Options(
           contentType: Headers.jsonContentType,
           responseType: ResponseType.json,
-          headers: {'accept': Headers.jsonContentType, ...headers},
+          headers: {
+            'accept': Headers.jsonContentType,
+            // request headers beat the Dio's own, so don't mask a caller's
+            if (!_dio.options.headers.containsKey(
+              CLIENT_PROTOCOL_VERSION_HEADER,
+            ))
+              CLIENT_PROTOCOL_VERSION_HEADER: '$MAX_PROTOCOL_VERSION',
+            ...headers,
+          },
           validateStatus: (_) => true,
         ),
       );

@@ -1,3 +1,23 @@
+## 0.12.1
+
+Synced to `045187f`.
+
+### Added
+
+* Requests send `x-sui-client-protocol-version: 138`, unless the caller sets it.
+* `gasPaymentMocked` on simulate results, and `MOCKED_GAS_OBJECT_ID`.
+
+### Fixed
+
+* gRPC `simulateTransaction` reported a failed simulation as successful without
+  `include.effects`.
+* gRPC name-service lookups return `null` only for an unregistered or expired
+  name. Other errors now throw.
+
+### Changed
+
+* Protos refreshed from `sui-apis` `ab6a882` (`MLDSA65` signature scheme).
+
 ## 0.12.0
 
 Synced to `df494cd`.
