@@ -696,6 +696,7 @@ class SenderTransaction {
     this.eventTypes = const [],
     this.moveCallNames = const [],
     this.moveCallPackages = const [],
+    this.moveCalls = const [],
   });
 
   final String digest;
@@ -715,6 +716,9 @@ class SenderTransaction {
   /// Unqualified names of the Move functions this transaction called, in call
   /// order. Empty for a transaction with no move call.
   final List<String> moveCallNames;
+
+  /// Each call as `package::module::function`, paired with [moveCallNames].
+  final List<String> moveCalls;
 
   /// Package each call targeted, paired with [moveCallNames]. The called
   /// package, which an upgrade moves, not the type-defining one.
@@ -786,6 +790,12 @@ class SenderTransaction {
           if (command
               is generated.Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand)
             command.function.fullyQualifiedName.split('::').first,
+      ],
+      moveCalls: [
+        for (final command in programmable?.commands?.nodes ?? const [])
+          if (command
+              is generated.Fragment$TransactionHistoryFields$kind$$ProgrammableTransaction$commands$nodes$$MoveCallCommand)
+            command.function.fullyQualifiedName,
       ],
     );
   }

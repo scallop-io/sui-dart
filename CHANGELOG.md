@@ -1,3 +1,10 @@
+## 0.12.2
+
+### Added
+
+* `SenderTransaction.moveCalls`: each Move call as `package::module::function`,
+  in call order. `moveCallNames` and `moveCallPackages` drop the module.
+
 ## 0.12.1
 
 Synced to `045187f`.
