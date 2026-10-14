@@ -42,6 +42,29 @@ query SimulateTransaction($tx: JSON!, $checksEnabled: Boolean, $doGasSelection: 
   simulateTransaction(transaction: $tx, checksEnabled: $checksEnabled, doGasSelection: $doGasSelection) {
     effects {
       status
+      epoch {
+        epochId
+      }
+      executionError {
+        message
+        abortCode
+        sourceLineNumber
+        instructionOffset
+        identifier
+        constant
+        module {
+          name
+          package {
+            address
+          }
+        }
+        function {
+          name
+        }
+      }
+      transaction {
+        transactionBcs
+      }
       gasEffects {
         gasObject {
           address
@@ -576,6 +599,39 @@ query ListEvents(
         effects {
           checkpoint {
             sequenceNumber
+          }
+        }
+      }
+    }
+  }
+}
+
+query ResolveTransaction($transaction: JSON!, $doGasSelection: Boolean = true, $checksEnabled: Boolean = true) {
+  simulateTransaction(transaction: $transaction, doGasSelection: $doGasSelection, checksEnabled: $checksEnabled) {
+    effects {
+      transaction {
+        transactionBcs
+        effects {
+          epoch {
+            epochId
+          }
+          status
+          executionError {
+            message
+            abortCode
+            identifier
+            constant
+            sourceLineNumber
+            instructionOffset
+            module {
+              name
+              package {
+                address
+              }
+            }
+            function {
+              name
+            }
           }
         }
       }

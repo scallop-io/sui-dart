@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/input.pbenum.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction.pbenum.dart';
 import 'package:sui_dart/grpc/types.dart';
@@ -10,6 +12,9 @@ const _fooType =
     '0x00000000000000000000000000000000000000000000000000000000000000ab::foo::FOO';
 
 class _AddressBalanceOnly implements SuiCoreClient {
+  @override
+  TransactionPlugin resolveTransactionPlugin() => simulationResolvePlugin(this);
+
   @override
   Future<Page<CoinData>> getCoins(
     String a, {
@@ -27,6 +32,32 @@ class _AddressBalanceOnly implements SuiCoreClient {
     coinBalance: '0',
     addressBalance: '30000000',
   );
+
+  /// Resolves like a node with no spare coin: gas from the address balance.
+  @override
+  Future<TransactionResponse> simulateTransaction(
+    Transaction transactionBlock, {
+    TransactionIncludeOptions? include,
+    bool? doGasSelection,
+    bool? checksEnabled,
+  }) async {
+    final resolved = TransactionBlockDataBuilder.restore(
+      jsonDecode(transactionBlock.toJson()) as Map<String, dynamic>,
+    );
+    resolved.gasData.payment ??= [];
+    resolved.expiration = TransactionExpiration(
+      validDuring: {
+        'minEpoch': '1231',
+        'maxEpoch': '1232',
+        'minTimestamp': null,
+        'maxTimestamp': null,
+        'chain': '4btiuiMPvEENsttpZC7CZ53DruC3MAgfznDbASZ7DR6S',
+        'nonce': 7,
+      },
+    );
+    return TransactionResponse(digest: '', bcs: resolved.build());
+  }
+
   @override
   Future<String> getChainIdentifier() async =>
       '4btiuiMPvEENsttpZC7CZ53DruC3MAgfznDbASZ7DR6S';

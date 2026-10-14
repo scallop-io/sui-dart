@@ -40,7 +40,9 @@ class TransactionDataV1 {
       transactions: (data["transactions"] as List)
           .cast<Map<dynamic, dynamic>>(),
       sender: data["sender"],
-      expiration: TransactionExpiration.fromJson(data["expiration"]),
+      expiration: data["expiration"] == null
+          ? null
+          : TransactionExpiration.fromJson(data["expiration"]),
     );
   }
 }

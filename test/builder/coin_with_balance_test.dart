@@ -22,6 +22,9 @@ CoinData _coin(String id, String balance, [String type = _fooType]) {
 
 /// Returns coins from a fixed pool; no network.
 class _FakeClient implements SuiCoreClient {
+  @override
+  TransactionPlugin resolveTransactionPlugin() => simulationResolvePlugin(this);
+
   final List<CoinData> pool;
   final BigInt addressBalance;
   _FakeClient(this.pool, {BigInt? addressBalance})
@@ -74,7 +77,6 @@ Future<List<dynamic>> _resolve(
     BuildOptions(
       client: _FakeClient(pool, addressBalance: addressBalance),
       onlyTransactionKind: true,
-      limits: {'maxPureArgumentSize': 16 * 1024},
     ),
   );
   return tx.getData().commands!;

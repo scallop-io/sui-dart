@@ -1,7 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:sui_dart/builder/transaction.dart' show Transaction;
+import 'package:sui_dart/builder/transaction.dart'
+    show
+        ResolvedSimulation,
+        Transaction,
+        TransactionPlugin,
+        simulationResolvePlugin;
 import 'package:sui_dart/core/sui_core_client.dart';
 import 'package:sui_dart/grpc/types.dart';
 import 'package:sui_dart/types/common.dart'
@@ -118,6 +123,17 @@ class GraphQLCoreClient implements SuiCoreClient {
         document: generated.documentNodeQueryGetDynamicFields,
         operationName: 'GetDynamicFields',
         decodeData: generated.Query$GetDynamicFields.fromJson,
+        encodeVariables: (v) => v.toJson(),
+      );
+
+  static final _resolveTransactionOperation =
+      GraphQLOperation<
+        generated.Query$ResolveTransaction,
+        generated.Variables$Query$ResolveTransaction
+      >(
+        document: generated.documentNodeQueryResolveTransaction,
+        operationName: 'ResolveTransaction',
+        decodeData: generated.Query$ResolveTransaction.fromJson,
         encodeVariables: (v) => v.toJson(),
       );
 
@@ -345,6 +361,50 @@ class GraphQLCoreClient implements SuiCoreClient {
   );
 
   @override
+  TransactionPlugin resolveTransactionPlugin() =>
+      simulationResolvePlugin(this, simulate: _resolveSimulate);
+
+  Future<ResolvedSimulation> _resolveSimulate(
+    Transaction request, {
+    required bool doGasSelection,
+    required bool checksEnabled,
+  }) async {
+    final data = await _client.executeData(
+      _resolveTransactionOperation,
+      generated.Variables$Query$ResolveTransaction(
+        transaction:
+            request.toGrpcTransaction().toProto3Json() as Map<String, dynamic>,
+        doGasSelection: doGasSelection,
+        checksEnabled: checksEnabled,
+      ),
+    );
+    final transaction = data.simulateTransaction.effects?.transaction;
+    final effects = transaction?.effects;
+    final error = effects?.executionError;
+    final bcs = transaction?.transactionBcs;
+    return (
+      bcs: bcs == null ? null : base64Decode(bcs),
+      epoch: effects?.epoch?.epochId.toString(),
+      status: ExecutionStatus(
+        success: effects?.status == schema.Enum$ExecutionStatus.SUCCESS,
+        error: error == null
+            ? null
+            : _parseExecutionError(
+                message: error.message,
+                abortCode: error.abortCode,
+                sourceLineNumber: error.sourceLineNumber,
+                instructionOffset: error.instructionOffset,
+                identifier: error.identifier,
+                constant: error.constant,
+                package: error.module?.package?.address,
+                module: error.module?.name,
+                functionName: error.function?.name,
+              ),
+      ),
+    );
+  }
+
+  @override
   Future<List<ObjectResult>> getObjects(
     List<String> objectIds, {
     ObjectIncludeOptions? include,
@@ -555,16 +615,82 @@ class GraphQLCoreClient implements SuiCoreClient {
     final result = data.simulateTransaction;
     final effects = result.effects;
     final gasObjectId = effects?.gasEffects?.gasObject?.address;
+    final transactionBcs = effects?.transaction?.transactionBcs;
+    final executionError = effects?.executionError;
     return TransactionResponse(
       digest: '',
+      epoch: effects?.epoch?.epochId.toString(),
       status: ExecutionStatus(
         success: effects?.status == schema.Enum$ExecutionStatus.SUCCESS,
+        error: executionError == null
+            ? null
+            : _parseExecutionError(
+                message: executionError.message,
+                abortCode: executionError.abortCode,
+                sourceLineNumber: executionError.sourceLineNumber,
+                instructionOffset: executionError.instructionOffset,
+                identifier: executionError.identifier,
+                constant: executionError.constant,
+                package: executionError.module?.package?.address,
+                module: executionError.module?.name,
+                functionName: executionError.function?.name,
+              ),
       ),
+      bcs: include?.bcs == true && transactionBcs != null
+          ? base64Decode(transactionBcs)
+          : null,
       events: effects?.events?.nodes.map(_mapSimEvent).toList(),
       commandResults: result.outputs?.map(_mapSimCommand).toList(),
       gasPaymentMocked:
           gasObjectId != null &&
           normalizeSuiAddress(gasObjectId) == MOCKED_GAS_OBJECT_ID,
+    );
+  }
+
+  ExecutionError _parseExecutionError({
+    required String message,
+    String? abortCode,
+    int? sourceLineNumber,
+    int? instructionOffset,
+    String? identifier,
+    String? constant,
+    String? package,
+    String? module,
+    String? functionName,
+  }) {
+    if (abortCode == null) {
+      return ExecutionError(message: message, kind: 'UNKNOWN');
+    }
+
+    final match = RegExp(r'in (\d+)\w* command').firstMatch(message);
+    final command = match == null ? null : int.parse(match.group(1)!) - 1;
+    final location = package == null || module == null
+        ? null
+        : MoveAbortLocation(
+            package: package,
+            module: module,
+            functionName: functionName,
+            instruction: instructionOffset,
+          );
+    final clever = identifier != null || constant != null;
+    return ExecutionError(
+      message: formatMoveAbortMessage(
+        command: command,
+        location: location,
+        abortCode: abortCode,
+        cleverLineNumber: clever ? sourceLineNumber : null,
+        cleverConstantName: identifier,
+        cleverValue: constant,
+      ),
+      kind: 'MOVE_ABORT',
+      command: command,
+      detail: AbortDetail(
+        MoveAbort(
+          abortCode: abortCode,
+          location: location,
+          cleverError: constant,
+        ),
+      ),
     );
   }
 

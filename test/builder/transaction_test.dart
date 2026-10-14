@@ -7,17 +7,12 @@ import 'package:test/test.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction.pbenum.dart';
 import 'package:sui_dart/grpc/types.dart'
     show
-        AddressOwner,
-        CoinData,
+        ExecutionError,
         ExecutionStatus,
-        GasUsed,
-        Page,
         SystemState,
-        TransactionEffects,
         TransactionIncludeOptions,
         TransactionResponse;
-import 'package:sui_dart/sui.dart'
-    hide AddressOwner, ExecutionStatus, TransactionEffects;
+import 'package:sui_dart/sui.dart' hide ExecutionStatus;
 
 void main() {
   test('can construct and serialize an empty transaction', () {
@@ -276,23 +271,106 @@ void main() {
       expect(tx.getData().expiration?.epoch, isNull);
     });
 
-    test('the budget dry-run mocks gas behind a ValidDuring', () async {
+    test('the node fills a missing budget and payment', () async {
       final tx = Transaction();
       tx.setSender(normalizeSuiAddress('0xaaaa'));
       tx.setGasPrice(BigInt.from(1000));
-      tx.setGasPayment([ref()]);
 
       final client = _StubCoreClient();
       await tx.build(BuildOptions(client: client));
 
-      expect(client.simulateGasSelection, isFalse);
-      // u64 comes back from BCS as BigInt.
-      expect(client.simulateValidDuring!['minEpoch'].toString(), '42');
-      expect(client.simulateValidDuring!['maxEpoch'].toString(), '43');
-      expect(client.simulateValidDuring!['chain'], _StubCoreClient.chainId);
-      // Only the simulate needed the window: real gas coins bound the transaction.
+      expect(client.simulateGasSelection, isTrue);
+      expect(client.simulateChecks, isTrue);
+      expect(tx.getData().gasData.budget, BigInt.from(5000000));
+      expect(
+        tx.getData().gasData.payment!.single.objectId,
+        client.selectedPayment.single.objectId,
+      );
+      // real gas coins bound the transaction, so no window is added
       expect(tx.getData().expiration?.validDuring, isNull);
     });
+
+    test('a kind-only build resolves objects without a sender', () async {
+      final tx = Transaction();
+      tx.transferObjects([tx.object(normalizeSuiAddress('0xb'))], '0xc');
+
+      final client = _StubCoreClient();
+      await tx.build(BuildOptions(client: client, onlyTransactionKind: true));
+
+      expect(client.simulateGasSelection, isFalse);
+      expect(client.simulateChecks, isFalse);
+      expect(tx.getData().sender, isNull);
+      expect(
+        tx.getData().inputs!.first['Object']['ImmOrOwnedObject']['objectId'],
+        normalizeSuiAddress('0xb'),
+      );
+    });
+
+    test(
+      'object arguments go to the node without a signature lookup',
+      () async {
+        final tx = Transaction();
+        tx.moveCall(
+          '0x2::foo::bar',
+          arguments: [tx.object(normalizeSuiAddress('0xb'))],
+        );
+
+        // the stub has no getMoveFunction, so a lookup would throw
+        await tx.build(
+          BuildOptions(client: _StubCoreClient(), onlyTransactionKind: true),
+        );
+
+        expect(
+          tx.getData().inputs!.first['Object']['ImmOrOwnedObject']['objectId'],
+          normalizeSuiAddress('0xb'),
+        );
+      },
+    );
+
+    test('a resolved object that does not match throws', () async {
+      final tx = Transaction();
+      tx.transferObjects([tx.object(normalizeSuiAddress('0xb'))], '0xc');
+
+      await expectLater(
+        tx.build(
+          BuildOptions(
+            client: _StubCoreClient(resolveTo: normalizeSuiAddress('0xd')),
+            onlyTransactionKind: true,
+          ),
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('a failed resolution throws a SimulationError', () async {
+      final tx = Transaction();
+      tx.setSender(normalizeSuiAddress('0xaaaa'));
+
+      await expectLater(
+        tx.build(BuildOptions(client: _StubCoreClient(fail: true))),
+        throwsA(
+          isA<SimulationError>()
+              .having((e) => e.message, 'message', contains('MoveAbort 7'))
+              .having((e) => e.executionError?.kind, 'kind', 'MOVE_ABORT'),
+        ),
+      );
+    });
+
+    test(
+      'an explicit None expiry with an empty payment builds offline',
+      () async {
+        final tx = Transaction();
+        tx.setSender(normalizeSuiAddress('0xaaaa'));
+        tx.setGasPrice(BigInt.from(1000));
+        tx.setGasBudget(BigInt.from(2000000));
+        tx.setGasPayment([]);
+        tx.setTransactionExpiration(TransactionExpiration());
+
+        // None counts as set, so nothing asks the node for a window
+        await tx.build();
+        expect(tx.getData().expiration!.toJson(), {'None': true});
+      },
+    );
 
     test('keeps a Validity the caller set', () async {
       final tx = Transaction();
@@ -307,36 +385,6 @@ void main() {
       expect(tx.getData().expiration!.validity, isNotNull);
       expect(tx.getData().expiration!.validDuring, isNull);
     });
-  });
-
-  test('gas selection takes up to 256 coins not used as inputs', () async {
-    final coins = [
-      for (var i = 1; i <= 300; i++)
-        CoinData(
-          objectId: normalizeSuiAddress(i.toRadixString(16)),
-          version: '1',
-          digest: 'Bfm2Z4dXysM9Vu1X5p8oR4z7mFs2pT8w9X1y2Z3a4B5c',
-          owner: AddressOwner(normalizeSuiAddress('0xaaaa')),
-          type: '0x2::sui::SUI',
-          balance: '1000',
-        ),
-    ];
-    final tx = Transaction();
-    tx.setSender(normalizeSuiAddress('0xaaaa'));
-    tx.setGasPrice(BigInt.from(1000));
-    tx.setGasBudget(BigInt.from(2000000));
-
-    Map<String, dynamic> input(CoinData coin) => tx.object(
-      Inputs.objectRef(SuiObjectRef(coin.digest, coin.objectId, coin.version)),
-    );
-    tx.mergeCoins(input(coins[0]), [input(coins[1])]);
-
-    await tx.build(BuildOptions(client: _StubCoreClient(coins: coins)));
-
-    final payment = tx.getData().gasData.payment!;
-    expect(payment.length, 256);
-    expect(payment.first.objectId, coins[2].objectId);
-    expect(payment.last.objectId, coins[257].objectId);
   });
 
   group('windowed expiration', () {
@@ -437,21 +485,20 @@ TransactionExpiration _validity({List<int> proposers = const [0, 2, 5]}) =>
     );
 
 class _StubCoreClient implements SuiCoreClient {
+  @override
+  TransactionPlugin resolveTransactionPlugin() => simulationResolvePlugin(this);
+
   static const chainId = '4btiuiMPvEENsttpZC7CZ53DruC3MAgfznDbASZ7DR6S';
 
-  final List<CoinData> coins;
-  _StubCoreClient({this.coins = const []});
+  _StubCoreClient({this.fail = false, this.resolveTo});
 
+  final bool fail;
+
+  /// Object id an unresolved input resolves to; defaults to its own.
+  final String? resolveTo;
+  final selectedPayment = [ref()];
   bool? simulateGasSelection;
-  Map<String, dynamic>? simulateValidDuring;
-
-  @override
-  Future<Page<CoinData>> getCoins(
-    String address, {
-    String coinType = '0x2::sui::SUI',
-    String? cursor,
-    int? limit,
-  }) async => Page(data: coins, hasNextPage: true);
+  bool? simulateChecks;
 
   @override
   Future<TransactionResponse> simulateTransaction(
@@ -461,20 +508,37 @@ class _StubCoreClient implements SuiCoreClient {
     bool? checksEnabled,
   }) async {
     simulateGasSelection = doGasSelection;
-    // Read off the rebuilt tx: this also covers the BCS round-trip.
-    simulateValidDuring = transactionBlock.getData().expiration?.validDuring;
-    return const TransactionResponse(
+    simulateChecks = checksEnabled;
+    final resolved = TransactionBlockDataBuilder.restore(
+      jsonDecode(transactionBlock.toJson()) as Map<String, dynamic>,
+    );
+    for (var i = 0; i < resolved.inputs.length; i++) {
+      final unresolved = resolved.inputs[i]['UnresolvedObject'];
+      if (unresolved == null) continue;
+      resolved.inputs[i] = {
+        'Object': {
+          'ImmOrOwnedObject': {
+            'objectId': resolveTo ?? unresolved['objectId'],
+            'version': '1',
+            'digest': ref().digest,
+          },
+        },
+      };
+    }
+    resolved.gasData
+      ..price ??= BigInt.from(1000)
+      ..budget ??= BigInt.from(5000000)
+      ..payment ??= doGasSelection == true ? selectedPayment : [];
+    return TransactionResponse(
       digest: '',
-      status: ExecutionStatus(success: true),
-      effects: TransactionEffects(
-        status: ExecutionStatus(success: true),
-        gasUsed: GasUsed(
-          computationCost: '1000',
-          storageCost: '0',
-          storageRebate: '0',
-          nonRefundableStorageFee: '0',
-        ),
-      ),
+      epoch: '42',
+      status: fail
+          ? const ExecutionStatus(
+              success: false,
+              error: ExecutionError(message: 'MoveAbort 7', kind: 'MOVE_ABORT'),
+            )
+          : const ExecutionStatus(success: true),
+      bcs: resolved.build(),
     );
   }
 

@@ -7062,6 +7062,143 @@ const documentNodeQuerySimulateTransaction = DocumentNode(
                         selectionSet: null,
                       ),
                       FieldNode(
+                        name: NameNode(value: 'epoch'),
+                        alias: null,
+                        arguments: [],
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'epochId'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      FieldNode(
+                        name: NameNode(value: 'executionError'),
+                        alias: null,
+                        arguments: [],
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'message'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'abortCode'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'sourceLineNumber'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'instructionOffset'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'identifier'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'constant'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'module'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: SelectionSetNode(
+                                selections: [
+                                  FieldNode(
+                                    name: NameNode(value: 'name'),
+                                    alias: null,
+                                    arguments: [],
+                                    directives: [],
+                                    selectionSet: null,
+                                  ),
+                                  FieldNode(
+                                    name: NameNode(value: 'package'),
+                                    alias: null,
+                                    arguments: [],
+                                    directives: [],
+                                    selectionSet: SelectionSetNode(
+                                      selections: [
+                                        FieldNode(
+                                          name: NameNode(value: 'address'),
+                                          alias: null,
+                                          arguments: [],
+                                          directives: [],
+                                          selectionSet: null,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'function'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: SelectionSetNode(
+                                selections: [
+                                  FieldNode(
+                                    name: NameNode(value: 'name'),
+                                    alias: null,
+                                    arguments: [],
+                                    directives: [],
+                                    selectionSet: null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      FieldNode(
+                        name: NameNode(value: 'transaction'),
+                        alias: null,
+                        arguments: [],
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'transactionBcs'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      FieldNode(
                         name: NameNode(value: 'gasEffects'),
                         alias: null,
                         arguments: [],
@@ -7349,6 +7486,9 @@ class Query$SimulateTransaction$simulateTransaction {
 class Query$SimulateTransaction$simulateTransaction$effects {
   Query$SimulateTransaction$simulateTransaction$effects({
     this.status,
+    this.epoch,
+    this.executionError,
+    this.transaction,
     this.gasEffects,
     this.events,
   });
@@ -7357,12 +7497,30 @@ class Query$SimulateTransaction$simulateTransaction$effects {
     Map<String, dynamic> json,
   ) {
     final l$status = json['status'];
+    final l$epoch = json['epoch'];
+    final l$executionError = json['executionError'];
+    final l$transaction = json['transaction'];
     final l$gasEffects = json['gasEffects'];
     final l$events = json['events'];
     return Query$SimulateTransaction$simulateTransaction$effects(
       status: l$status == null
           ? null
           : fromJson$Enum$ExecutionStatus((l$status as String)),
+      epoch: l$epoch == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$epoch.fromJson(
+              (l$epoch as Map<String, dynamic>),
+            ),
+      executionError: l$executionError == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$executionError.fromJson(
+              (l$executionError as Map<String, dynamic>),
+            ),
+      transaction: l$transaction == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$transaction.fromJson(
+              (l$transaction as Map<String, dynamic>),
+            ),
       gasEffects: l$gasEffects == null
           ? null
           : Query$SimulateTransaction$simulateTransaction$effects$gasEffects.fromJson(
@@ -7378,6 +7536,14 @@ class Query$SimulateTransaction$simulateTransaction$effects {
 
   final Enum$ExecutionStatus? status;
 
+  final Query$SimulateTransaction$simulateTransaction$effects$epoch? epoch;
+
+  final Query$SimulateTransaction$simulateTransaction$effects$executionError?
+  executionError;
+
+  final Query$SimulateTransaction$simulateTransaction$effects$transaction?
+  transaction;
+
   final Query$SimulateTransaction$simulateTransaction$effects$gasEffects?
   gasEffects;
 
@@ -7389,6 +7555,12 @@ class Query$SimulateTransaction$simulateTransaction$effects {
     _resultData['status'] = l$status == null
         ? null
         : toJson$Enum$ExecutionStatus(l$status);
+    final l$epoch = epoch;
+    _resultData['epoch'] = l$epoch?.toJson();
+    final l$executionError = executionError;
+    _resultData['executionError'] = l$executionError?.toJson();
+    final l$transaction = transaction;
+    _resultData['transaction'] = l$transaction?.toJson();
     final l$gasEffects = gasEffects;
     _resultData['gasEffects'] = l$gasEffects?.toJson();
     final l$events = events;
@@ -7399,9 +7571,19 @@ class Query$SimulateTransaction$simulateTransaction$effects {
   @override
   int get hashCode {
     final l$status = status;
+    final l$epoch = epoch;
+    final l$executionError = executionError;
+    final l$transaction = transaction;
     final l$gasEffects = gasEffects;
     final l$events = events;
-    return Object.hashAll([l$status, l$gasEffects, l$events]);
+    return Object.hashAll([
+      l$status,
+      l$epoch,
+      l$executionError,
+      l$transaction,
+      l$gasEffects,
+      l$events,
+    ]);
   }
 
   @override
@@ -7418,6 +7600,21 @@ class Query$SimulateTransaction$simulateTransaction$effects {
     if (l$status != lOther$status) {
       return false;
     }
+    final l$epoch = epoch;
+    final lOther$epoch = other.epoch;
+    if (l$epoch != lOther$epoch) {
+      return false;
+    }
+    final l$executionError = executionError;
+    final lOther$executionError = other.executionError;
+    if (l$executionError != lOther$executionError) {
+      return false;
+    }
+    final l$transaction = transaction;
+    final lOther$transaction = other.transaction;
+    if (l$transaction != lOther$transaction) {
+      return false;
+    }
     final l$gasEffects = gasEffects;
     final lOther$gasEffects = other.gasEffects;
     if (l$gasEffects != lOther$gasEffects) {
@@ -7426,6 +7623,421 @@ class Query$SimulateTransaction$simulateTransaction$effects {
     final l$events = events;
     final lOther$events = other.events;
     if (l$events != lOther$events) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$epoch {
+  Query$SimulateTransaction$simulateTransaction$effects$epoch({
+    required this.epochId,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$epoch.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$epochId = json['epochId'];
+    return Query$SimulateTransaction$simulateTransaction$effects$epoch(
+      epochId: (l$epochId as int),
+    );
+  }
+
+  final int epochId;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$epochId = epochId;
+    _resultData['epochId'] = l$epochId;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$epochId = epochId;
+    return Object.hashAll([l$epochId]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Query$SimulateTransaction$simulateTransaction$effects$epoch ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$epochId = epochId;
+    final lOther$epochId = other.epochId;
+    if (l$epochId != lOther$epochId) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$executionError {
+  Query$SimulateTransaction$simulateTransaction$effects$executionError({
+    required this.message,
+    this.abortCode,
+    this.sourceLineNumber,
+    this.instructionOffset,
+    this.identifier,
+    this.constant,
+    this.module,
+    this.function,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$executionError.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$message = json['message'];
+    final l$abortCode = json['abortCode'];
+    final l$sourceLineNumber = json['sourceLineNumber'];
+    final l$instructionOffset = json['instructionOffset'];
+    final l$identifier = json['identifier'];
+    final l$constant = json['constant'];
+    final l$module = json['module'];
+    final l$function = json['function'];
+    return Query$SimulateTransaction$simulateTransaction$effects$executionError(
+      message: (l$message as String),
+      abortCode: (l$abortCode as String?),
+      sourceLineNumber: (l$sourceLineNumber as int?),
+      instructionOffset: (l$instructionOffset as int?),
+      identifier: (l$identifier as String?),
+      constant: (l$constant as String?),
+      module: l$module == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$executionError$module.fromJson(
+              (l$module as Map<String, dynamic>),
+            ),
+      function: l$function == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$executionError$function.fromJson(
+              (l$function as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final String message;
+
+  final String? abortCode;
+
+  final int? sourceLineNumber;
+
+  final int? instructionOffset;
+
+  final String? identifier;
+
+  final String? constant;
+
+  final Query$SimulateTransaction$simulateTransaction$effects$executionError$module?
+  module;
+
+  final Query$SimulateTransaction$simulateTransaction$effects$executionError$function?
+  function;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$message = message;
+    _resultData['message'] = l$message;
+    final l$abortCode = abortCode;
+    _resultData['abortCode'] = l$abortCode;
+    final l$sourceLineNumber = sourceLineNumber;
+    _resultData['sourceLineNumber'] = l$sourceLineNumber;
+    final l$instructionOffset = instructionOffset;
+    _resultData['instructionOffset'] = l$instructionOffset;
+    final l$identifier = identifier;
+    _resultData['identifier'] = l$identifier;
+    final l$constant = constant;
+    _resultData['constant'] = l$constant;
+    final l$module = module;
+    _resultData['module'] = l$module?.toJson();
+    final l$function = function;
+    _resultData['function'] = l$function?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$message = message;
+    final l$abortCode = abortCode;
+    final l$sourceLineNumber = sourceLineNumber;
+    final l$instructionOffset = instructionOffset;
+    final l$identifier = identifier;
+    final l$constant = constant;
+    final l$module = module;
+    final l$function = function;
+    return Object.hashAll([
+      l$message,
+      l$abortCode,
+      l$sourceLineNumber,
+      l$instructionOffset,
+      l$identifier,
+      l$constant,
+      l$module,
+      l$function,
+    ]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$executionError ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$message = message;
+    final lOther$message = other.message;
+    if (l$message != lOther$message) {
+      return false;
+    }
+    final l$abortCode = abortCode;
+    final lOther$abortCode = other.abortCode;
+    if (l$abortCode != lOther$abortCode) {
+      return false;
+    }
+    final l$sourceLineNumber = sourceLineNumber;
+    final lOther$sourceLineNumber = other.sourceLineNumber;
+    if (l$sourceLineNumber != lOther$sourceLineNumber) {
+      return false;
+    }
+    final l$instructionOffset = instructionOffset;
+    final lOther$instructionOffset = other.instructionOffset;
+    if (l$instructionOffset != lOther$instructionOffset) {
+      return false;
+    }
+    final l$identifier = identifier;
+    final lOther$identifier = other.identifier;
+    if (l$identifier != lOther$identifier) {
+      return false;
+    }
+    final l$constant = constant;
+    final lOther$constant = other.constant;
+    if (l$constant != lOther$constant) {
+      return false;
+    }
+    final l$module = module;
+    final lOther$module = other.module;
+    if (l$module != lOther$module) {
+      return false;
+    }
+    final l$function = function;
+    final lOther$function = other.function;
+    if (l$function != lOther$function) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$executionError$module {
+  Query$SimulateTransaction$simulateTransaction$effects$executionError$module({
+    required this.name,
+    this.package,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$executionError$module.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$name = json['name'];
+    final l$package = json['package'];
+    return Query$SimulateTransaction$simulateTransaction$effects$executionError$module(
+      name: (l$name as String),
+      package: l$package == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package.fromJson(
+              (l$package as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final String name;
+
+  final Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package?
+  package;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$name = name;
+    _resultData['name'] = l$name;
+    final l$package = package;
+    _resultData['package'] = l$package?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$name = name;
+    final l$package = package;
+    return Object.hashAll([l$name, l$package]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$executionError$module ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$name = name;
+    final lOther$name = other.name;
+    if (l$name != lOther$name) {
+      return false;
+    }
+    final l$package = package;
+    final lOther$package = other.package;
+    if (l$package != lOther$package) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package {
+  Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package({
+    required this.address,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$address = json['address'];
+    return Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package(
+      address: (l$address as String),
+    );
+  }
+
+  final String address;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$address = address;
+    _resultData['address'] = l$address;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$address = address;
+    return Object.hashAll([l$address]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$address = address;
+    final lOther$address = other.address;
+    if (l$address != lOther$address) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$executionError$function {
+  Query$SimulateTransaction$simulateTransaction$effects$executionError$function({
+    required this.name,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$executionError$function.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$name = json['name'];
+    return Query$SimulateTransaction$simulateTransaction$effects$executionError$function(
+      name: (l$name as String),
+    );
+  }
+
+  final String name;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$name = name;
+    _resultData['name'] = l$name;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$name = name;
+    return Object.hashAll([l$name]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$executionError$function ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$name = name;
+    final lOther$name = other.name;
+    if (l$name != lOther$name) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$transaction {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction({
+    this.transactionBcs,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$transactionBcs = json['transactionBcs'];
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction(
+      transactionBcs: (l$transactionBcs as String?),
+    );
+  }
+
+  final String? transactionBcs;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$transactionBcs = transactionBcs;
+    _resultData['transactionBcs'] = l$transactionBcs;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$transactionBcs = transactionBcs;
+    return Object.hashAll([l$transactionBcs]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$transactionBcs = transactionBcs;
+    final lOther$transactionBcs = other.transactionBcs;
+    if (l$transactionBcs != lOther$transactionBcs) {
       return false;
     }
     return true;
@@ -18144,6 +18756,1010 @@ class Query$ListEvents$events$nodes$transaction$effects$checkpoint {
     final l$sequenceNumber = sequenceNumber;
     final lOther$sequenceNumber = other.sequenceNumber;
     if (l$sequenceNumber != lOther$sequenceNumber) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Variables$Query$ResolveTransaction {
+  factory Variables$Query$ResolveTransaction({
+    required Map<String, dynamic> transaction,
+    bool? doGasSelection,
+    bool? checksEnabled,
+  }) => Variables$Query$ResolveTransaction._({
+    r'transaction': transaction,
+    if (doGasSelection != null) r'doGasSelection': doGasSelection,
+    if (checksEnabled != null) r'checksEnabled': checksEnabled,
+  });
+
+  Variables$Query$ResolveTransaction._(this._$data);
+
+  factory Variables$Query$ResolveTransaction.fromJson(
+    Map<String, dynamic> data,
+  ) {
+    final result$data = <String, dynamic>{};
+    final l$transaction = data['transaction'];
+    result$data['transaction'] = (l$transaction as Map<String, dynamic>);
+    if (data.containsKey('doGasSelection')) {
+      final l$doGasSelection = data['doGasSelection'];
+      result$data['doGasSelection'] = (l$doGasSelection as bool?);
+    }
+    if (data.containsKey('checksEnabled')) {
+      final l$checksEnabled = data['checksEnabled'];
+      result$data['checksEnabled'] = (l$checksEnabled as bool?);
+    }
+    return Variables$Query$ResolveTransaction._(result$data);
+  }
+
+  Map<String, dynamic> _$data;
+
+  Map<String, dynamic> get transaction =>
+      (_$data['transaction'] as Map<String, dynamic>);
+
+  bool? get doGasSelection => (_$data['doGasSelection'] as bool?);
+
+  bool? get checksEnabled => (_$data['checksEnabled'] as bool?);
+
+  Map<String, dynamic> toJson() {
+    final result$data = <String, dynamic>{};
+    final l$transaction = transaction;
+    result$data['transaction'] = l$transaction;
+    if (_$data.containsKey('doGasSelection')) {
+      final l$doGasSelection = doGasSelection;
+      result$data['doGasSelection'] = l$doGasSelection;
+    }
+    if (_$data.containsKey('checksEnabled')) {
+      final l$checksEnabled = checksEnabled;
+      result$data['checksEnabled'] = l$checksEnabled;
+    }
+    return result$data;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Variables$Query$ResolveTransaction ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$transaction = transaction;
+    final lOther$transaction = other.transaction;
+    if (l$transaction != lOther$transaction) {
+      return false;
+    }
+    final l$doGasSelection = doGasSelection;
+    final lOther$doGasSelection = other.doGasSelection;
+    if (_$data.containsKey('doGasSelection') !=
+        other._$data.containsKey('doGasSelection')) {
+      return false;
+    }
+    if (l$doGasSelection != lOther$doGasSelection) {
+      return false;
+    }
+    final l$checksEnabled = checksEnabled;
+    final lOther$checksEnabled = other.checksEnabled;
+    if (_$data.containsKey('checksEnabled') !=
+        other._$data.containsKey('checksEnabled')) {
+      return false;
+    }
+    if (l$checksEnabled != lOther$checksEnabled) {
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode {
+    final l$transaction = transaction;
+    final l$doGasSelection = doGasSelection;
+    final l$checksEnabled = checksEnabled;
+    return Object.hashAll([
+      l$transaction,
+      _$data.containsKey('doGasSelection') ? l$doGasSelection : const {},
+      _$data.containsKey('checksEnabled') ? l$checksEnabled : const {},
+    ]);
+  }
+}
+
+class Query$ResolveTransaction {
+  Query$ResolveTransaction({required this.simulateTransaction});
+
+  factory Query$ResolveTransaction.fromJson(Map<String, dynamic> json) {
+    final l$simulateTransaction = json['simulateTransaction'];
+    return Query$ResolveTransaction(
+      simulateTransaction:
+          Query$ResolveTransaction$simulateTransaction.fromJson(
+            (l$simulateTransaction as Map<String, dynamic>),
+          ),
+    );
+  }
+
+  final Query$ResolveTransaction$simulateTransaction simulateTransaction;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$simulateTransaction = simulateTransaction;
+    _resultData['simulateTransaction'] = l$simulateTransaction.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$simulateTransaction = simulateTransaction;
+    return Object.hashAll([l$simulateTransaction]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Query$ResolveTransaction ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$simulateTransaction = simulateTransaction;
+    final lOther$simulateTransaction = other.simulateTransaction;
+    if (l$simulateTransaction != lOther$simulateTransaction) {
+      return false;
+    }
+    return true;
+  }
+}
+
+const documentNodeQueryResolveTransaction = DocumentNode(
+  definitions: [
+    OperationDefinitionNode(
+      type: OperationType.query,
+      name: NameNode(value: 'ResolveTransaction'),
+      variableDefinitions: [
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'transaction')),
+          type: NamedTypeNode(name: NameNode(value: 'JSON'), isNonNull: true),
+          defaultValue: DefaultValueNode(value: null),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'doGasSelection')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: true)),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'checksEnabled')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: true)),
+          directives: [],
+        ),
+      ],
+      directives: [],
+      selectionSet: SelectionSetNode(
+        selections: [
+          FieldNode(
+            name: NameNode(value: 'simulateTransaction'),
+            alias: null,
+            arguments: [
+              ArgumentNode(
+                name: NameNode(value: 'transaction'),
+                value: VariableNode(name: NameNode(value: 'transaction')),
+              ),
+              ArgumentNode(
+                name: NameNode(value: 'doGasSelection'),
+                value: VariableNode(name: NameNode(value: 'doGasSelection')),
+              ),
+              ArgumentNode(
+                name: NameNode(value: 'checksEnabled'),
+                value: VariableNode(name: NameNode(value: 'checksEnabled')),
+              ),
+            ],
+            directives: [],
+            selectionSet: SelectionSetNode(
+              selections: [
+                FieldNode(
+                  name: NameNode(value: 'effects'),
+                  alias: null,
+                  arguments: [],
+                  directives: [],
+                  selectionSet: SelectionSetNode(
+                    selections: [
+                      FieldNode(
+                        name: NameNode(value: 'transaction'),
+                        alias: null,
+                        arguments: [],
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'transactionBcs'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'effects'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: SelectionSetNode(
+                                selections: [
+                                  FieldNode(
+                                    name: NameNode(value: 'epoch'),
+                                    alias: null,
+                                    arguments: [],
+                                    directives: [],
+                                    selectionSet: SelectionSetNode(
+                                      selections: [
+                                        FieldNode(
+                                          name: NameNode(value: 'epochId'),
+                                          alias: null,
+                                          arguments: [],
+                                          directives: [],
+                                          selectionSet: null,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  FieldNode(
+                                    name: NameNode(value: 'status'),
+                                    alias: null,
+                                    arguments: [],
+                                    directives: [],
+                                    selectionSet: null,
+                                  ),
+                                  FieldNode(
+                                    name: NameNode(value: 'executionError'),
+                                    alias: null,
+                                    arguments: [],
+                                    directives: [],
+                                    selectionSet: SelectionSetNode(
+                                      selections: [
+                                        FieldNode(
+                                          name: NameNode(value: 'message'),
+                                          alias: null,
+                                          arguments: [],
+                                          directives: [],
+                                          selectionSet: null,
+                                        ),
+                                        FieldNode(
+                                          name: NameNode(value: 'abortCode'),
+                                          alias: null,
+                                          arguments: [],
+                                          directives: [],
+                                          selectionSet: null,
+                                        ),
+                                        FieldNode(
+                                          name: NameNode(value: 'identifier'),
+                                          alias: null,
+                                          arguments: [],
+                                          directives: [],
+                                          selectionSet: null,
+                                        ),
+                                        FieldNode(
+                                          name: NameNode(value: 'constant'),
+                                          alias: null,
+                                          arguments: [],
+                                          directives: [],
+                                          selectionSet: null,
+                                        ),
+                                        FieldNode(
+                                          name: NameNode(
+                                            value: 'sourceLineNumber',
+                                          ),
+                                          alias: null,
+                                          arguments: [],
+                                          directives: [],
+                                          selectionSet: null,
+                                        ),
+                                        FieldNode(
+                                          name: NameNode(
+                                            value: 'instructionOffset',
+                                          ),
+                                          alias: null,
+                                          arguments: [],
+                                          directives: [],
+                                          selectionSet: null,
+                                        ),
+                                        FieldNode(
+                                          name: NameNode(value: 'module'),
+                                          alias: null,
+                                          arguments: [],
+                                          directives: [],
+                                          selectionSet: SelectionSetNode(
+                                            selections: [
+                                              FieldNode(
+                                                name: NameNode(value: 'name'),
+                                                alias: null,
+                                                arguments: [],
+                                                directives: [],
+                                                selectionSet: null,
+                                              ),
+                                              FieldNode(
+                                                name: NameNode(
+                                                  value: 'package',
+                                                ),
+                                                alias: null,
+                                                arguments: [],
+                                                directives: [],
+                                                selectionSet: SelectionSetNode(
+                                                  selections: [
+                                                    FieldNode(
+                                                      name: NameNode(
+                                                        value: 'address',
+                                                      ),
+                                                      alias: null,
+                                                      arguments: [],
+                                                      directives: [],
+                                                      selectionSet: null,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        FieldNode(
+                                          name: NameNode(value: 'function'),
+                                          alias: null,
+                                          arguments: [],
+                                          directives: [],
+                                          selectionSet: SelectionSetNode(
+                                            selections: [
+                                              FieldNode(
+                                                name: NameNode(value: 'name'),
+                                                alias: null,
+                                                arguments: [],
+                                                directives: [],
+                                                selectionSet: null,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  ],
+);
+
+class Query$ResolveTransaction$simulateTransaction {
+  Query$ResolveTransaction$simulateTransaction({this.effects});
+
+  factory Query$ResolveTransaction$simulateTransaction.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$effects = json['effects'];
+    return Query$ResolveTransaction$simulateTransaction(
+      effects: l$effects == null
+          ? null
+          : Query$ResolveTransaction$simulateTransaction$effects.fromJson(
+              (l$effects as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final Query$ResolveTransaction$simulateTransaction$effects? effects;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$effects = effects;
+    _resultData['effects'] = l$effects?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$effects = effects;
+    return Object.hashAll([l$effects]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Query$ResolveTransaction$simulateTransaction ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$effects = effects;
+    final lOther$effects = other.effects;
+    if (l$effects != lOther$effects) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$ResolveTransaction$simulateTransaction$effects {
+  Query$ResolveTransaction$simulateTransaction$effects({this.transaction});
+
+  factory Query$ResolveTransaction$simulateTransaction$effects.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$transaction = json['transaction'];
+    return Query$ResolveTransaction$simulateTransaction$effects(
+      transaction: l$transaction == null
+          ? null
+          : Query$ResolveTransaction$simulateTransaction$effects$transaction.fromJson(
+              (l$transaction as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final Query$ResolveTransaction$simulateTransaction$effects$transaction?
+  transaction;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$transaction = transaction;
+    _resultData['transaction'] = l$transaction?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$transaction = transaction;
+    return Object.hashAll([l$transaction]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Query$ResolveTransaction$simulateTransaction$effects ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$transaction = transaction;
+    final lOther$transaction = other.transaction;
+    if (l$transaction != lOther$transaction) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$ResolveTransaction$simulateTransaction$effects$transaction {
+  Query$ResolveTransaction$simulateTransaction$effects$transaction({
+    this.transactionBcs,
+    this.effects,
+  });
+
+  factory Query$ResolveTransaction$simulateTransaction$effects$transaction.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$transactionBcs = json['transactionBcs'];
+    final l$effects = json['effects'];
+    return Query$ResolveTransaction$simulateTransaction$effects$transaction(
+      transactionBcs: (l$transactionBcs as String?),
+      effects: l$effects == null
+          ? null
+          : Query$ResolveTransaction$simulateTransaction$effects$transaction$effects.fromJson(
+              (l$effects as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final String? transactionBcs;
+
+  final Query$ResolveTransaction$simulateTransaction$effects$transaction$effects?
+  effects;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$transactionBcs = transactionBcs;
+    _resultData['transactionBcs'] = l$transactionBcs;
+    final l$effects = effects;
+    _resultData['effects'] = l$effects?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$transactionBcs = transactionBcs;
+    final l$effects = effects;
+    return Object.hashAll([l$transactionBcs, l$effects]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$ResolveTransaction$simulateTransaction$effects$transaction ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$transactionBcs = transactionBcs;
+    final lOther$transactionBcs = other.transactionBcs;
+    if (l$transactionBcs != lOther$transactionBcs) {
+      return false;
+    }
+    final l$effects = effects;
+    final lOther$effects = other.effects;
+    if (l$effects != lOther$effects) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$ResolveTransaction$simulateTransaction$effects$transaction$effects {
+  Query$ResolveTransaction$simulateTransaction$effects$transaction$effects({
+    this.epoch,
+    this.status,
+    this.executionError,
+  });
+
+  factory Query$ResolveTransaction$simulateTransaction$effects$transaction$effects.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$epoch = json['epoch'];
+    final l$status = json['status'];
+    final l$executionError = json['executionError'];
+    return Query$ResolveTransaction$simulateTransaction$effects$transaction$effects(
+      epoch: l$epoch == null
+          ? null
+          : Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$epoch.fromJson(
+              (l$epoch as Map<String, dynamic>),
+            ),
+      status: l$status == null
+          ? null
+          : fromJson$Enum$ExecutionStatus((l$status as String)),
+      executionError: l$executionError == null
+          ? null
+          : Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError.fromJson(
+              (l$executionError as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$epoch?
+  epoch;
+
+  final Enum$ExecutionStatus? status;
+
+  final Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError?
+  executionError;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$epoch = epoch;
+    _resultData['epoch'] = l$epoch?.toJson();
+    final l$status = status;
+    _resultData['status'] = l$status == null
+        ? null
+        : toJson$Enum$ExecutionStatus(l$status);
+    final l$executionError = executionError;
+    _resultData['executionError'] = l$executionError?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$epoch = epoch;
+    final l$status = status;
+    final l$executionError = executionError;
+    return Object.hashAll([l$epoch, l$status, l$executionError]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$ResolveTransaction$simulateTransaction$effects$transaction$effects ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$epoch = epoch;
+    final lOther$epoch = other.epoch;
+    if (l$epoch != lOther$epoch) {
+      return false;
+    }
+    final l$status = status;
+    final lOther$status = other.status;
+    if (l$status != lOther$status) {
+      return false;
+    }
+    final l$executionError = executionError;
+    final lOther$executionError = other.executionError;
+    if (l$executionError != lOther$executionError) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$epoch {
+  Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$epoch({
+    required this.epochId,
+  });
+
+  factory Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$epoch.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$epochId = json['epochId'];
+    return Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$epoch(
+      epochId: (l$epochId as int),
+    );
+  }
+
+  final int epochId;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$epochId = epochId;
+    _resultData['epochId'] = l$epochId;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$epochId = epochId;
+    return Object.hashAll([l$epochId]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$epoch ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$epochId = epochId;
+    final lOther$epochId = other.epochId;
+    if (l$epochId != lOther$epochId) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError {
+  Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError({
+    required this.message,
+    this.abortCode,
+    this.identifier,
+    this.constant,
+    this.sourceLineNumber,
+    this.instructionOffset,
+    this.module,
+    this.function,
+  });
+
+  factory Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$message = json['message'];
+    final l$abortCode = json['abortCode'];
+    final l$identifier = json['identifier'];
+    final l$constant = json['constant'];
+    final l$sourceLineNumber = json['sourceLineNumber'];
+    final l$instructionOffset = json['instructionOffset'];
+    final l$module = json['module'];
+    final l$function = json['function'];
+    return Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError(
+      message: (l$message as String),
+      abortCode: (l$abortCode as String?),
+      identifier: (l$identifier as String?),
+      constant: (l$constant as String?),
+      sourceLineNumber: (l$sourceLineNumber as int?),
+      instructionOffset: (l$instructionOffset as int?),
+      module: l$module == null
+          ? null
+          : Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module.fromJson(
+              (l$module as Map<String, dynamic>),
+            ),
+      function: l$function == null
+          ? null
+          : Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$function.fromJson(
+              (l$function as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final String message;
+
+  final String? abortCode;
+
+  final String? identifier;
+
+  final String? constant;
+
+  final int? sourceLineNumber;
+
+  final int? instructionOffset;
+
+  final Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module?
+  module;
+
+  final Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$function?
+  function;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$message = message;
+    _resultData['message'] = l$message;
+    final l$abortCode = abortCode;
+    _resultData['abortCode'] = l$abortCode;
+    final l$identifier = identifier;
+    _resultData['identifier'] = l$identifier;
+    final l$constant = constant;
+    _resultData['constant'] = l$constant;
+    final l$sourceLineNumber = sourceLineNumber;
+    _resultData['sourceLineNumber'] = l$sourceLineNumber;
+    final l$instructionOffset = instructionOffset;
+    _resultData['instructionOffset'] = l$instructionOffset;
+    final l$module = module;
+    _resultData['module'] = l$module?.toJson();
+    final l$function = function;
+    _resultData['function'] = l$function?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$message = message;
+    final l$abortCode = abortCode;
+    final l$identifier = identifier;
+    final l$constant = constant;
+    final l$sourceLineNumber = sourceLineNumber;
+    final l$instructionOffset = instructionOffset;
+    final l$module = module;
+    final l$function = function;
+    return Object.hashAll([
+      l$message,
+      l$abortCode,
+      l$identifier,
+      l$constant,
+      l$sourceLineNumber,
+      l$instructionOffset,
+      l$module,
+      l$function,
+    ]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$message = message;
+    final lOther$message = other.message;
+    if (l$message != lOther$message) {
+      return false;
+    }
+    final l$abortCode = abortCode;
+    final lOther$abortCode = other.abortCode;
+    if (l$abortCode != lOther$abortCode) {
+      return false;
+    }
+    final l$identifier = identifier;
+    final lOther$identifier = other.identifier;
+    if (l$identifier != lOther$identifier) {
+      return false;
+    }
+    final l$constant = constant;
+    final lOther$constant = other.constant;
+    if (l$constant != lOther$constant) {
+      return false;
+    }
+    final l$sourceLineNumber = sourceLineNumber;
+    final lOther$sourceLineNumber = other.sourceLineNumber;
+    if (l$sourceLineNumber != lOther$sourceLineNumber) {
+      return false;
+    }
+    final l$instructionOffset = instructionOffset;
+    final lOther$instructionOffset = other.instructionOffset;
+    if (l$instructionOffset != lOther$instructionOffset) {
+      return false;
+    }
+    final l$module = module;
+    final lOther$module = other.module;
+    if (l$module != lOther$module) {
+      return false;
+    }
+    final l$function = function;
+    final lOther$function = other.function;
+    if (l$function != lOther$function) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module {
+  Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module({
+    required this.name,
+    this.package,
+  });
+
+  factory Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$name = json['name'];
+    final l$package = json['package'];
+    return Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module(
+      name: (l$name as String),
+      package: l$package == null
+          ? null
+          : Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package.fromJson(
+              (l$package as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final String name;
+
+  final Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package?
+  package;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$name = name;
+    _resultData['name'] = l$name;
+    final l$package = package;
+    _resultData['package'] = l$package?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$name = name;
+    final l$package = package;
+    return Object.hashAll([l$name, l$package]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$name = name;
+    final lOther$name = other.name;
+    if (l$name != lOther$name) {
+      return false;
+    }
+    final l$package = package;
+    final lOther$package = other.package;
+    if (l$package != lOther$package) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package {
+  Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package({
+    required this.address,
+  });
+
+  factory Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$address = json['address'];
+    return Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package(
+      address: (l$address as String),
+    );
+  }
+
+  final String address;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$address = address;
+    _resultData['address'] = l$address;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$address = address;
+    return Object.hashAll([l$address]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$address = address;
+    final lOther$address = other.address;
+    if (l$address != lOther$address) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$function {
+  Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$function({
+    required this.name,
+  });
+
+  factory Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$function.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$name = json['name'];
+    return Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$function(
+      name: (l$name as String),
+    );
+  }
+
+  final String name;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$name = name;
+    _resultData['name'] = l$name;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$name = name;
+    return Object.hashAll([l$name]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$ResolveTransaction$simulateTransaction$effects$transaction$effects$executionError$function ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$name = name;
+    final lOther$name = other.name;
+    if (l$name != lOther$name) {
       return false;
     }
     return true;

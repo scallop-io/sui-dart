@@ -319,35 +319,3 @@ List<Argument> toIterableGrpcArguments(List? args) {
       .map(argumentToGrpcArgument)
       .toList();
 }
-
-// void applyGrpcResolvedTransaction(
-//   TransactionBlockDataBuilder builder,
-//   GrpcTransaction.Transaction resolved, {
-//   bool onlyTransactionKind = false,
-// }) {
-//   final resolvedBuilder = TransactionBlockDataBuilder.fromBytes(resolved.bcs.value as Uint8List);
-//   final snapshot = resolvedBuilder.snapshot();
-
-//   if (onlyTransactionKind) {
-//     builder.applyResolvedData(
-//       snapshot.copyWith(
-//         gasData: GasData(budget: null, owner: null, payment: null, price: null),
-//         expiration: null,
-//       ),
-//     );
-//   } else {
-//     builder.applyResolvedData(snapshot);
-//   }
-// }
-
-// List<Map<String, String>> grpcObjectReferencesToBcs(List<ObjectReference> refs) {
-//   return refs
-//       .map(
-//         (ref) => {
-//           'objectId': ref.objectId,
-//           'version': ref.version.toString(),
-//           'digest': ref.digest,
-//         },
-//       )
-//       .toList();
-// }

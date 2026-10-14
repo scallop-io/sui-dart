@@ -4,37 +4,30 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:bcs_dart/bcs.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:grpc/grpc.dart' show GrpcError;
 import 'package:sui_dart/bcs/sui_bcs.dart';
 import 'package:sui_dart/builder/commands.dart';
 import 'package:sui_dart/builder/inputs.dart';
 import 'package:sui_dart/builder/pure.dart';
-import 'package:sui_dart/builder/serializer.dart';
 import 'package:sui_dart/builder/transaction_block_data.dart';
 import 'package:sui_dart/builder/transaction_resolver.dart';
 import 'package:sui_dart/builder/v1.dart';
 import 'package:sui_dart/core/sui_core_client.dart';
 import 'package:sui_dart/cryptography/keypair.dart';
 import 'package:sui_dart/grpc/types.dart'
-    show
-        ObjectData,
-        ObjectError,
-        ObjectResult,
-        ObjectSuccess,
-        SharedOwner,
-        SystemState,
-        TransactionIncludeOptions;
+    show ExecutionStatus, TransactionIncludeOptions;
 import 'package:sui_dart/types/common.dart';
-import 'package:sui_dart/types/framework.dart' hide ObjectData;
-import 'package:sui_dart/types/normalized.dart';
 import 'package:sui_dart/types/objects.dart';
 import 'package:sui_dart/types/sui_bcs.dart';
+import 'package:sui_dart/utils/error.dart' show SimulationError;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction.pb.dart'
     as grpc_transaction;
 
 /// An async resolver for a named `$Intent` command. It may inspect and mutate
 /// [transactionData] (e.g. via `replaceCommand`) and must call [next] to run the
 /// rest of the resolver chain.
+typedef TransactionPlugin = IntentResolver;
+
 typedef IntentResolver =
     Future<void> Function(
       TransactionBlockDataBuilder transactionData,
@@ -81,13 +74,6 @@ class TransactionResult {
   }
 }
 
-const DefaultOfflineLimits = {
-  "maxPureArgumentSize": 16 * 1024,
-  "maxTxGas": 50000000000,
-  "maxGasObjects": 256,
-  "maxTxSizeBytes": 128 * 1024,
-};
-
 SuiCoreClient expectClient(BuildOptions options) {
   if (options.client == null) {
     throw ArgumentError(
@@ -98,9 +84,6 @@ SuiCoreClient expectClient(BuildOptions options) {
   return options.client!;
 }
 
-SuiObjectRef _objectRefFromData(ObjectData data) =>
-    SuiObjectRef(data.digest, data.objectId, data.version);
-
 /// A command referencing an earlier one holds a [TransactionResult] rather than a
 /// map. Its `result` is the right form: a stored bare result means the whole
 /// result, while its own `toJson` can report a nested index read elsewhere.
@@ -109,25 +92,6 @@ Object? _jsonEncodable(dynamic value) {
   if (value is TransactionResult) return value.result;
   return value;
 }
-
-const LIMITS = {
-  // The maximum gas that is allowed.
-  "maxTxGas": 'max_tx_gas',
-  // The maximum number of gas objects that can be selected for one transaction.
-  "maxGasObjects": 'max_gas_payment_objects',
-  // The maximum size (in bytes) that the transaction can be:
-  "maxTxSizeBytes": 'max_tx_size_bytes',
-  // The maximum size (in bytes) that pure arguments can be:
-  "maxPureArgumentSize": 'max_pure_argument_size',
-};
-
-typedef Limits = dynamic;
-
-// An amount of gas (in gas units) that is added to transactions as an overhead to ensure transactions do not fail.
-final GAS_SAFE_OVERHEAD = BigInt.from(1000);
-
-// The maximum objects that can be fetched at once using multiGetObjects.
-const MAX_OBJECTS_PER_FETCH = 50;
 
 List<List<T>> chunk<T>(List<T> arr, int size) {
   int length = (arr.length / size).ceil();
@@ -148,12 +112,6 @@ class BuildOptions {
 
   bool onlyTransactionKind;
 
-  /// Define a protocol config to build against, instead of having it fetched from the provider at build time.
-  dynamic protocolConfig;
-
-  /// Define limits that are used when building the transaction. In general, we recommend using the protocol configuration instead of defining limits.
-  Limits? limits;
-
   /// Resolves `coinWithBalance` from the address balance, no lookups. With price,
   /// budget, a `ValidDuring`/`Validity` expiry and no `tx.gas`, payment is `[]`.
   bool assumeSufficientAddressBalances;
@@ -161,8 +119,6 @@ class BuildOptions {
   BuildOptions({
     this.client,
     this.onlyTransactionKind = false,
-    this.protocolConfig,
-    this.limits,
     this.assumeSufficientAddressBalances = false,
   });
 }
@@ -174,8 +130,6 @@ class SerializeTransactionOptions extends BuildOptions {
     this.supportedIntents,
     super.client,
     super.onlyTransactionKind,
-    super.protocolConfig,
-    super.limits,
     super.assumeSufficientAddressBalances,
   });
 }
@@ -187,8 +141,6 @@ class SignOptions extends BuildOptions {
     required this.signer,
     super.client,
     super.onlyTransactionKind,
-    super.protocolConfig,
-    super.limits,
     super.assumeSufficientAddressBalances,
   });
 }
@@ -237,7 +189,9 @@ class Transaction {
   }
 
   void setExpiration(int? epoch) {
-    _blockData.expiration = TransactionExpiration(epoch: epoch);
+    _blockData.expiration = epoch == null
+        ? null
+        : TransactionExpiration(epoch: epoch);
   }
 
   void setTransactionExpiration(TransactionExpiration? expiration) {
@@ -580,30 +534,6 @@ class Transaction {
     );
   }
 
-  String _getConfig(String key, BuildOptions options) {
-    if (options.limits != null && options.limits[key] is int) {
-      return options.limits[key]!.toString();
-    }
-
-    if (options.protocolConfig == null) {
-      return DefaultOfflineLimits[key].toString();
-    }
-
-    final attribute = options.protocolConfig?["attributes"][LIMITS[key]];
-    if (attribute == null) {
-      throw ArgumentError('Missing expected protocol config: "${LIMITS[key]}"');
-    }
-
-    final value = attribute["u64"] ?? (attribute["u32"] ?? attribute["f64"]);
-    if (value == null) {
-      throw ArgumentError(
-        'Unexpected protocol config value found for: "${LIMITS[key]}"',
-      );
-    }
-
-    return value.toString();
-  }
-
   /// Build the transaction to BCS bytes, and sign it with the provided keypair.
   Future<SignatureWithBytes> sign(SignOptions options) async {
     final bytes = await build(options);
@@ -623,18 +553,16 @@ class Transaction {
     return _blockData.getDigest();
   }
 
-  void _validate(BuildOptions options) {
-    final maxPureArgumentSize = int.parse(
-      _getConfig('maxPureArgumentSize', options),
-    );
+  void _validate() {
     for (var i = 0; i < _blockData.inputs.length; i++) {
       final input = _blockData.inputs[i];
-      if (input["value"] is Map && input["value"].containsKey("Pure")) {
-        if (input["value"]["Pure"].length > maxPureArgumentSize) {
-          throw ArgumentError(
-            "Input at index $i is too large, max pure input size is $maxPureArgumentSize bytes, got ${input["value"]["Pure"].length} bytes",
-          );
-        }
+      if (input['Object'] == null &&
+          input['Pure'] == null &&
+          input['FundsWithdrawal'] == null) {
+        throw ArgumentError(
+          'Input at index $i has not been resolved. Expected a Pure, Object, '
+          'or FundsWithdrawal input, but found $input',
+        );
       }
     }
   }
@@ -657,527 +585,17 @@ class Transaction {
     );
   }
 
-  Future<void> resolveObjectReferences(BuildOptions options) async {
-    // Unresolved object inputs (kept by-reference to avoid re-resolving).
-    final objectsToResolve = _blockData.inputs.where((input) {
-      return (input["UnresolvedObject"] != null &&
-          (input["UnresolvedObject"]["version"] == null &&
-              input["UnresolvedObject"]["initialSharedVersion"] == null));
-    });
-
-    final dedupedIds = Set.from(
-      objectsToResolve.map(
-        (input) => normalizeSuiObjectId(input["UnresolvedObject"]["objectId"]),
-      ),
-    ).toList();
-
-    final objectChunks = dedupedIds.isNotEmpty
-        ? chunk(dedupedIds, MAX_OBJECTS_PER_FETCH)
-        : [];
-
-    final resolved = <ObjectResult>[];
-    final objectsResult = (await Future.wait(
-      objectChunks.map(
-        (chunk) => expectClient(options).getObjects(chunk.cast<String>()),
-      ),
-    ));
-    for (var item in objectsResult) {
-      resolved.addAll(item);
-    }
-
-    final responsesById = Map.fromIterables(
-      dedupedIds,
-      dedupedIds
-          .asMap()
-          .map((index, id) => MapEntry(index, resolved[index]))
-          .values,
-    );
-
-    final invalidObjects = responsesById.entries
-        .where((entry) => entry.value is ObjectError)
-        .map((entry) => (entry.value as ObjectError).error)
-        .toList();
-
-    if (invalidObjects.isNotEmpty) {
-      throw ArgumentError(
-        "The following input objects are invalid: ${invalidObjects.join(', ')}",
-      );
-    }
-
-    final objects = resolved.map((result) {
-      if (result is! ObjectSuccess) {
-        throw ArgumentError(
-          "Failed to fetch object: ${(result as ObjectError).error}",
-        );
-      }
-      final data = result.data;
-      final owner = data.owner;
-      final initialSharedVersion = owner is SharedOwner
-          ? int.parse(owner.initialSharedVersion)
-          : null;
-
-      return {
-        "objectId": data.objectId,
-        "digest": data.digest,
-        "version": data.version,
-        "initialSharedVersion": initialSharedVersion,
-      };
-    }).toList();
-
-    final objectsById = Map.fromIterables(
-      dedupedIds,
-      dedupedIds
-          .asMap()
-          .map((index, id) => MapEntry(index, objects[index]))
-          .values,
-    );
-
-    for (int index = 0; index < _blockData.inputs.length; index++) {
-      final input = _blockData.inputs[index];
-      if (input["UnresolvedObject"] == null) {
-        continue;
-      }
-
-      CallArg updated;
-      final id = normalizeSuiAddress(input["UnresolvedObject"]["objectId"]);
-      final object = objectsById[id];
-
-      if ((input["UnresolvedObject"]?["initialSharedVersion"] ??
-              object?["initialSharedVersion"]) !=
-          null) {
-        updated = Inputs.sharedObjectRef({
-          "objectId": id,
-          "initialSharedVersion":
-              input["UnresolvedObject"]["initialSharedVersion"] ??
-              object?["initialSharedVersion"],
-          "mutable":
-              (input["UnresolvedObject"]?["mutable"] ?? false) ||
-              isUsedAsMutable(_blockData, index),
-        });
-      } else if (isUsedAsReceiving(_blockData, index)) {
-        updated = Inputs.receivingRef(
-          SuiObjectRef(
-            input["UnresolvedObject"]["digest"] ?? object?["digest"],
-            id,
-            input["UnresolvedObject"]["version"] ?? object?["version"],
-          ),
-        );
-      }
-
-      _blockData.inputs[_blockData.inputs.indexOf(input)] =
-          updated ??
-          Inputs.objectRef(
-            SuiObjectRef(
-              input["UnresolvedObject"]["digest"] ?? object?["digest"],
-              id,
-              input["UnresolvedObject"]["version"] ?? object?["version"],
-            ),
-          );
-    }
-  }
-
-  Future<void> normalizeInputs(BuildOptions options) async {
-    final inputs = _blockData.inputs;
-    final commands = _blockData.commands;
-    final moveCallsToResolve = [];
-    final moveFunctionsToResolve = <String>{};
-
-    for (var command in commands) {
-      if (command["MoveCall"] != null) {
-        // Args needing encoding require the normalized move module; skip if types are known.
-        if (command["MoveCall"]?["_argumentTypes"] != null) {
-          continue;
-        }
-
-        final inputs = (command["MoveCall"]["arguments"] as Iterable).map((
-          arg,
-        ) {
-          if (arg is Map && arg["Input"] != null) {
-            return _blockData.inputs[arg["Input"]];
-          }
-          return null;
-        }).toList();
-        final needsResolution = inputs.firstWhere(
-          (input) =>
-              input?["UnresolvedPure"] != null ||
-              input?["UnresolvedObject"] != null,
-          orElse: () => null,
-        );
-
-        if (needsResolution != null) {
-          final functionName =
-              "${command["MoveCall"]["package"]}::${command["MoveCall"]["module"]}::${command["MoveCall"]["function"]}";
-          moveFunctionsToResolve.add(functionName);
-          moveCallsToResolve.add(command["MoveCall"]);
-        }
-      }
-
-      // Legacy wellKnownEncoding values (data hydrated from an old SDK version).
+  void _normalizeRawArguments() {
+    for (final command in _blockData.commands) {
       if (command["SplitCoins"] != null) {
-        command["SplitCoins"]["amounts"].forEach((amount) {
+        for (final amount in command["SplitCoins"]["amounts"]) {
           normalizeRawArgument(amount, SuiBcs.U64);
-        });
+        }
       } else if (command["TransferObjects"] != null) {
         normalizeRawArgument(
           command["TransferObjects"]["address"],
           SuiBcs.Address,
         );
-      }
-    }
-
-    final moveFunctionParameters = <String, List<dynamic>>{};
-    if (moveFunctionsToResolve.isNotEmpty) {
-      final client = expectClient(options);
-      await Future.wait(
-        [...moveFunctionsToResolve].map((functionName) async {
-          final [packageId, moduleId, functionId] = functionName.split('::');
-          final def = await client.getMoveFunction(
-            packageId,
-            moduleId,
-            functionId,
-          );
-
-          moveFunctionParameters[functionName] = def.parameters
-              .map(normalizedMoveTypeToJson)
-              .map((param) => normalizedTypeToMoveTypeSignature(param))
-              .toList();
-        }),
-      );
-    }
-
-    if (moveCallsToResolve.isNotEmpty) {
-      for (var moveCall in moveCallsToResolve) {
-        final parameters =
-            moveFunctionParameters["${moveCall["package"]}::${moveCall["module"]}::${moveCall["function"]}"];
-        if (parameters != null && parameters.isNotEmpty) {
-          // Entry functions may take a trailing &mut TxContext that the caller omits.
-          final hasTxContext = isTxContext(parameters.last!);
-          final params = hasTxContext
-              ? parameters.sublist(0, parameters.length - 1)
-              : parameters;
-
-          moveCall["_argumentTypes"] = params;
-        }
-      }
-    }
-
-    for (var command in commands) {
-      if (command["MoveCall"] == null) {
-        continue;
-      }
-
-      final moveCall = command["MoveCall"];
-      final fnName =
-          "${moveCall["package"]}::${moveCall["module"]}::${moveCall["function"]}";
-      final params = moveCall["_argumentTypes"];
-
-      if (params == null) {
-        continue;
-      }
-
-      if (params.length != command["MoveCall"]["arguments"].length) {
-        throw ArgumentError("Incorrect number of arguments for $fnName");
-      }
-
-      final callArgs = moveCall["arguments"].toList();
-      for (var i = 0; i < params.length; i++) {
-        final param = params[i];
-        final arg = callArgs[i];
-        if (arg["Input"] == null) continue;
-        final input = inputs[arg["Input"]];
-
-        // Skip already-resolved inputs.
-        if (input["UnresolvedPure"] == null &&
-            input["UnresolvedObject"] == null) {
-          continue;
-        }
-
-        final inputValue =
-            input["UnresolvedPure"]?["value"] ??
-            input["UnresolvedObject"]?["objectId"];
-
-        final schema = getPureBcsSchema(param["body"]);
-        if (schema != null) {
-          arg["type"] = 'pure';
-          inputs[inputs.indexOf(input)] = Inputs.pure(
-            schema.serialize(inputValue),
-          );
-          continue;
-        }
-
-        if (inputValue is! String) {
-          throw ArgumentError(
-            "Expect the argument to be an object id string, got $inputValue",
-          );
-        }
-
-        arg["type"] = 'object';
-        final unresolvedObject = input["UnresolvedPure"] != null
-            ? {
-                "UnresolvedObject": {"objectId": inputValue},
-              }
-            : input;
-
-        inputs[arg["Input"]] = unresolvedObject;
-      }
-    }
-  }
-
-  Future<void> _prepareGasPayment(BuildOptions options) async {
-    if (_blockData.gasData.payment != null) {
-      final maxGasObjects = int.parse(_getConfig('maxGasObjects', options));
-      if (_blockData.gasData.payment!.length > maxGasObjects) {
-        throw ArgumentError(
-          "Payment objects exceed maximum amount: $maxGasObjects",
-        );
-      }
-    }
-
-    if ((options.onlyTransactionKind) || _blockData.gasData.payment != null) {
-      return;
-    }
-
-    final gasOwner = _blockData.gasData.owner ?? _blockData.sender;
-
-    final coins = await expectClient(
-      options,
-    ).getCoins(gasOwner!, coinType: SUI_TYPE_ARG);
-
-    final paymentCoins = coins.data
-        // Exclude coins already used as input.
-        .where((coin) {
-          final matchingInput = _blockData.inputs.indexWhere((input) {
-            if (input["Object"]?["ImmOrOwnedObject"] != null) {
-              return coin.objectId ==
-                  input["Object"]["ImmOrOwnedObject"]["objectId"];
-            }
-
-            return false;
-          });
-
-          return matchingInput == -1;
-        })
-        .toList();
-
-    int end = min(
-      paymentCoins.length,
-      int.parse(_getConfig('maxGasObjects', options)),
-    );
-
-    final usePaymentCoins = paymentCoins
-        .sublist(0, end)
-        .map((coin) => SuiObjectRef(coin.digest, coin.objectId, coin.version))
-        .toList();
-
-    // an empty payment makes the node pay gas from the address balance.
-    setGasPayment(paymentCoins.isEmpty ? const [] : usePaymentCoins);
-  }
-
-  Future<void> _prepareGasPrice(BuildOptions options) async {
-    if (options.onlyTransactionKind || _blockData.gasData.price != null) {
-      return;
-    }
-
-    final gasPrice = await expectClient(options).getReferenceGasPrice();
-    setGasPrice(BigInt.parse(gasPrice));
-  }
-
-  bool isBuilderCallArg(dynamic arg) {
-    if (arg is! Map) return false;
-    return arg.containsKey("Pure") || arg.containsKey("Object");
-  }
-
-  Future<void> _prepareTransactions(BuildOptions options) async {
-    final inputs = _blockData.inputs;
-    final transactions = _blockData.commands;
-
-    final moveModulesToResolve = [];
-
-    // Unresolved object inputs (kept by-reference to avoid re-resolving).
-    final objectsToResolve = [];
-
-    for (var input in inputs) {
-      if (input['type'] == 'object' && input['value'] is String) {
-        // String input to resolve into an object reference.
-        objectsToResolve.add({
-          "id": normalizeSuiAddress(input['value']),
-          "input": input,
-        });
-        continue;
-      }
-    }
-
-    for (var transaction in transactions) {
-      if (transaction["kind"] == "MoveCall") {
-        bool needsResolution = (transaction["arguments"] as List).any(
-          (arg) =>
-              arg is Map &&
-              arg['kind'] == 'Input' &&
-              !(isBuilderCallArg(inputs[arg['index']]["value"])),
-        );
-        if (needsResolution) {
-          moveModulesToResolve.add(transaction);
-        }
-      }
-
-      // Legacy wellKnownEncoding values (data hydrated from an old SDK version).
-      if (transaction["kind"] == 'SplitCoins') {
-        for (var amount in (transaction["amounts"] as List)) {
-          if (amount["kind"] == 'Input') {
-            final input = inputs[amount['index']];
-            if (input["value"] is! Map) {
-              input['value'] = Inputs.pure(input['value'], LegacyBCS.U64);
-            }
-          }
-        }
-      }
-
-      if (transaction["kind"] == 'TransferObjects') {
-        if (transaction['address']['kind'] == 'Input') {
-          final input = inputs[transaction['address']['index']];
-          if (input["value"] is! Map) {
-            input['value'] = Inputs.pure(input['value'], LegacyBCS.ADDRESS);
-          }
-        }
-      }
-    }
-
-    if (moveModulesToResolve.isNotEmpty) {
-      final resolveResults = await Future.wait(
-        moveModulesToResolve.map((moveCall) async {
-          final target = moveCall["target"].split('::');
-          final packageId = target[0];
-          final moduleName = target[1];
-          final functionName = target[2];
-
-          final normalized = await expectClient(options).getMoveFunction(
-            normalizeSuiObjectId(packageId),
-            moduleName,
-            functionName,
-          );
-          final normalizedParameters = normalized.parameters
-              .map(normalizedMoveTypeToJson)
-              .toList();
-
-          // Entry functions may take a trailing &mut TxContext that the caller omits.
-          final hasTxContext =
-              normalizedParameters.isNotEmpty &&
-              isTxContext(normalizedParameters.last);
-
-          final params = hasTxContext
-              ? normalizedParameters.sublist(0, normalizedParameters.length - 1)
-              : normalizedParameters;
-
-          final callArgs = moveCall["arguments"].toList();
-          if (params.length != callArgs.length) {
-            throw ArgumentError('Incorrect number of arguments.');
-          }
-
-          final localObjectsToResolve = [];
-
-          for (int i = 0; i < params.length; i++) {
-            final param = params[i];
-            final arg = callArgs[i];
-            if (arg["kind"] != 'Input') continue;
-            final input = inputs[arg["index"]];
-            // Skip already-resolved inputs.
-            if (isBuilderCallArg(input["value"])) continue;
-
-            final inputValue = input["value"];
-
-            final serType = getPureSerializationType(param, inputValue);
-
-            if (serType != null) {
-              input["value"] = Inputs.pure(inputValue, serType);
-              continue;
-            }
-
-            final structVal = extractStructTag(param);
-            if (structVal != null ||
-                (param is Map && param["TypeParameter"] != null)) {
-              if (inputValue is! String) {
-                throw ArgumentError(
-                  "Expect the argument to be an object id string, got ${jsonEncode(inputValue)}",
-                );
-              }
-              localObjectsToResolve.add({
-                "id": inputValue,
-                "input": input,
-                "normalizedType": param,
-              });
-            } else {
-              throw ArgumentError(
-                "Unknown call arg type ${jsonEncode(param)} for value ${jsonEncode(inputValue)}",
-              );
-            }
-          }
-
-          return localObjectsToResolve;
-        }),
-      );
-
-      for (var result in resolveResults) {
-        objectsToResolve.addAll(result);
-      }
-    }
-
-    if (objectsToResolve.isNotEmpty) {
-      final dedupedIds = Set<String>.from(
-        objectsToResolve.map((o) => o["id"]),
-      ).toList();
-      final objectChunks = chunk(dedupedIds, MAX_OBJECTS_PER_FETCH);
-      final objects = (await Future.wait(
-        objectChunks.map((chunk) => expectClient(options).getObjects(chunk)),
-      )).expand((element) => element).toList();
-
-      final objectsById = <String, ObjectResult>{};
-      for (int index = 0; index < dedupedIds.length; index++) {
-        objectsById[dedupedIds[index]] = objects[index];
-      }
-
-      final invalidObjects = objectsById.entries
-          .where((entry) => entry.value is ObjectError)
-          .map((entry) => entry.key)
-          .toList();
-      if (invalidObjects.isNotEmpty) {
-        throw ArgumentError(
-          "The following input objects are invalid: ${invalidObjects.join(', ')}",
-        );
-      }
-
-      for (var item in objectsToResolve) {
-        final id = item["id"];
-        final input = item["input"];
-        final normalizedType = item["normalizedType"];
-
-        final data = (objectsById[id] as ObjectSuccess).data;
-        final owner = data.owner;
-        final initialSharedVersion = owner is SharedOwner
-            ? int.parse(owner.initialSharedVersion)
-            : null;
-
-        if (initialSharedVersion != null) {
-          // Mark shared input mutable if any referencing command needs it mutable.
-          final isByValue =
-              normalizedType != null &&
-              extractMutableReference(normalizedType) == null &&
-              extractReference(normalizedType) == null;
-          final mutable =
-              isMutableSharedObjectInput(input["value"]) ||
-              isByValue ||
-              (normalizedType != null &&
-                  extractMutableReference(normalizedType) != null);
-
-          input["value"] = Inputs.sharedObjectRef({
-            "objectId": id,
-            "initialSharedVersion": initialSharedVersion,
-            "mutable": mutable,
-          });
-        } else if (normalizedType != null && isReceivingType(normalizedType)) {
-          input["value"] = Inputs.receivingRef(_objectRefFromData(data));
-        } else {
-          input["value"] = Inputs.objectRef(_objectRefFromData(data));
-        }
       }
     }
   }
@@ -1192,88 +610,32 @@ class Transaction {
 
     if (_assumesAddressBalanceGas(options)) setGasPayment(const []);
 
-    await normalizeInputs(options);
-    await resolveObjectReferences(options);
+    _normalizeRawArguments();
 
-    await Future.wait([
-      _prepareGasPrice(options),
-      _prepareTransactions(options),
-    ]);
-
-    if (options.onlyTransactionKind != true) {
-      await _prepareGasPayment(options);
-
-      final payment = _blockData.gasData.payment;
-      final addressBalanceGas = payment != null && payment.isEmpty;
-      final needsBudget = _blockData.gasData.budget == null;
-
-      // Replay protection needs a bound: an empty gas payment has none.
-      final validDuring =
-          (!_hasExpiration && (needsBudget || addressBalanceGas))
-          ? await _buildValidDuringExpiration(options)
-          : null;
-
-      if (needsBudget) {
-        final bytes = _blockData.build(
-          gasConfig: GasConfig(
-            budget: BigInt.tryParse(_getConfig('maxTxGas', options)),
-            payment: [],
-          ),
-          expiration: validDuring,
-        );
-        // The empty payment is a placeholder, so the node mocks gas.
-        final dryRunResult = await expectClient(options).simulateTransaction(
-          Transaction.fromBytes(bytes),
-          doGasSelection: false,
-          include: const TransactionIncludeOptions(effects: true),
-        );
-
-        final effects = dryRunResult.effects;
-        final success = effects?.status?.success ?? dryRunResult.status.success;
-
-        if (!success) {
-          final error =
-              effects?.status?.error?.message ??
-              dryRunResult.status.error?.message;
-          throw ArgumentError(
-            "Dry run failed, could not automatically determine a budget: $error",
-          );
-        }
-
-        final gasUsed = effects?.gasUsed;
-
-        final safeOverhead =
-            GAS_SAFE_OVERHEAD * (_blockData.gasData.price ?? BigInt.one);
-
-        final baseComputationCostWithOverhead =
-            BigInt.parse(gasUsed?.computationCost ?? '0') + safeOverhead;
-
-        final gasBudget =
-            baseComputationCostWithOverhead +
-            BigInt.parse(gasUsed?.storageCost ?? '0') -
-            BigInt.parse(gasUsed?.storageRebate ?? '0');
-
-        // Set the budget to max(computation, computation + storage - rebate)
-        setGasBudget(
-          gasBudget > baseComputationCostWithOverhead
-              ? gasBudget
-              : baseComputationCostWithOverhead,
-        );
-      }
-
-      if (addressBalanceGas && validDuring != null) {
-        _blockData.expiration = validDuring;
-      }
+    if (_needsResolution(options)) {
+      await expectClient(options).resolveTransactionPlugin()(
+        _blockData,
+        options,
+        () async {},
+      );
     }
 
-    _validate(options);
+    _validate();
   }
 
-  bool get _hasExpiration {
-    final expiration = _blockData.expiration;
-    return expiration?.epoch != null ||
-        expiration?.validDuring != null ||
-        expiration?.validity != null;
+  bool _needsResolution(BuildOptions options) {
+    final unresolved = _blockData.inputs.any(
+      (input) =>
+          input['UnresolvedObject'] != null || input['UnresolvedPure'] != null,
+    );
+    if (unresolved) return true;
+    if (options.onlyTransactionKind) return false;
+
+    final gas = _blockData.gasData;
+    return gas.price == null ||
+        gas.budget == null ||
+        gas.payment == null ||
+        (gas.payment!.isEmpty && _blockData.expiration == null);
   }
 
   bool _assumesAddressBalanceGas(BuildOptions options) {
@@ -1308,81 +670,113 @@ class Transaction {
     });
     return !usesGasCoin;
   }
+}
 
-  Future<TransactionExpiration> _buildValidDuringExpiration(
-    BuildOptions options,
-  ) async {
-    final client = expectClient(options);
-    final chain = await client.getChainIdentifier();
-    final SystemState state = await client.getCurrentSystemState();
-    final epoch = BigInt.parse(state.epoch);
+typedef ResolvedSimulation = ({
+  Uint8List? bcs,
+  String? epoch,
+  ExecutionStatus status,
+});
 
-    return TransactionExpiration(
-      validDuring: {
-        'minEpoch': epoch.toString(),
-        'maxEpoch': (epoch + BigInt.one).toString(),
-        'minTimestamp': null,
-        'maxTimestamp': null,
-        'chain': chain,
-        'nonce': Random().nextInt(0x100000000),
-      },
-    );
-  }
-
-  bool isUsedAsMutable(TransactionBlockDataBuilder transactionData, int index) {
-    var usedAsMutable = false;
-
-    transactionData.getInputUses(index, (arg, tx) {
-      if (tx["MoveCall"]?["_argumentTypes"] != null) {
-        final arguments = tx["MoveCall"]["arguments"].toList();
-        final argIndex = arguments.indexWhere(
-          (element) => DeepCollectionEquality().equals(element, arg),
-        );
-        if (argIndex != -1) {
-          usedAsMutable =
-              tx["MoveCall"]["_argumentTypes"][argIndex]["ref"] != '&' ||
-              usedAsMutable;
-        }
-      } else if (tx["MakeMoveVec"] != null ||
-          tx["MergeCoins"] != null ||
-          tx["SplitCoins"] != null) {
-        usedAsMutable = true;
-      }
+typedef ResolveSimulate =
+    Future<ResolvedSimulation> Function(
+      Transaction request, {
+      required bool doGasSelection,
+      required bool checksEnabled,
     });
 
-    return usedAsMutable;
-  }
-
-  bool isUsedAsReceiving(
-    TransactionBlockDataBuilder transactionData,
-    int index,
-  ) {
-    var usedAsReceiving = false;
-
-    transactionData.getInputUses(index, (arg, tx) {
-      if (tx["MoveCall"]?["_argumentTypes"] != null) {
-        final arguments = tx["MoveCall"]["arguments"].toList();
-        final argIndex = arguments.indexWhere(
-          (element) => DeepCollectionEquality().equals(element, arg),
+/// The node fills in object versions, gas price, budget and payment, selecting
+/// gas when budget or payment is unset. [simulate] defaults to simulateTransaction.
+TransactionPlugin simulationResolvePlugin(
+  SuiCoreClient client, {
+  ResolveSimulate? simulate,
+}) {
+  simulate ??=
+      (request, {required doGasSelection, required checksEnabled}) async {
+        final result = await client.simulateTransaction(
+          request,
+          doGasSelection: doGasSelection,
+          checksEnabled: checksEnabled,
+          include: const TransactionIncludeOptions(effects: true, bcs: true),
         );
-        if (argIndex != -1) {
-          usedAsReceiving =
-              isReceivingType(tx["MoveCall"]["_argumentTypes"][argIndex]) ||
-              usedAsReceiving;
-        }
-      }
-    });
+        return (bcs: result.bcs, epoch: result.epoch, status: result.status);
+      };
 
-    return usedAsReceiving;
-  }
+  return (data, options, next) async {
+    final original = data.snapshot();
+    final onlyKind = options.onlyTransactionKind;
+    final doGasSelection =
+        !onlyKind &&
+        (original.gasData.budget == null || original.gasData.payment == null);
 
-  bool isReceivingType(dynamic type) {
-    if (type["body"] is! Map || type["body"]["datatype"] is! Map) {
-      return false;
+    final request = Transaction()
+      .._blockData = TransactionBlockDataBuilder(data.snapshot());
+    request._blockData.sender ??= normalizeSuiAddress('0x0');
+
+    final ResolvedSimulation result;
+    try {
+      result = await simulate!(
+        request,
+        doGasSelection: doGasSelection,
+        checksEnabled: !onlyKind,
+      );
+    } on Exception catch (error) {
+      throw SimulationError(
+        error is GrpcError ? (error.message ?? '$error') : '$error',
+        cause: error,
+      );
     }
 
-    return (type["body"]["datatype"]["package"] == '0x2' &&
-        type["body"]["datatype"]["module"] == 'transfer' &&
-        type["body"]["datatype"]["type"] == 'Receiving');
-  }
+    if (!onlyKind && !result.status.success) {
+      final executionError = result.status.error;
+      throw SimulationError(
+        'Transaction resolution failed: '
+        '${executionError?.message ?? 'Transaction failed'}',
+        executionError: executionError,
+      );
+    }
+    final bytes = result.bcs;
+    if (bytes == null) {
+      throw StateError('simulateTransaction returned no resolved transaction');
+    }
+
+    final resolved = TransactionBlockDataBuilder.fromBytes(bytes).snapshot();
+    if (onlyKind) {
+      resolved
+        ..sender = null
+        ..expiration = null
+        ..gasData = GasConfig();
+    }
+    data.applyResolvedData(resolved);
+
+    // an explicit empty payment has no coin version to stop a replay
+    final current = data.expiration;
+    final hasWindow =
+        current != null &&
+        (current.epoch != null ||
+            current.validDuring != null ||
+            current.validity != null);
+    if (!onlyKind &&
+        !doGasSelection &&
+        original.expiration == null &&
+        original.gasData.payment?.isEmpty == true &&
+        !hasWindow) {
+      final chain = await client.getChainIdentifier();
+      final epoch = BigInt.parse(
+        result.epoch ?? (await client.getCurrentSystemState()).epoch,
+      );
+      data.expiration = TransactionExpiration(
+        validDuring: {
+          'minEpoch': epoch.toString(),
+          'maxEpoch': (epoch + BigInt.one).toString(),
+          'minTimestamp': null,
+          'maxTimestamp': null,
+          'chain': chain,
+          'nonce': Random().nextInt(0x100000000),
+        },
+      );
+    }
+
+    return next();
+  };
 }

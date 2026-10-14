@@ -32,7 +32,8 @@ import 'package:sui_dart/grpc/generated/sui/rpc/v2/state_service.pbgrpc.dart'
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/transaction_execution_service.pbgrpc.dart'
     hide CommandResult, CommandOutput;
 import 'package:sui_dart/sui.dart' as sui_dart;
-import 'package:sui_dart/builder/transaction.dart' show chunk;
+import 'package:sui_dart/builder/transaction.dart'
+    show TransactionPlugin, chunk, simulationResolvePlugin;
 import 'package:sui_dart/types/common.dart' hide ObjectOwner;
 
 import 'package:protobuf/well_known_types/google/protobuf/struct.pb.dart'
@@ -155,6 +156,9 @@ class GrpcCoreClient implements SuiCoreClient {
   final SuiGrpcClient _client;
 
   GrpcCoreClient(this._client);
+
+  @override
+  TransactionPlugin resolveTransactionPlugin() => simulationResolvePlugin(this);
 
   @override
   Future<List<ObjectResult>> getObjects(
@@ -1125,10 +1129,25 @@ class GrpcCoreClient implements SuiCoreClient {
         break;
     }
 
+    final command = error.hasCommand() ? error.command.toInt() : null;
+    final clever = error.abort.cleverError;
     return ExecutionError(
-      message: error.description,
+      message: detail is AbortDetail
+          ? formatMoveAbortMessage(
+              command: command,
+              location: detail.abort.location,
+              abortCode: detail.abort.abortCode,
+              cleverLineNumber: clever.hasLineNumber()
+                  ? clever.lineNumber.toInt()
+                  : null,
+              cleverConstantName: clever.hasConstantName()
+                  ? clever.constantName
+                  : null,
+              cleverValue: detail.abort.cleverError,
+            )
+          : error.description,
       kind: _mapErrorName(error.kind),
-      command: error.hasCommand() ? error.command.toInt() : null,
+      command: command,
       detail: detail,
     );
   }

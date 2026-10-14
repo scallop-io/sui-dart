@@ -479,15 +479,15 @@ class MoveAbort {
 class MoveAbortLocation {
   final String package;
   final String module;
-  final int function;
-  final int instruction;
+  final int? function;
+  final int? instruction;
   final String? functionName;
 
   const MoveAbortLocation({
     required this.package,
     required this.module,
-    required this.function,
-    required this.instruction,
+    this.function,
+    this.instruction,
     this.functionName,
   });
 }
@@ -708,4 +708,63 @@ class CommandOutput {
   final Uint8List bcs;
 
   const CommandOutput({required this.bcs});
+}
+
+/// e.g. `MoveAbort in 2nd command, 'EBadInput': 7, in '0x2::m::f' (line 12)`
+String formatMoveAbortMessage({
+  int? command,
+  MoveAbortLocation? location,
+  required String abortCode,
+  int? cleverLineNumber,
+  String? cleverConstantName,
+  String? cleverValue,
+}) {
+  final parts = [
+    command == null
+        ? 'MoveAbort'
+        : 'MoveAbort in ${_ordinal(command + 1)} command',
+    if (cleverConstantName != null && cleverConstantName.isNotEmpty)
+      cleverValue != null && cleverValue.isNotEmpty
+          ? "'$cleverConstantName': $cleverValue"
+          : "'$cleverConstantName'"
+    else
+      'abort code: $abortCode',
+  ];
+
+  if (location != null &&
+      location.package.isNotEmpty &&
+      location.module.isNotEmpty) {
+    final package = location.package.startsWith('0x')
+        ? location.package
+        : '0x${location.package}';
+    final path = [
+      package,
+      location.module,
+      if (location.functionName != null && location.functionName!.isNotEmpty)
+        location.functionName!,
+    ].join('::');
+    parts.add(
+      [
+        "in '$path'",
+        if (cleverLineNumber != null)
+          '(line $cleverLineNumber)'
+        else if (location.instruction != null)
+          '(instruction ${location.instruction})',
+      ].join(' '),
+    );
+  }
+
+  return parts.join(', ');
+}
+
+String _ordinal(int n) {
+  final suffix = n % 100 >= 11 && n % 100 <= 13
+      ? 'th'
+      : switch (n % 10) {
+          1 => 'st',
+          2 => 'nd',
+          3 => 'rd',
+          _ => 'th',
+        };
+  return '$n$suffix';
 }

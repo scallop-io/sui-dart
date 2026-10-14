@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:sui_dart/builder/transaction.dart' show Transaction;
+import 'package:sui_dart/builder/transaction.dart'
+    show Transaction, TransactionPlugin;
 import 'package:sui_dart/grpc/types.dart';
 import 'package:sui_dart/types/common.dart'
     show normalizeStructTagString, normalizeSuiAddress;
@@ -11,6 +12,8 @@ import 'package:sui_dart/types/common.dart'
 /// [verifyZkLoginSignature] (GraphQL throws `UnsupportedError`). Use GraphQL
 /// for read-only workloads against an indexer.
 abstract interface class SuiCoreClient {
+  TransactionPlugin resolveTransactionPlugin();
+
   /// Batched object reads: one entry per input id, in the same order.
   Future<List<ObjectResult>> getObjects(
     List<String> objectIds, {

@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:sui_dart/graphql/operations.graphql.dart' as generated;
 import 'package:sui_dart/grpc/types.dart'
     show
+        AbortDetail,
         EventFilter,
         ObjectError,
         ObjectErrorReason,
@@ -1046,5 +1047,143 @@ void main() {
       expect(adapter.lastBody!['query'], contains('gasObject'));
       expect(result.gasPaymentMocked, mocked);
     }
+  });
+
+  test('simulate parses a Move abort into a MoveAbort error', () async {
+    final adapter = _MockAdapter(
+      (_) => {
+        'data': {
+          'simulateTransaction': {
+            'effects': {
+              'status': 'FAILURE',
+              'executionError': {
+                'message': 'Error in 1st command, abort code: 7',
+                'abortCode': '7',
+                'instructionOffset': 3,
+                'module': {
+                  'name': 'pool',
+                  'package': {'address': _pkg},
+                },
+                'function': {'name': 'deposit'},
+              },
+              'events': {'nodes': []},
+            },
+            'outputs': null,
+          },
+        },
+      },
+    );
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final result = await client.core.simulateTransaction(
+      Transaction()..setSender(normalizeSuiAddress('0xa')),
+    );
+
+    final error = result.status.error!;
+    expect(result.status.success, isFalse);
+    expect(error.kind, 'MOVE_ABORT');
+    expect(error.command, 0);
+    expect(
+      error.message,
+      "MoveAbort in 1st command, abort code: 7, in '$_pkg::pool::deposit' "
+      '(instruction 3)',
+    );
+    final abort = (error.detail as AbortDetail).abort;
+    expect(abort.abortCode, '7');
+    expect(abort.location!.functionName, 'deposit');
+  });
+
+  group('building over GraphQL', () {
+    Transaction unfinished() => Transaction()
+      ..setSender(normalizeSuiAddress('0xa'))
+      ..setGasPrice(BigInt.from(1000));
+
+    test('resolves through the dedicated query', () async {
+      final finished = unfinished()
+        ..setGasBudget(BigInt.from(5000000))
+        ..setGasPayment([
+          SuiObjectRef(
+            '11111111111111111111111111111111',
+            normalizeSuiAddress('0x5'),
+            1,
+          ),
+        ]);
+      final finishedBcs = base64Encode(await finished.build());
+      final adapter = _MockAdapter(
+        (_) => {
+          'data': {
+            'simulateTransaction': {
+              'effects': {
+                'transaction': {
+                  'transactionBcs': finishedBcs,
+                  'effects': {
+                    'status': 'SUCCESS',
+                    'epoch': {'epochId': 42},
+                  },
+                },
+              },
+            },
+          },
+        },
+      );
+      final client = SuiGraphQLClient(
+        endpoint: 'https://example.test/graphql',
+        dio: _dioWith(adapter),
+      );
+
+      final tx = unfinished();
+      await tx.build(BuildOptions(client: client.core));
+
+      expect(adapter.lastBody!['operationName'], 'ResolveTransaction');
+      expect(adapter.lastBody!['query'], isNot(contains('events')));
+      expect(adapter.lastBody!['variables']['doGasSelection'], isTrue);
+      expect(tx.getData().gasData.budget, BigInt.from(5000000));
+      expect(
+        tx.getData().gasData.payment!.single.objectId,
+        normalizeSuiAddress('0x5'),
+      );
+    });
+
+    test('a failed resolution throws the parsed abort', () async {
+      final adapter = _MockAdapter(
+        (_) => {
+          'data': {
+            'simulateTransaction': {
+              'effects': {
+                'transaction': {
+                  'transactionBcs': null,
+                  'effects': {
+                    'status': 'FAILURE',
+                    'epoch': {'epochId': 42},
+                    'executionError': {
+                      'message': 'Error in 1st command, abort code: 7',
+                      'abortCode': '7',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      );
+      final client = SuiGraphQLClient(
+        endpoint: 'https://example.test/graphql',
+        dio: _dioWith(adapter),
+      );
+
+      await expectLater(
+        unfinished().build(BuildOptions(client: client.core)),
+        throwsA(
+          isA<SimulationError>().having(
+            (e) => e.executionError?.kind,
+            'kind',
+            'MOVE_ABORT',
+          ),
+        ),
+      );
+    });
   });
 }

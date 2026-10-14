@@ -927,4 +927,32 @@ void main() {
       expect(status.error!.message, 'Execution failed');
     });
   });
+
+  test('formats a Move abort like the node reports it', () {
+    expect(
+      formatMoveAbortMessage(
+        command: 1,
+        location: const MoveAbortLocation(
+          package: '2',
+          module: 'coin',
+          functionName: 'split',
+          instruction: 9,
+        ),
+        abortCode: '7',
+      ),
+      "MoveAbort in 2nd command, abort code: 7, in '0x2::coin::split' "
+      '(instruction 9)',
+    );
+    expect(
+      formatMoveAbortMessage(
+        command: 10,
+        abortCode: '7',
+        cleverConstantName: 'EBadInput',
+        cleverValue: 'bad',
+        cleverLineNumber: 12,
+        location: const MoveAbortLocation(package: '0x2', module: 'm'),
+      ),
+      "MoveAbort in 11th command, 'EBadInput': bad, in '0x2::m' (line 12)",
+    );
+  });
 }

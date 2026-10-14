@@ -113,7 +113,9 @@ class TransactionData {
       inputs: List<Map<String, dynamic>>.from(data["inputs"]),
       commands: (data["commands"] as List).cast<Map<dynamic, dynamic>>(),
       sender: data["sender"],
-      expiration: TransactionExpiration.fromJson(data["expiration"]),
+      expiration: data["expiration"] == null
+          ? null
+          : TransactionExpiration.fromJson(data["expiration"]),
     );
   }
 }
@@ -412,6 +414,59 @@ class TransactionBlockDataBuilder {
       return arg;
     });
   }
+
+  /// Fills unset fields from a node-resolved copy; throws on a mismatched input.
+  void applyResolvedData(TransactionData resolved) {
+    sender ??= resolved.sender;
+    expiration ??= resolved.expiration;
+    gasData.budget ??= resolved.gasData.budget;
+    gasData.owner ??= resolved.gasData.owner;
+    gasData.payment ??= resolved.gasData.payment;
+    gasData.price ??= resolved.gasData.price;
+
+    final resolvedInputs = resolved.inputs ?? const [];
+    for (var i = 0; i < inputs.length; i++) {
+      final input = inputs[i];
+      if (input['UnresolvedPure'] != null) {
+        if (resolvedInputs[i]['Pure'] == null) _mismatch(i, resolvedInputs[i]);
+        inputs[i] = resolvedInputs[i];
+      } else if (input['UnresolvedObject'] != null) {
+        final original = input['UnresolvedObject'];
+        final object = resolvedInputs[i]['Object'];
+        final owned = object?['ImmOrOwnedObject'] ?? object?['Receiving'];
+        final shared = object?['SharedObject'];
+        String? text(dynamic value) => value?.toString();
+        bool sameId(dynamic id) =>
+            normalizeSuiAddress(original['objectId']) ==
+            normalizeSuiAddress(id);
+
+        final matches = owned != null
+            ? sameId(owned['objectId']) &&
+                  (original['version'] == null ||
+                      text(original['version']) == text(owned['version'])) &&
+                  (original['digest'] == null ||
+                      original['digest'] == owned['digest']) &&
+                  // shared-object fields can't resolve to an owned object
+                  original['mutable'] == null &&
+                  original['initialSharedVersion'] == null
+            : shared != null &&
+                  sameId(shared['objectId']) &&
+                  (original['initialSharedVersion'] == null ||
+                      text(original['initialSharedVersion']) ==
+                          text(shared['initialSharedVersion'])) &&
+                  (original['mutable'] == null ||
+                      original['mutable'] == shared['mutable']) &&
+                  original['version'] == null &&
+                  original['digest'] == null;
+        if (!matches) _mismatch(i, resolvedInputs[i]);
+        inputs[i] = resolvedInputs[i];
+      }
+    }
+  }
+
+  Never _mismatch(int index, dynamic resolved) => throw StateError(
+    'Input $index (${inputs[index]}) does not match its resolved form $resolved',
+  );
 
   String getDigest() {
     final bytes = build(onlyTransactionKind: false);

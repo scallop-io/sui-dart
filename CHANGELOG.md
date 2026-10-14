@@ -1,3 +1,32 @@
+## 0.12.3
+
+### Breaking
+
+* Builds let the node fill in unset object versions, gas price, budget and
+  payment in one simulation, through `SuiCoreClient.resolveTransactionPlugin`.
+  The SDK no longer lists coins, picks gas, or runs a budget dry run.
+* A failed resolution throws `SimulationError`, carrying the parsed
+  `executionError`.
+* Untyped `pure` values resolve only in `splitCoins` and `transferObjects`; in
+  a `moveCall` they fail to build.
+* `setExpiration(null)` clears the expiration. An explicit `None` counts as set.
+* Move abort messages read `MoveAbort in 1st command, abort code: 7, in
+  '0x2::m::f' (instruction 3)` on both transports.
+
+### Added
+
+* GraphQL `simulateTransaction` returns the transaction bytes, epoch, and a
+  parsed execution error.
+* GraphQL builds resolve through a `ResolveTransaction` query that fetches only
+  the transaction bytes, epoch, and status.
+
+### Removed
+
+* `Transaction.normalizeInputs`, `resolveObjectReferences`, `isUsedAsMutable`,
+  `isUsedAsReceiving`, `isReceivingType`, and `isBuilderCallArg`.
+* `BuildOptions.limits` and `protocolConfig`, `GAS_SAFE_OVERHEAD`, `LIMITS`,
+  `DefaultOfflineLimits`, and `MAX_OBJECTS_PER_FETCH`.
+
 ## 0.12.2
 
 ### Added
