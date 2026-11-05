@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:bip39_plus/bip39_plus.dart' as bip39;
 import 'package:sui_dart/cryptography/helper.dart';
+import 'package:sui_dart/utils/hex.dart';
 
 /// [purpose] is 44 for Ed25519, 94 for ML-DSA-65.
 bool isValidHardenedPath(String path, [int purpose = 44]) {
@@ -20,23 +21,24 @@ bool isValidBIP32Path(String path) {
   return true;
 }
 
+/// bip39 only accepts and hashes this form.
+String normalizeMnemonics(String mnemonics) => mnemonics
+    .trim()
+    .split(RegExp(r'\s+'))
+    .map((word) => word.toLowerCase())
+    .join(' ');
+
 /// Uses KDF to derive 64 bytes of key data from mnemonic with empty password.
 Uint8List mnemonicToSeed(String mnemonics) {
-  if (!isValidMnemonics(mnemonics)) {
+  final normalized = normalizeMnemonics(mnemonics);
+  if (!bip39.validateMnemonic(normalized)) {
     throw ArgumentError("Invalid mnemonics");
   }
-
-  return bip39.mnemonicToSeed(mnemonics, passphrase: "");
+  return bip39.mnemonicToSeed(normalized, passphrase: "");
 }
 
-/// Derive the seed in hex format from mnemonic with empty password.
-String mnemonicToSeedHex(String mnemonics) {
-  if (!isValidMnemonics(mnemonics)) {
-    throw ArgumentError("Invalid mnemonics");
-  }
-
-  return bip39.mnemonicToSeedHex(mnemonics, passphrase: "");
-}
+String mnemonicToSeedHex(String mnemonics) =>
+    Hex.encode(mnemonicToSeed(mnemonics));
 
 String generateMnemonic({int strength = 128}) {
   return bip39.generateMnemonic(
@@ -46,5 +48,5 @@ String generateMnemonic({int strength = 128}) {
 }
 
 bool isValidMnemonics(String mnemonics) {
-  return bip39.validateMnemonic(mnemonics);
+  return bip39.validateMnemonic(normalizeMnemonics(mnemonics));
 }

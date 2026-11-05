@@ -109,32 +109,8 @@ class Ed25519Keypair with Keypair {
 
   /// Derive an Ed25519 keypair from mnemonics and a SLIP-0010 hardened [path]
   /// (m/44'/784'/{account}'/{change}'/{address}').
-  static Ed25519Keypair deriveKeypair(String path, String mnemonics) {
-    if (!isValidHardenedPath(path)) {
-      throw ArgumentError('Invalid derivation path');
-    }
-
-    final normalizeMnemonics = mnemonics
-        .trim()
-        .split(r"\s+")
-        .map((part) => part.toLowerCase())
-        .join(" ");
-
-    if (!isValidMnemonics(mnemonics)) {
-      throw ArgumentError('Invalid mnemonics');
-    }
-
-    final key = ed25519_hd_key_lib
-        .derivePath(path, mnemonicToSeedHex(normalizeMnemonics))
-        .key!;
-    final pubkey = ed25519_hd_key_lib.getPublicKey(key, false);
-
-    final fullPrivateKey = Uint8List(64);
-    fullPrivateKey.setAll(0, key);
-    fullPrivateKey.setAll(32, pubkey);
-
-    return Ed25519Keypair(Uint8List.fromList(fullPrivateKey));
-  }
+  static Ed25519Keypair deriveKeypair(String path, String mnemonics) =>
+      deriveKeypairFromSeed(mnemonicToSeedHex(mnemonics), path);
 
   /// Derive an Ed25519 keypair from hex [seedHex] and SLIP-0010 hardened [path]
   /// (defaults to [DEFAULT_ED25519_DERIVATION_PATH]).
