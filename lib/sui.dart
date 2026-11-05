@@ -14,6 +14,8 @@ export 'cryptography/ed25519_publickey.dart';
 export 'cryptography/helper.dart';
 export 'cryptography/keypair.dart';
 export 'cryptography/mnemonics.dart';
+export 'cryptography/mldsa65_keypair.dart';
+export 'cryptography/mldsa65_publickey.dart';
 export 'cryptography/secp256.dart';
 export 'cryptography/secp256_publickey.dart';
 export 'cryptography/passkey_publickey.dart';

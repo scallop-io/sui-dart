@@ -199,22 +199,20 @@ class MultiSigPublicKey with PublicKey {
 
   @override
   String toSuiAddress() {
-    // 1 flag byte + (max pk + u8 weight) * max signers + u16 threshold.
-    const maxLength = 1 + (64 + 1) * MAX_SIGNER_IN_MULTISIG + 2;
-    final tmp = Uint8List(maxLength);
+    final suiBytes = publicKeys.map((p) => p.publicKey.toSuiBytes()).toList();
+    // flag + u16 threshold + (flagged key, u8 weight) per member
+    final tmp = Uint8List(
+      3 + suiBytes.fold<int>(0, (sum, b) => sum + b.length + 1),
+    );
     tmp.setAll(0, [SIGNATURE_SCHEME_TO_FLAG.MultiSig]);
     tmp.setAll(1, Bcs.u16().serialize(_multisigPublicKey.threshold).toBytes());
-    // Start at 3, past the flag byte and u16 threshold.
     int i = 3;
-    for (var item in publicKeys) {
-      final publicKey = item.publicKey;
-      final weight = item.weight;
-      final bytes = publicKey.toSuiBytes();
-      tmp.setAll(i, bytes);
-      i += bytes.length;
-      tmp.setAll(i++, [weight]);
+    for (var j = 0; j < publicKeys.length; j++) {
+      tmp.setAll(i, suiBytes[j]);
+      i += suiBytes[j].length;
+      tmp[i++] = publicKeys[j].weight;
     }
-    return normalizeSuiAddress(Hex.encode(blake2b(tmp.sublist(0, i))));
+    return normalizeSuiAddress(Hex.encode(blake2b(tmp)));
   }
 
   @override
@@ -231,7 +229,7 @@ class MultiSigPublicKey with PublicKey {
     int signatureWeight = 0;
 
     if (!bytesEqual(
-      SuiBcs.MultiSigPublicKey.serialize(_multisigPublicKey.toJson()).toBytes(),
+      _rawBytes,
       SuiBcs.MultiSigPublicKey.serialize(
         multisig!.multisigPK.toJson(),
       ).toBytes(),
@@ -327,7 +325,8 @@ class MultiSigPublicKey with PublicKey {
     };
     final bytes = SuiBcs.MultiSig.serialize(
       multisig,
-      options: BcsWriterOptions(maxSize: 8192),
+      // ten ML-DSA-65 members are ~53 KB
+      options: BcsWriterOptions(maxSize: 65536),
     ).toBytes();
     var tmp = Uint8List(bytes.length + 1);
     tmp.setAll(0, [SIGNATURE_SCHEME_TO_FLAG.MultiSig]);
@@ -421,6 +420,8 @@ PublicKey publicKeyFromRawBytes(
       return ZkLoginPublicIdentifier.fromBytes(bytes, address: address);
     case "Passkey":
       return PasskeyPublicKey(bytes);
+    case "MLDSA65":
+      return MLDSA65PublicKey(bytes);
     default:
       throw ArgumentError("Unsupported signature scheme $signatureScheme");
   }

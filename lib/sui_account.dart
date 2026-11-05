@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:sui_dart/cryptography/ed25519_keypair.dart';
 import 'package:sui_dart/cryptography/helper.dart';
 import 'package:sui_dart/cryptography/keypair.dart';
+import 'package:sui_dart/cryptography/mldsa65_keypair.dart';
 import 'package:sui_dart/cryptography/secp256k1_keypair.dart';
 import 'package:sui_dart/cryptography/secp256r1_keypair.dart';
 import 'package:sui_dart/cryptography/mnemonics.dart' as mnemonic;
@@ -71,6 +72,16 @@ class SuiAccount {
           ),
         );
         break;
+      case SignatureScheme.MLDSA65:
+        account = SuiAccount(
+          MLDSA65Keypair.fromMnemonics(
+            mnemonics,
+            accountIndex: accountIndex,
+            addressIndex: addressIndex,
+            changeIndex: changeIndex,
+          ),
+        );
+        break;
       default:
         throw ArgumentError('Undefined SignatureScheme $scheme');
     }
@@ -108,6 +119,11 @@ class SuiAccount {
       case SignatureScheme.Ed25519:
         account = SuiAccount(
           Ed25519Keypair.fromSecretKey(Hex.decode(privateKeyHex)),
+        );
+        break;
+      case SignatureScheme.MLDSA65:
+        account = SuiAccount(
+          MLDSA65Keypair.fromSecretKey(Hex.decode(privateKeyHex)),
         );
         break;
       default:

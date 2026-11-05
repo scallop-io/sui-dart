@@ -28,8 +28,8 @@ Uint8List hmacSha512(Uint8List hmacKey, Uint8List data) {
   return hmac.process(data);
 }
 
-Keys getMasterKeyFromSeed(String seed) {
-  final keyBytes = Uint8List.fromList(utf8.encode(HMAC_KEY));
+Keys getMasterKeyFromSeed(String seed, [String masterKey = HMAC_KEY]) {
+  final keyBytes = Uint8List.fromList(utf8.encode(masterKey));
   final seedBytes = Uint8List.fromList(HEX.decode(seed));
   final digest = hmacSha512(keyBytes, seedBytes);
   final IL = digest.sublist(0, 32);
@@ -70,7 +70,13 @@ bool isValidPath(String path) {
   });
 }
 
-Keys derivePath(String path, String seed, {int offset = HARDENED_OFFSET}) {
+/// [masterKey] picks the SLIP-0010 tree (`ed25519 seed` or `ML-DSA-65 seed`).
+Keys derivePath(
+  String path,
+  String seed, {
+  int offset = HARDENED_OFFSET,
+  String masterKey = HMAC_KEY,
+}) {
   if (!isValidPath(path)) {
     throw ArgumentError("Invalid derivation path");
   }
@@ -82,7 +88,7 @@ Keys derivePath(String path, String seed, {int offset = HARDENED_OFFSET}) {
     );
   }
 
-  final keys = getMasterKeyFromSeed(seed);
+  final keys = getMasterKeyFromSeed(seed, masterKey);
   final segments = path
       .split("/")
       .sublist(1)

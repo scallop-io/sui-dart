@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:sui_dart/bcs/sui_bcs.dart';
 import 'package:sui_dart/cryptography/ed25519_publickey.dart';
 import 'package:sui_dart/cryptography/keypair.dart';
+import 'package:sui_dart/cryptography/mldsa65_publickey.dart';
 import 'package:sui_dart/cryptography/passkey_publickey.dart';
 import 'package:sui_dart/cryptography/secp256_publickey.dart';
 import 'package:sui_dart/multisig/multsig_publickey.dart';
@@ -35,6 +36,7 @@ enum SignatureScheme {
   MultiSig,
   ZkLogin,
   Passkey,
+  MLDSA65,
 }
 
 abstract class SIGNATURE_SCHEME_TO_FLAG {
@@ -44,6 +46,7 @@ abstract class SIGNATURE_SCHEME_TO_FLAG {
   static const int MultiSig = 0x03;
   static const int ZkLogin = 0x05;
   static const int Passkey = 0x06;
+  static const int MLDSA65 = 0x07;
 
   static int schemeToFlag(SignatureScheme scheme) {
     switch (scheme) {
@@ -59,6 +62,8 @@ abstract class SIGNATURE_SCHEME_TO_FLAG {
         return ZkLogin;
       case SignatureScheme.Passkey:
         return Passkey;
+      case SignatureScheme.MLDSA65:
+        return MLDSA65;
     }
   }
 
@@ -76,6 +81,8 @@ abstract class SIGNATURE_SCHEME_TO_FLAG {
         return SignatureScheme.ZkLogin;
       case Passkey:
         return SignatureScheme.Passkey;
+      case MLDSA65:
+        return SignatureScheme.MLDSA65;
       default:
         throw ArgumentError("Undefined Signature Flag $flag");
     }
@@ -158,6 +165,8 @@ SignaturePubkeyPair parseSerializedSignature(String serializedSignature) {
           bytes,
           SIGNATURE_SCHEME_TO_FLAG.Secp256r1,
         );
+      case SignatureScheme.MLDSA65:
+        return MLDSA65PublicKey(bytes);
       default:
         throw ArgumentError("Undefined Scheme: $scheme");
     }
@@ -170,13 +179,17 @@ SignaturePubkeyPair parseSerializedSignature(String serializedSignature) {
       case SignatureScheme.Secp256k1:
       case SignatureScheme.Secp256r1:
         return 33;
+      case SignatureScheme.MLDSA65:
+        return MLDSA65_PUBLIC_KEY_SIZE;
       default:
         throw ArgumentError("Undefined Public Key Scheme: $scheme");
     }
   }
 
   final publicKeySize = getPublicKeySize(signatureScheme);
-  const signatureSize = 64;
+  final signatureSize = signatureScheme == SignatureScheme.MLDSA65
+      ? MLDSA65_SIGNATURE_SIZE
+      : 64;
   if (bytes.length != 1 + signatureSize + publicKeySize) {
     throw ArgumentError('Invalid serialized signature length');
   }

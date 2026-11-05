@@ -3,14 +3,9 @@ import 'dart:typed_data';
 import 'package:bip39_plus/bip39_plus.dart' as bip39;
 import 'package:sui_dart/cryptography/helper.dart';
 
-/// Parse and validate a path that is compliant to SLIP-0010 in form m/44'/784'/{account_index}'/{change_index}'/{address_index}'.
-///
-/// [path] string (e.g. `m/44'/784'/0'/0'/0'`).
-bool isValidHardenedPath(String path) {
-  if (!RegExp(r"^m/44'/784'/[0-9]+'/[0-9]+'/[0-9]+'+$").hasMatch(path)) {
-    return false;
-  }
-  return true;
+/// [purpose] is 44 for Ed25519, 94 for ML-DSA-65.
+bool isValidHardenedPath(String path, [int purpose = 44]) {
+  return RegExp("^m/$purpose'/784'/[0-9]+'/[0-9]+'/[0-9]+'+\$").hasMatch(path);
 }
 
 /// Parse and validate a path that is compliant to BIP-32 in form m/54'/784'/{account_index}'/{change_index}/{address_index}

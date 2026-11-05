@@ -3,6 +3,8 @@ import 'dart:typed_data';
 
 import 'package:bcs_dart/bcs.dart';
 import 'package:sui_dart/bcs/type_tag_serializer.dart';
+import 'package:sui_dart/cryptography/mldsa65_publickey.dart'
+    show MLDSA65_PUBLIC_KEY_SIZE, MLDSA65_SIGNATURE_SIZE;
 import 'package:sui_dart/types/common.dart';
 
 class SuiBcs {
@@ -516,6 +518,7 @@ class SuiBcs {
     'Secp256r1': Bcs.fixedArray(64, Bcs.u8()),
     'ZkLogin': Bcs.vector(Bcs.u8()),
     'Passkey': Bcs.vector(Bcs.u8()),
+    'MLDSA65': Bcs.fixedArray(MLDSA65_SIGNATURE_SIZE, Bcs.u8()),
   });
 
   static final PublicKey = Bcs.enumeration('PublicKey', {
@@ -524,6 +527,7 @@ class SuiBcs {
     'Secp256r1': Bcs.fixedArray(33, Bcs.u8()),
     'ZkLogin': Bcs.vector(Bcs.u8()),
     'Passkey': Bcs.fixedArray(33, Bcs.u8()),
+    'MLDSA65': Bcs.fixedArray(MLDSA65_PUBLIC_KEY_SIZE, Bcs.u8()),
   });
 
   static final MultiSigPkMap = Bcs.struct('MultiSigPkMap', {
