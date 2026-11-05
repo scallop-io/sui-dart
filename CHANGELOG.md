@@ -1,3 +1,27 @@
+## 0.13.0
+
+### Breaking
+
+* `SignatureScheme` has a new `MLDSA65` value, so exhaustive switches over it
+  need a new case.
+
+### Added
+
+* ML-DSA-65 (FIPS 204) keys: `MLDSA65Keypair` and `MLDSA65PublicKey`, flag
+  `0x07`. The secret key is the 32-byte seed, so `suiprivkey` import and export
+  work as for other schemes. Signing is hedged.
+* ML-DSA-65 derivation from mnemonics at `m/94'/784'/{account}'/{change}'/{address}'`,
+  also through `SuiAccount.fromMnemonics(..., SignatureScheme.MLDSA65)`.
+* ML-DSA-65 multisig members. Combined multisig signatures may be up to 64 KB.
+* `derivePath` takes a `masterKey`; `isValidHardenedPath` takes a `purpose`.
+
+### Fixed
+
+* Mnemonics are trimmed, lowercased and single-spaced (`normalizeMnemonics`)
+  before checking and hashing, for every key scheme. Extra spaces, tabs,
+  newlines or capitals no longer fail; addresses from already-valid input do
+  not change.
+
 ## 0.12.4
 
 Synced to `1e60c8b`.
