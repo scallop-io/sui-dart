@@ -16,11 +16,11 @@ import 'package:protobuf/protobuf.dart' as $pb;
 
 /// Ordering for the returned result set.
 class Ordering extends $pb.ProtobufEnum {
-  /// Return results in increasing cursor order.
+  /// Return results in increasing ledger order.
   static const Ordering ORDERING_ASCENDING =
       Ordering._(0, _omitEnumNames ? '' : 'ORDERING_ASCENDING');
 
-  /// Return results in decreasing cursor order.
+  /// Return results in decreasing ledger order.
   static const Ordering ORDERING_DESCENDING =
       Ordering._(1, _omitEnumNames ? '' : 'ORDERING_DESCENDING');
 
@@ -56,8 +56,10 @@ class QueryEndReason extends $pb.ProtobufEnum {
   static const QueryEndReason QUERY_END_REASON_SCAN_LIMIT =
       QueryEndReason._(2, _omitEnumNames ? '' : 'QUERY_END_REASON_SCAN_LIMIT');
 
-  /// The scan reached a requested checkpoint range bound. The terminal frame
-  /// carries no item.
+  /// The scan reached the edge of the window the request set: its checkpoint
+  /// range bound, or a start or end position the request set within a
+  /// checkpoint at that range's edge (for example `end_transaction_index` on
+  /// `ListTransactionsRequest`). The terminal frame carries no item.
   static const QueryEndReason QUERY_END_REASON_CHECKPOINT_BOUND =
       QueryEndReason._(
           3, _omitEnumNames ? '' : 'QUERY_END_REASON_CHECKPOINT_BOUND');

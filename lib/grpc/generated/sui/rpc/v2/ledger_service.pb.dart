@@ -1464,6 +1464,8 @@ class ListTransactionsRequest extends $pb.GeneratedMessage {
     $fixnum.Int64? endCheckpoint,
     $8.TransactionFilter? filter,
     $9.QueryOptions? options,
+    $fixnum.Int64? startTransactionIndex,
+    $fixnum.Int64? endTransactionIndex,
   }) {
     final result = create();
     if (readMask != null) result.readMask = readMask;
@@ -1471,6 +1473,10 @@ class ListTransactionsRequest extends $pb.GeneratedMessage {
     if (endCheckpoint != null) result.endCheckpoint = endCheckpoint;
     if (filter != null) result.filter = filter;
     if (options != null) result.options = options;
+    if (startTransactionIndex != null)
+      result.startTransactionIndex = startTransactionIndex;
+    if (endTransactionIndex != null)
+      result.endTransactionIndex = endTransactionIndex;
     return result;
   }
 
@@ -1499,6 +1505,12 @@ class ListTransactionsRequest extends $pb.GeneratedMessage {
         subBuilder: $8.TransactionFilter.create)
     ..aOM<$9.QueryOptions>(5, _omitFieldNames ? '' : 'options',
         subBuilder: $9.QueryOptions.create)
+    ..a<$fixnum.Int64>(
+        6, _omitFieldNames ? '' : 'startTransactionIndex', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..a<$fixnum.Int64>(
+        7, _omitFieldNames ? '' : 'endTransactionIndex', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1584,6 +1596,55 @@ class ListTransactionsRequest extends $pb.GeneratedMessage {
   void clearOptions() => $_clearField(5);
   @$pb.TagNumber(5)
   $9.QueryOptions ensureOptions() => $_ensure(4);
+
+  /// Optional. Transaction position within `start_checkpoint` at which the
+  /// query starts (inclusive): within `start_checkpoint`, only transactions
+  /// whose `ExecutedTransaction.transaction_index` is at least this value are
+  /// returned. Unset starts at the beginning of `start_checkpoint`. An index at
+  /// or past the checkpoint's transaction count starts at the next checkpoint.
+  /// Requires `start_checkpoint`. When this position leaves transactions of
+  /// `start_checkpoint` out, a descending query does not report that checkpoint
+  /// as covered in `Watermark.checkpoint`.
+  ///
+  /// Combines with `options.after` by intersection: the query starts at
+  /// whichever of the two is later in ledger order.
+  ///
+  /// Servers that predate this field ignore it and start at the beginning of
+  /// `start_checkpoint`, so clients must still drop transactions before this
+  /// position themselves.
+  @$pb.TagNumber(6)
+  $fixnum.Int64 get startTransactionIndex => $_getI64(5);
+  @$pb.TagNumber(6)
+  set startTransactionIndex($fixnum.Int64 value) => $_setInt64(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasStartTransactionIndex() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearStartTransactionIndex() => $_clearField(6);
+
+  /// Optional. Transaction position within the last checkpoint of the range,
+  /// `end_checkpoint - 1`, at which the query ends (exclusive): within that
+  /// checkpoint, only transactions whose `ExecutedTransaction.transaction_index`
+  /// is below this value are returned, so 0 returns none of it. Unset ends after
+  /// the whole checkpoint. An index at or past the checkpoint's transaction
+  /// count ends after the whole checkpoint. Requires `end_checkpoint`. A query
+  /// that stops at this position ends with `QUERY_END_REASON_CHECKPOINT_BOUND`.
+  /// When this position leaves transactions of that checkpoint out, an
+  /// ascending query does not report it as covered in `Watermark.checkpoint`.
+  ///
+  /// Combines with `options.before` by intersection: the query ends at
+  /// whichever of the two is earlier in ledger order.
+  ///
+  /// Servers that predate this field ignore it and return the whole
+  /// checkpoint, so clients must still drop transactions at or after this
+  /// position themselves.
+  @$pb.TagNumber(7)
+  $fixnum.Int64 get endTransactionIndex => $_getI64(6);
+  @$pb.TagNumber(7)
+  set endTransactionIndex($fixnum.Int64 value) => $_setInt64(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasEndTransactionIndex() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearEndTransactionIndex() => $_clearField(7);
 }
 
 /// Response message for LedgerService.ListTransactions.
@@ -1698,6 +1759,10 @@ class ListEventsRequest extends $pb.GeneratedMessage {
     $fixnum.Int64? endCheckpoint,
     $8.EventFilter? filter,
     $9.QueryOptions? options,
+    $fixnum.Int64? startTransactionIndex,
+    $core.int? startEventIndex,
+    $fixnum.Int64? endTransactionIndex,
+    $core.int? endEventIndex,
   }) {
     final result = create();
     if (readMask != null) result.readMask = readMask;
@@ -1705,6 +1770,12 @@ class ListEventsRequest extends $pb.GeneratedMessage {
     if (endCheckpoint != null) result.endCheckpoint = endCheckpoint;
     if (filter != null) result.filter = filter;
     if (options != null) result.options = options;
+    if (startTransactionIndex != null)
+      result.startTransactionIndex = startTransactionIndex;
+    if (startEventIndex != null) result.startEventIndex = startEventIndex;
+    if (endTransactionIndex != null)
+      result.endTransactionIndex = endTransactionIndex;
+    if (endEventIndex != null) result.endEventIndex = endEventIndex;
     return result;
   }
 
@@ -1733,6 +1804,16 @@ class ListEventsRequest extends $pb.GeneratedMessage {
         subBuilder: $8.EventFilter.create)
     ..aOM<$9.QueryOptions>(5, _omitFieldNames ? '' : 'options',
         subBuilder: $9.QueryOptions.create)
+    ..a<$fixnum.Int64>(
+        6, _omitFieldNames ? '' : 'startTransactionIndex', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aI(7, _omitFieldNames ? '' : 'startEventIndex',
+        fieldType: $pb.PbFieldType.OU3)
+    ..a<$fixnum.Int64>(
+        8, _omitFieldNames ? '' : 'endTransactionIndex', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aI(9, _omitFieldNames ? '' : 'endEventIndex',
+        fieldType: $pb.PbFieldType.OU3)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1816,6 +1897,92 @@ class ListEventsRequest extends $pb.GeneratedMessage {
   void clearOptions() => $_clearField(5);
   @$pb.TagNumber(5)
   $9.QueryOptions ensureOptions() => $_ensure(4);
+
+  /// Optional. Transaction position within `start_checkpoint` at which the
+  /// query starts (inclusive): within `start_checkpoint`, only events of
+  /// transactions whose `Event.transaction_index` is at least this value are
+  /// returned. Unset starts at the beginning of `start_checkpoint`. An index at
+  /// or past the checkpoint's transaction count starts at the next checkpoint,
+  /// ignoring `start_event_index`. Requires `start_checkpoint`. When this
+  /// position leaves events of `start_checkpoint` out, a descending query does
+  /// not report that checkpoint as covered in `Watermark.checkpoint`.
+  ///
+  /// Combines with `options.after` by intersection: the query starts at
+  /// whichever of the two is later in ledger order.
+  ///
+  /// Servers that predate this field ignore it and start at the beginning of
+  /// `start_checkpoint`, so clients must still drop events before this
+  /// position themselves.
+  @$pb.TagNumber(6)
+  $fixnum.Int64 get startTransactionIndex => $_getI64(5);
+  @$pb.TagNumber(6)
+  set startTransactionIndex($fixnum.Int64 value) => $_setInt64(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasStartTransactionIndex() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearStartTransactionIndex() => $_clearField(6);
+
+  /// Optional. Event position within the transaction at
+  /// `start_transaction_index` at which the query starts (inclusive): within
+  /// that transaction, only events whose `Event.event_index` is at least this
+  /// value are returned. Unset starts at the transaction's first event. An
+  /// index past the transaction's last event starts at the next transaction.
+  /// Requires `start_transaction_index`.
+  ///
+  /// Servers that predate this field ignore it, as for
+  /// `start_transaction_index`.
+  @$pb.TagNumber(7)
+  $core.int get startEventIndex => $_getIZ(6);
+  @$pb.TagNumber(7)
+  set startEventIndex($core.int value) => $_setUnsignedInt32(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasStartEventIndex() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearStartEventIndex() => $_clearField(7);
+
+  /// Optional. Transaction position within the last checkpoint of the range,
+  /// `end_checkpoint - 1`, at which the query ends (exclusive): within that
+  /// checkpoint, only events of transactions whose `Event.transaction_index` is
+  /// below this value are returned, plus, with `end_event_index`, the events
+  /// of the transaction at this index that precede it. Unset ends after the
+  /// whole checkpoint. An index at or past the checkpoint's transaction count
+  /// ends after the whole checkpoint. Requires `end_checkpoint`. A query that
+  /// stops at this position ends with `QUERY_END_REASON_CHECKPOINT_BOUND`.
+  /// When this position leaves events of that checkpoint out, an ascending
+  /// query does not report it as covered in `Watermark.checkpoint`.
+  ///
+  /// Combines with `options.before` by intersection: the query ends at
+  /// whichever of the two is earlier in ledger order.
+  ///
+  /// Servers that predate this field ignore it and return the whole
+  /// checkpoint, so clients must still drop events at or after this position
+  /// themselves.
+  @$pb.TagNumber(8)
+  $fixnum.Int64 get endTransactionIndex => $_getI64(7);
+  @$pb.TagNumber(8)
+  set endTransactionIndex($fixnum.Int64 value) => $_setInt64(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasEndTransactionIndex() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearEndTransactionIndex() => $_clearField(8);
+
+  /// Optional. Event position within the transaction at
+  /// `end_transaction_index` at which the query ends (exclusive): events of
+  /// that transaction whose `Event.event_index` is below this value are also
+  /// returned. Unset, like 0, returns none of the transaction's events. An
+  /// index past the transaction's last event returns all of them. Requires
+  /// `end_transaction_index`.
+  ///
+  /// Servers that predate this field ignore it, as for
+  /// `end_transaction_index`.
+  @$pb.TagNumber(9)
+  $core.int get endEventIndex => $_getIZ(8);
+  @$pb.TagNumber(9)
+  set endEventIndex($core.int value) => $_setUnsignedInt32(8, value);
+  @$pb.TagNumber(9)
+  $core.bool hasEndEventIndex() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearEndEventIndex() => $_clearField(9);
 }
 
 /// Response message for LedgerService.ListEvents.

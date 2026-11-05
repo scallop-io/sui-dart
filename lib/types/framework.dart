@@ -28,7 +28,7 @@ const MOCKED_GAS_OBJECT_ID =
     '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 
 /// Newest protocol whose types the BCS here decodes; raise it with new types.
-const MAX_PROTOCOL_VERSION = 138;
+const MAX_PROTOCOL_VERSION = 141;
 const CLIENT_PROTOCOL_VERSION_HEADER = 'x-sui-client-protocol-version';
 
 const PAY_MODULE_NAME = 'pay';

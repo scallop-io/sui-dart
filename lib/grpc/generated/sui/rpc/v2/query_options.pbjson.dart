@@ -90,6 +90,52 @@ final $typed_data.Uint8List queryOptionsDescriptor = $convert.base64Decode(
     'IAEoDjIULnN1aS5ycGMudjIuT3JkZXJpbmdIA1IIb3JkZXJpbmeIAQFCCAoGX2xpbWl0QggKBl'
     '9hZnRlckIJCgdfYmVmb3JlQgsKCV9vcmRlcmluZw==');
 
+@$core.Deprecated('Use ledgerPositionDescriptor instead')
+const LedgerPosition$json = {
+  '1': 'LedgerPosition',
+  '2': [
+    {
+      '1': 'checkpoint',
+      '3': 1,
+      '4': 1,
+      '5': 4,
+      '9': 0,
+      '10': 'checkpoint',
+      '17': true
+    },
+    {
+      '1': 'transaction_index',
+      '3': 2,
+      '4': 1,
+      '5': 4,
+      '9': 1,
+      '10': 'transactionIndex',
+      '17': true
+    },
+    {
+      '1': 'event_index',
+      '3': 3,
+      '4': 1,
+      '5': 13,
+      '9': 2,
+      '10': 'eventIndex',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_checkpoint'},
+    {'1': '_transaction_index'},
+    {'1': '_event_index'},
+  ],
+};
+
+/// Descriptor for `LedgerPosition`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List ledgerPositionDescriptor = $convert.base64Decode(
+    'Cg5MZWRnZXJQb3NpdGlvbhIjCgpjaGVja3BvaW50GAEgASgESABSCmNoZWNrcG9pbnSIAQESMA'
+    'oRdHJhbnNhY3Rpb25faW5kZXgYAiABKARIAVIQdHJhbnNhY3Rpb25JbmRleIgBARIkCgtldmVu'
+    'dF9pbmRleBgDIAEoDUgCUgpldmVudEluZGV4iAEBQg0KC19jaGVja3BvaW50QhQKEl90cmFuc2'
+    'FjdGlvbl9pbmRleEIOCgxfZXZlbnRfaW5kZXg=');
+
 @$core.Deprecated('Use watermarkDescriptor instead')
 const Watermark$json = {
   '1': 'Watermark',
@@ -112,17 +158,30 @@ const Watermark$json = {
       '10': 'checkpoint',
       '17': true
     },
+    {
+      '1': 'cursor_position',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.sui.rpc.v2.LedgerPosition',
+      '9': 2,
+      '10': 'cursorPosition',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_cursor'},
     {'1': '_checkpoint'},
+    {'1': '_cursor_position'},
   ],
 };
 
 /// Descriptor for `Watermark`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List watermarkDescriptor = $convert.base64Decode(
     'CglXYXRlcm1hcmsSGwoGY3Vyc29yGAEgASgMSABSBmN1cnNvcogBARIjCgpjaGVja3BvaW50GA'
-    'IgASgESAFSCmNoZWNrcG9pbnSIAQFCCQoHX2N1cnNvckINCgtfY2hlY2twb2ludA==');
+    'IgASgESAFSCmNoZWNrcG9pbnSIAQESSAoPY3Vyc29yX3Bvc2l0aW9uGAQgASgLMhouc3VpLnJw'
+    'Yy52Mi5MZWRnZXJQb3NpdGlvbkgCUg5jdXJzb3JQb3NpdGlvbogBAUIJCgdfY3Vyc29yQg0KC1'
+    '9jaGVja3BvaW50QhIKEF9jdXJzb3JfcG9zaXRpb24=');
 
 @$core.Deprecated('Use queryEndDescriptor instead')
 const QueryEnd$json = {

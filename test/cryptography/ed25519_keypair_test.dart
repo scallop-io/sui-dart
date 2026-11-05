@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:test/test.dart';
 import 'package:sui_dart/cryptography/ed25519_keypair.dart';
+import 'package:sui_dart/utils/ed25519_hd_key.dart' show derivePath;
 import 'package:ed25519_edwards/ed25519_edwards.dart' as ed25519;
 
 void main() {
@@ -109,6 +110,54 @@ void main() {
       expect(
         keypair.verifyPersonalMessage(message, signatureWithBytes.signature),
         true,
+      );
+    });
+  });
+
+  group('derivation paths', () {
+    const mnemonic =
+        'abandon abandon abandon abandon abandon abandon abandon abandon '
+        'abandon abandon abandon about';
+
+    test('reject an index that would wrap onto another account', () {
+      expect(
+        () => Ed25519Keypair.deriveKeypair(
+          "m/44'/784'/2147483648'/0'/0'",
+          mnemonic,
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('reject a non-canonical index', () {
+      expect(
+        () => Ed25519Keypair.deriveKeypair("m/44'/784'/01'/0'/0'", mnemonic),
+        throwsArgumentError,
+      );
+    });
+
+    test('reject a seed outside 16 to 64 bytes', () {
+      expect(
+        () => derivePath("m/44'/784'/0'/0'/0'", '00' * 15),
+        throwsArgumentError,
+      );
+      expect(
+        () => derivePath("m/44'/784'/0'/0'/0'", '00' * 65),
+        throwsArgumentError,
+      );
+    });
+
+    test('still derive the last valid index', () {
+      expect(
+        () => Ed25519Keypair.deriveKeypair(
+          "m/44'/784'/2147483647'/0'/0'",
+          mnemonic,
+        ),
+        returnsNormally,
+      );
+      expect(
+        () => derivePath("m/44'/784'/2147483647'/0'/0'", '00' * 32),
+        returnsNormally,
       );
     });
   });

@@ -156,6 +156,7 @@ class SuiEffects {
         'NonExclusiveWriteInputObjectModified',
         {'id': SuiBcs.Address},
       ),
+      'TransactionExpired': null,
     },
   );
 

@@ -691,6 +691,24 @@ const ListTransactionsRequest$json = {
       '10': 'options',
       '17': true
     },
+    {
+      '1': 'start_transaction_index',
+      '3': 6,
+      '4': 1,
+      '5': 4,
+      '9': 5,
+      '10': 'startTransactionIndex',
+      '17': true
+    },
+    {
+      '1': 'end_transaction_index',
+      '3': 7,
+      '4': 1,
+      '5': 4,
+      '9': 6,
+      '10': 'endTransactionIndex',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_read_mask'},
@@ -698,6 +716,8 @@ const ListTransactionsRequest$json = {
     {'1': '_end_checkpoint'},
     {'1': '_filter'},
     {'1': '_options'},
+    {'1': '_start_transaction_index'},
+    {'1': '_end_transaction_index'},
   ],
 };
 
@@ -708,8 +728,11 @@ final $typed_data.Uint8List listTransactionsRequestDescriptor = $convert.base64D
     'KARIAVIPc3RhcnRDaGVja3BvaW50iAEBEioKDmVuZF9jaGVja3BvaW50GAMgASgESAJSDWVuZE'
     'NoZWNrcG9pbnSIAQESOgoGZmlsdGVyGAQgASgLMh0uc3VpLnJwYy52Mi5UcmFuc2FjdGlvbkZp'
     'bHRlckgDUgZmaWx0ZXKIAQESNwoHb3B0aW9ucxgFIAEoCzIYLnN1aS5ycGMudjIuUXVlcnlPcH'
-    'Rpb25zSARSB29wdGlvbnOIAQFCDAoKX3JlYWRfbWFza0ITChFfc3RhcnRfY2hlY2twb2ludEIR'
-    'Cg9fZW5kX2NoZWNrcG9pbnRCCQoHX2ZpbHRlckIKCghfb3B0aW9ucw==');
+    'Rpb25zSARSB29wdGlvbnOIAQESOwoXc3RhcnRfdHJhbnNhY3Rpb25faW5kZXgYBiABKARIBVIV'
+    'c3RhcnRUcmFuc2FjdGlvbkluZGV4iAEBEjcKFWVuZF90cmFuc2FjdGlvbl9pbmRleBgHIAEoBE'
+    'gGUhNlbmRUcmFuc2FjdGlvbkluZGV4iAEBQgwKCl9yZWFkX21hc2tCEwoRX3N0YXJ0X2NoZWNr'
+    'cG9pbnRCEQoPX2VuZF9jaGVja3BvaW50QgkKB19maWx0ZXJCCgoIX29wdGlvbnNCGgoYX3N0YX'
+    'J0X3RyYW5zYWN0aW9uX2luZGV4QhgKFl9lbmRfdHJhbnNhY3Rpb25faW5kZXg=');
 
 @$core.Deprecated('Use listTransactionsResponseDescriptor instead')
 const ListTransactionsResponse$json = {
@@ -813,6 +836,42 @@ const ListEventsRequest$json = {
       '10': 'options',
       '17': true
     },
+    {
+      '1': 'start_transaction_index',
+      '3': 6,
+      '4': 1,
+      '5': 4,
+      '9': 5,
+      '10': 'startTransactionIndex',
+      '17': true
+    },
+    {
+      '1': 'start_event_index',
+      '3': 7,
+      '4': 1,
+      '5': 13,
+      '9': 6,
+      '10': 'startEventIndex',
+      '17': true
+    },
+    {
+      '1': 'end_transaction_index',
+      '3': 8,
+      '4': 1,
+      '5': 4,
+      '9': 7,
+      '10': 'endTransactionIndex',
+      '17': true
+    },
+    {
+      '1': 'end_event_index',
+      '3': 9,
+      '4': 1,
+      '5': 13,
+      '9': 8,
+      '10': 'endEventIndex',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_read_mask'},
@@ -820,6 +879,10 @@ const ListEventsRequest$json = {
     {'1': '_end_checkpoint'},
     {'1': '_filter'},
     {'1': '_options'},
+    {'1': '_start_transaction_index'},
+    {'1': '_start_event_index'},
+    {'1': '_end_transaction_index'},
+    {'1': '_end_event_index'},
   ],
 };
 
@@ -830,8 +893,14 @@ final $typed_data.Uint8List listEventsRequestDescriptor = $convert.base64Decode(
     'c3RhcnRDaGVja3BvaW50iAEBEioKDmVuZF9jaGVja3BvaW50GAMgASgESAJSDWVuZENoZWNrcG'
     '9pbnSIAQESNAoGZmlsdGVyGAQgASgLMhcuc3VpLnJwYy52Mi5FdmVudEZpbHRlckgDUgZmaWx0'
     'ZXKIAQESNwoHb3B0aW9ucxgFIAEoCzIYLnN1aS5ycGMudjIuUXVlcnlPcHRpb25zSARSB29wdG'
-    'lvbnOIAQFCDAoKX3JlYWRfbWFza0ITChFfc3RhcnRfY2hlY2twb2ludEIRCg9fZW5kX2NoZWNr'
-    'cG9pbnRCCQoHX2ZpbHRlckIKCghfb3B0aW9ucw==');
+    'lvbnOIAQESOwoXc3RhcnRfdHJhbnNhY3Rpb25faW5kZXgYBiABKARIBVIVc3RhcnRUcmFuc2Fj'
+    'dGlvbkluZGV4iAEBEi8KEXN0YXJ0X2V2ZW50X2luZGV4GAcgASgNSAZSD3N0YXJ0RXZlbnRJbm'
+    'RleIgBARI3ChVlbmRfdHJhbnNhY3Rpb25faW5kZXgYCCABKARIB1ITZW5kVHJhbnNhY3Rpb25J'
+    'bmRleIgBARIrCg9lbmRfZXZlbnRfaW5kZXgYCSABKA1ICFINZW5kRXZlbnRJbmRleIgBAUIMCg'
+    'pfcmVhZF9tYXNrQhMKEV9zdGFydF9jaGVja3BvaW50QhEKD19lbmRfY2hlY2twb2ludEIJCgdf'
+    'ZmlsdGVyQgoKCF9vcHRpb25zQhoKGF9zdGFydF90cmFuc2FjdGlvbl9pbmRleEIUChJfc3Rhcn'
+    'RfZXZlbnRfaW5kZXhCGAoWX2VuZF90cmFuc2FjdGlvbl9pbmRleEISChBfZW5kX2V2ZW50X2lu'
+    'ZGV4');
 
 @$core.Deprecated('Use listEventsResponseDescriptor instead')
 const ListEventsResponse$json = {

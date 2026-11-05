@@ -143,18 +143,147 @@ class QueryOptions extends $pb.GeneratedMessage {
   void clearOrdering() => $_clearField(4);
 }
 
-/// Progress marker for a query scan. Carried on every response frame, whether or
-/// not the frame delivers a matching item. Watermarks never regress in the
-/// requested ordering, but consecutive frames may carry the same watermark when
+/// A point in ledger order: the boundary between the items whose keys sort
+/// below this position and the items whose keys sort at or above it.
+///
+/// An item's key is (`sequence_number`) for a `Checkpoint`, (`checkpoint`,
+/// `transaction_index`) for an `ExecutedTransaction`, and (`checkpoint`,
+/// `transaction_index`, `event_index`) for an `Event`. Keys and positions sort
+/// lexicographically, with unset fields counting as 0.
+///
+/// An index past the last transaction of a checkpoint, or past the last event of
+/// a transaction, names the start of the next one, so different positions can
+/// name the same boundary: after the last of checkpoint `c`'s `n` transactions,
+/// both (`c`, `n`) and (`c + 1`, 0) name the start of checkpoint `c + 1`.
+/// Sorting never contradicts ledger order: a position that sorts below another
+/// is at or before it. Use comparisons to drop what is behind, and never assume
+/// that positions that differ name different boundaries.
+///
+/// To bound a request at a position: as its start, set `start_checkpoint` to
+/// `checkpoint` and, when either index is nonzero, the start index fields to
+/// both indexes, including one that is 0 (`start_transaction_index`, plus
+/// `start_event_index` for events). As its end, set `end_checkpoint` to
+/// `checkpoint` when both indexes are 0; otherwise set `end_checkpoint` to
+/// `checkpoint + 1` and the end index fields to both indexes
+/// (`end_transaction_index`, plus `end_event_index` for events). Checkpoint
+/// positions carry only `checkpoint`, so they set only `start_checkpoint` or
+/// `end_checkpoint`.
+class LedgerPosition extends $pb.GeneratedMessage {
+  factory LedgerPosition({
+    $fixnum.Int64? checkpoint,
+    $fixnum.Int64? transactionIndex,
+    $core.int? eventIndex,
+  }) {
+    final result = create();
+    if (checkpoint != null) result.checkpoint = checkpoint;
+    if (transactionIndex != null) result.transactionIndex = transactionIndex;
+    if (eventIndex != null) result.eventIndex = eventIndex;
+    return result;
+  }
+
+  LedgerPosition._();
+
+  factory LedgerPosition.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory LedgerPosition.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'LedgerPosition',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'sui.rpc.v2'),
+      createEmptyInstance: create)
+    ..a<$fixnum.Int64>(
+        1, _omitFieldNames ? '' : 'checkpoint', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..a<$fixnum.Int64>(
+        2, _omitFieldNames ? '' : 'transactionIndex', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aI(3, _omitFieldNames ? '' : 'eventIndex', fieldType: $pb.PbFieldType.OU3)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  LedgerPosition clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  LedgerPosition copyWith(void Function(LedgerPosition) updates) =>
+      super.copyWith((message) => updates(message as LedgerPosition))
+          as LedgerPosition;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static LedgerPosition create() => LedgerPosition._();
+  @$core.override
+  LedgerPosition createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static LedgerPosition getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<LedgerPosition>(create);
+  static LedgerPosition? _defaultInstance;
+
+  /// Checkpoint sequence number.
+  @$pb.TagNumber(1)
+  $fixnum.Int64 get checkpoint => $_getI64(0);
+  @$pb.TagNumber(1)
+  set checkpoint($fixnum.Int64 value) => $_setInt64(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasCheckpoint() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCheckpoint() => $_clearField(1);
+
+  /// Zero-based position of a transaction within `checkpoint`.
+  @$pb.TagNumber(2)
+  $fixnum.Int64 get transactionIndex => $_getI64(1);
+  @$pb.TagNumber(2)
+  set transactionIndex($fixnum.Int64 value) => $_setInt64(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasTransactionIndex() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearTransactionIndex() => $_clearField(2);
+
+  /// Zero-based index of an event within its transaction's event list. Event
+  /// streams only.
+  @$pb.TagNumber(3)
+  $core.int get eventIndex => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set eventIndex($core.int value) => $_setUnsignedInt32(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasEventIndex() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearEventIndex() => $_clearField(3);
+}
+
+/// Progress of a scan, carried on every response frame, whether or not the
+/// frame delivers a matching item. Watermarks never regress in the requested
+/// ordering, but consecutive frames may carry the same watermark when
 /// additional work does not advance the safe resume frontier.
+///
+/// A watermark has two parts:
+///
+/// - The resume point, in two forms: `cursor`, opaque, for the server, and
+///   `cursor_position`, in ledger coordinates, for clients to order frames and
+///   drop duplicates.
+/// - Coverage: `checkpoint`, the boundary checkpoint the scan has proven fully
+///   covered. It trails the resume point.
+///
+/// To continue in the same direction, set the request's start (ascending) or
+/// end (descending) at `cursor_position`. To read in the other direction, set
+/// the other bound at `cursor_position` from a frame without an item; from a
+/// frame with an item, start a page after the item at its key with the finest
+/// index incremented, or end a page before it at its key. In both cases pass
+/// `cursor` as `options.after` with a start and as `options.before` with an
+/// end.
 class Watermark extends $pb.GeneratedMessage {
   factory Watermark({
     $core.List<$core.int>? cursor,
     $fixnum.Int64? checkpoint,
+    LedgerPosition? cursorPosition,
   }) {
     final result = create();
     if (cursor != null) result.cursor = cursor;
     if (checkpoint != null) result.checkpoint = checkpoint;
+    if (cursorPosition != null) result.cursorPosition = cursorPosition;
     return result;
   }
 
@@ -176,6 +305,8 @@ class Watermark extends $pb.GeneratedMessage {
     ..a<$fixnum.Int64>(
         2, _omitFieldNames ? '' : 'checkpoint', $pb.PbFieldType.OU6,
         defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aOM<LedgerPosition>(4, _omitFieldNames ? '' : 'cursorPosition',
+        subBuilder: LedgerPosition.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -196,10 +327,13 @@ class Watermark extends $pb.GeneratedMessage {
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Watermark>(create);
   static Watermark? _defaultInstance;
 
-  /// Opaque cursor at this scan position. Set on every watermark. Use as
+  /// Opaque cursor at the resume point. Set on every watermark. Use as
   /// `options.after` (ascending) or `options.before` (descending) on the next
   /// request to resume from here. The most recently received cursor is always
   /// the safe resume point.
+  ///
+  /// Pass cursors back unchanged; never compare or inspect them. Cursors that
+  /// differ can name the same point, and their encoding may change.
   @$pb.TagNumber(1)
   $core.List<$core.int> get cursor => $_getN(0);
   @$pb.TagNumber(1)
@@ -229,6 +363,36 @@ class Watermark extends $pb.GeneratedMessage {
   $core.bool hasCheckpoint() => $_has(1);
   @$pb.TagNumber(2)
   void clearCheckpoint() => $_clearField(2);
+
+  /// The resume point in ledger coordinates. Set on every watermark by servers
+  /// that support it.
+  ///
+  /// Ascending, every match from the request's start up to (excluding)
+  /// `cursor_position` has been delivered. Descending, every match from
+  /// `cursor_position` up to (excluding) the request's end has been delivered.
+  ///
+  /// On a frame that carries an item, ascending, it is the boundary just past
+  /// the item, so it is not the item's own key: it is that key with its finest
+  /// index incremented (`event_index` for events, `transaction_index` for
+  /// transactions, `checkpoint` for checkpoints). Descending, it is the boundary
+  /// just before the item, which is the item's key.
+  ///
+  /// It never moves before the request's start (ascending) or past its end
+  /// (descending), so an ascending request that starts beyond what the server
+  /// has indexed gets its start echoed back: the resume point says where the
+  /// client is, not where the ledger is. `cursor` may then name an earlier
+  /// point; bounds intersect, so resuming with both starts at
+  /// `cursor_position`.
+  @$pb.TagNumber(4)
+  LedgerPosition get cursorPosition => $_getN(2);
+  @$pb.TagNumber(4)
+  set cursorPosition(LedgerPosition value) => $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasCursorPosition() => $_has(2);
+  @$pb.TagNumber(4)
+  void clearCursorPosition() => $_clearField(4);
+  @$pb.TagNumber(4)
+  LedgerPosition ensureCursorPosition() => $_ensure(2);
 }
 
 /// Marker for the final frame of a successful query stream. Every successful

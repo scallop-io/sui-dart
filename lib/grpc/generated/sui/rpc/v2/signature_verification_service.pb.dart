@@ -26,12 +26,15 @@ class VerifySignatureRequest extends $pb.GeneratedMessage {
     $2.UserSignature? signature,
     $core.String? address,
     $core.Iterable<$3.ActiveJwk>? jwks,
+    $core.bool? checkAddressAliases,
   }) {
     final result = create();
     if (message != null) result.message = message;
     if (signature != null) result.signature = signature;
     if (address != null) result.address = address;
     if (jwks != null) result.jwks.addAll(jwks);
+    if (checkAddressAliases != null)
+      result.checkAddressAliases = checkAddressAliases;
     return result;
   }
 
@@ -55,6 +58,7 @@ class VerifySignatureRequest extends $pb.GeneratedMessage {
     ..aOS(3, _omitFieldNames ? '' : 'address')
     ..pPM<$3.ActiveJwk>(4, _omitFieldNames ? '' : 'jwks',
         subBuilder: $3.ActiveJwk.create)
+    ..aOB(6, _omitFieldNames ? '' : 'checkAddressAliases')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -123,16 +127,35 @@ class VerifySignatureRequest extends $pb.GeneratedMessage {
   /// If this is empty the current set of valid JWKs stored onchain will be used
   @$pb.TagNumber(4)
   $pb.PbList<$3.ActiveJwk> get jwks => $_getList(3);
+
+  /// Optional. If true, `address` is required and the signature must be from a
+  /// member of `address`'s current `AddressAliases` set rather than from
+  /// `address` itself. An address with no `AddressAliases` set is its own only
+  /// alias.
+  ///
+  /// Servers that predate this field ignore it, so clients must check
+  /// `address_aliases_checked` in the response.
+  @$pb.TagNumber(6)
+  $core.bool get checkAddressAliases => $_getBF(4);
+  @$pb.TagNumber(6)
+  set checkAddressAliases($core.bool value) => $_setBool(4, value);
+  @$pb.TagNumber(6)
+  $core.bool hasCheckAddressAliases() => $_has(4);
+  @$pb.TagNumber(6)
+  void clearCheckAddressAliases() => $_clearField(6);
 }
 
 class VerifySignatureResponse extends $pb.GeneratedMessage {
   factory VerifySignatureResponse({
     $core.bool? isValid,
     $core.String? reason,
+    $core.bool? addressAliasesChecked,
   }) {
     final result = create();
     if (isValid != null) result.isValid = isValid;
     if (reason != null) result.reason = reason;
+    if (addressAliasesChecked != null)
+      result.addressAliasesChecked = addressAliasesChecked;
     return result;
   }
 
@@ -151,6 +174,7 @@ class VerifySignatureResponse extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..aOB(1, _omitFieldNames ? '' : 'isValid')
     ..aOS(2, _omitFieldNames ? '' : 'reason')
+    ..aOB(3, _omitFieldNames ? '' : 'addressAliasesChecked')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -192,6 +216,17 @@ class VerifySignatureResponse extends $pb.GeneratedMessage {
   $core.bool hasReason() => $_has(1);
   @$pb.TagNumber(2)
   void clearReason() => $_clearField(2);
+
+  /// Set to true when the server applied `check_address_aliases`, whether or
+  /// not the signature is valid. Unset by servers that predate it.
+  @$pb.TagNumber(3)
+  $core.bool get addressAliasesChecked => $_getBF(2);
+  @$pb.TagNumber(3)
+  set addressAliasesChecked($core.bool value) => $_setBool(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasAddressAliasesChecked() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearAddressAliasesChecked() => $_clearField(3);
 }
 
 const $core.bool _omitFieldNames =

@@ -15,7 +15,8 @@ class Keys {
   final Uint8List? chainCode;
 }
 
-const pathRegex = r"^m(\/[0-9]+')+$";
+// no leading zeros (`01'` is `1'`)
+const pathRegex = r"^m(\/(0|[1-9][0-9]*)')+$";
 const HMAC_KEY = "ed25519 seed";
 const HARDENED_OFFSET = 0x80000000;
 
@@ -62,16 +63,23 @@ bool isValidPath(String path) {
   if (!RegExp(pathRegex).hasMatch(path)) {
     return false;
   }
-  return !path
-      .split("/")
-      .sublist(1)
-      .map(replaceDerive)
-      .any((e) => int.tryParse(e) == null);
+  // >= 2^31 wraps onto another account
+  return path.split("/").sublist(1).map(replaceDerive).every((e) {
+    final index = int.tryParse(e);
+    return index != null && index < HARDENED_OFFSET;
+  });
 }
 
 Keys derivePath(String path, String seed, {int offset = HARDENED_OFFSET}) {
   if (!isValidPath(path)) {
     throw ArgumentError("Invalid derivation path");
+  }
+
+  final seedLength = seed.length ~/ 2;
+  if (seedLength < 16 || seedLength > 64) {
+    throw ArgumentError(
+      "Invalid seed length: expected 16 to 64 bytes, got $seedLength",
+    );
   }
 
   final keys = getMasterKeyFromSeed(seed);

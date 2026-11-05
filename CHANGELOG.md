@@ -1,3 +1,22 @@
+## 0.12.4
+
+Synced to `1e60c8b`.
+
+### Added
+
+* `TransactionExpired` execution failure: a transaction committed outside its
+  `ValidDuring` or `Validity` timestamp window. `MAX_PROTOCOL_VERSION` is 141.
+
+### Fixed
+
+* Ed25519 derivation rejects a path index at or above 2^31, which wrapped onto
+  another account, a non-canonical index such as `01'`, and a seed outside 16 to
+  64 bytes.
+
+### Changed
+
+* Protos refreshed from `sui-apis` `79485a8`.
+
 ## 0.12.3
 
 ### Breaking

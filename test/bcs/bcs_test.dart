@@ -424,6 +424,17 @@ void main() {
       [19],
     );
   });
+
+  test('TransactionExpired is ExecutionFailureStatus variant 42', () {
+    final bytes = SuiEffects.ExecutionFailureStatus.serialize({
+      'TransactionExpired': true,
+    }).toBytes();
+    expect(bytes, [42]);
+    expect(
+      SuiEffects.ExecutionFailureStatus.parse(bytes)[r'$kind'],
+      'TransactionExpired',
+    );
+  });
 }
 
 SuiObjectRef ref() {

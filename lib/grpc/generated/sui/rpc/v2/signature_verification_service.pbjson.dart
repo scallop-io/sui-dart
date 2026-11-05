@@ -56,11 +56,21 @@ const VerifySignatureRequest$json = {
       '6': '.sui.rpc.v2.ActiveJwk',
       '10': 'jwks'
     },
+    {
+      '1': 'check_address_aliases',
+      '3': 6,
+      '4': 1,
+      '5': 8,
+      '9': 3,
+      '10': 'checkAddressAliases',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_message'},
     {'1': '_signature'},
     {'1': '_address'},
+    {'1': '_check_address_aliases'},
   ],
 };
 
@@ -69,8 +79,9 @@ final $typed_data.Uint8List verifySignatureRequestDescriptor = $convert.base64De
     'ChZWZXJpZnlTaWduYXR1cmVSZXF1ZXN0Ei4KB21lc3NhZ2UYASABKAsyDy5zdWkucnBjLnYyLk'
     'Jjc0gAUgdtZXNzYWdliAEBEjwKCXNpZ25hdHVyZRgCIAEoCzIZLnN1aS5ycGMudjIuVXNlclNp'
     'Z25hdHVyZUgBUglzaWduYXR1cmWIAQESHQoHYWRkcmVzcxgDIAEoCUgCUgdhZGRyZXNziAEBEi'
-    'kKBGp3a3MYBCADKAsyFS5zdWkucnBjLnYyLkFjdGl2ZUp3a1IEandrc0IKCghfbWVzc2FnZUIM'
-    'Cgpfc2lnbmF0dXJlQgoKCF9hZGRyZXNz');
+    'kKBGp3a3MYBCADKAsyFS5zdWkucnBjLnYyLkFjdGl2ZUp3a1IEandrcxI3ChVjaGVja19hZGRy'
+    'ZXNzX2FsaWFzZXMYBiABKAhIA1ITY2hlY2tBZGRyZXNzQWxpYXNlc4gBAUIKCghfbWVzc2FnZU'
+    'IMCgpfc2lnbmF0dXJlQgoKCF9hZGRyZXNzQhgKFl9jaGVja19hZGRyZXNzX2FsaWFzZXM=');
 
 @$core.Deprecated('Use verifySignatureResponseDescriptor instead')
 const VerifySignatureResponse$json = {
@@ -86,14 +97,26 @@ const VerifySignatureResponse$json = {
       '17': true
     },
     {'1': 'reason', '3': 2, '4': 1, '5': 9, '9': 1, '10': 'reason', '17': true},
+    {
+      '1': 'address_aliases_checked',
+      '3': 3,
+      '4': 1,
+      '5': 8,
+      '9': 2,
+      '10': 'addressAliasesChecked',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_is_valid'},
     {'1': '_reason'},
+    {'1': '_address_aliases_checked'},
   ],
 };
 
 /// Descriptor for `VerifySignatureResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List verifySignatureResponseDescriptor = $convert.base64Decode(
     'ChdWZXJpZnlTaWduYXR1cmVSZXNwb25zZRIeCghpc192YWxpZBgBIAEoCEgAUgdpc1ZhbGlkiA'
-    'EBEhsKBnJlYXNvbhgCIAEoCUgBUgZyZWFzb26IAQFCCwoJX2lzX3ZhbGlkQgkKB19yZWFzb24=');
+    'EBEhsKBnJlYXNvbhgCIAEoCUgBUgZyZWFzb26IAQESOwoXYWRkcmVzc19hbGlhc2VzX2NoZWNr'
+    'ZWQYAyABKAhIAlIVYWRkcmVzc0FsaWFzZXNDaGVja2VkiAEBQgsKCV9pc192YWxpZEIJCgdfcm'
+    'Vhc29uQhoKGF9hZGRyZXNzX2FsaWFzZXNfY2hlY2tlZA==');
