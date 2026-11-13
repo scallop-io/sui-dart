@@ -13,7 +13,13 @@ import 'package:sui_dart/grpc/generated/sui/rpc/v2/effects.pb.dart'
     as pb_effects;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/execution_status.pb.dart'
     as pb_exec;
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/event.pb.dart' as grpc_event;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/executed_transaction.pb.dart';
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/subscription_service.pbgrpc.dart'
+    show
+        SubscribeCheckpointsRequest,
+        SubscribeEventsRequest,
+        SubscribeTransactionsRequest;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/filter.pb.dart' as pb_filter;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/ledger_service.pbgrpc.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/query_options.pb.dart'
@@ -464,6 +470,126 @@ class GrpcCoreClient implements SuiCoreClient {
     return result;
   }
 
+  static final _eventReadMask = FieldMask(
+    paths: [
+      'package_id',
+      'module',
+      'sender',
+      'event_type',
+      'contents',
+      'json',
+      'checkpoint',
+      'transaction_digest',
+      'event_index',
+    ],
+  );
+
+  Event _parseEvent(grpc_event.Event event) => Event(
+    packageId: event.packageId,
+    module: event.module,
+    sender: event.sender,
+    eventType: event.eventType,
+    bcs: event.hasContents()
+        ? Uint8List.fromList(event.contents.value)
+        : Uint8List(0),
+    json: event.hasJson() ? _protoValueToMap(event.json) : null,
+    checkpoint: event.hasCheckpoint() ? event.checkpoint.toString() : null,
+    transactionDigest: event.hasTransactionDigest()
+        ? event.transactionDigest
+        : null,
+    eventIndex: event.hasEventIndex() ? event.eventIndex : null,
+  );
+
+  /// Starts at the latest checkpoint; cancel to close the call. Server errors
+  /// arrive on the stream.
+  Stream<TransactionResponse> subscribeTransactions({
+    TransactionFilter? filter,
+    TransactionIncludeOptions? include,
+  }) {
+    final resolved = filter == null ? null : resolveTransactionFilter(filter);
+    return _client.subscriptionService
+        .subscribeTransactions(
+          SubscribeTransactionsRequest(
+            readMask: _transactionReadMask(include),
+            filter: resolved == null ? null : _transactionFilter(resolved),
+          ),
+        )
+        .where((frame) => frame.hasTransaction())
+        .map((frame) => _parseTransaction(frame.transaction, include));
+  }
+
+  /// [filter] keeps checkpoints holding a matching transaction; [transactions]
+  /// also returns their transactions with those fields.
+  Stream<CheckpointResponse> subscribeCheckpoints({
+    TransactionFilter? filter,
+    TransactionIncludeOptions? transactions,
+  }) {
+    final resolved = filter == null ? null : resolveTransactionFilter(filter);
+    return _client.subscriptionService
+        .subscribeCheckpoints(
+          SubscribeCheckpointsRequest(
+            readMask: FieldMask(
+              paths: [
+                'sequence_number',
+                'digest',
+                'summary.epoch',
+                'summary.timestamp',
+                'summary.previous_digest',
+                'summary.total_network_transactions',
+                if (transactions != null)
+                  for (final path in _transactionReadMask(transactions).paths)
+                    'transactions.$path',
+              ],
+            ),
+            filter: resolved == null ? null : _transactionFilter(resolved),
+          ),
+        )
+        .where((frame) => frame.hasCheckpoint() || frame.hasCursor())
+        .map((frame) {
+          final cp = frame.checkpoint;
+          final summary = cp.summary;
+          return CheckpointResponse(
+            // cursor is always set, even if the mask drops sequence_number
+            sequenceNumber:
+                (cp.hasSequenceNumber() ? cp.sequenceNumber : frame.cursor)
+                    .toString(),
+            digest: cp.hasDigest() ? cp.digest : null,
+            epoch: summary.hasEpoch() ? summary.epoch.toString() : null,
+            timestampMs: summary.hasTimestamp()
+                ? (summary.timestamp.seconds * Int64(1000) +
+                          Int64(summary.timestamp.nanos ~/ 1000000))
+                      .toString()
+                : null,
+            previousDigest: summary.hasPreviousDigest()
+                ? summary.previousDigest
+                : null,
+            totalNetworkTransactions: summary.hasTotalNetworkTransactions()
+                ? summary.totalNetworkTransactions.toString()
+                : null,
+            transactions: transactions == null
+                ? null
+                : [
+                    for (final tx in cp.transactions)
+                      _parseTransaction(tx, transactions),
+                  ],
+          );
+        });
+  }
+
+  /// Same lifetime as [subscribeTransactions].
+  Stream<Event> subscribeEvents({EventFilter? filter}) {
+    final resolved = filter == null ? null : resolveEventFilter(filter);
+    return _client.subscriptionService
+        .subscribeEvents(
+          SubscribeEventsRequest(
+            readMask: _eventReadMask,
+            filter: resolved == null ? null : _eventFilter(resolved),
+          ),
+        )
+        .where((frame) => frame.hasEvent())
+        .map((frame) => _parseEvent(frame.event));
+  }
+
   @override
   Future<Page<TransactionResponse>> listTransactions({
     TransactionFilter? filter,
@@ -526,19 +652,7 @@ class GrpcCoreClient implements SuiCoreClient {
 
     final stream = _client.ledgerService.listEvents(
       ListEventsRequest(
-        readMask: FieldMask(
-          paths: [
-            'package_id',
-            'module',
-            'sender',
-            'event_type',
-            'contents',
-            'json',
-            'checkpoint',
-            'transaction_digest',
-            'event_index',
-          ],
-        ),
+        readMask: _eventReadMask,
         startCheckpoint: _checkpoint(startCheckpoint),
         endCheckpoint: _checkpoint(endCheckpoint),
         filter: resolved == null ? null : _eventFilter(resolved),
@@ -549,28 +663,7 @@ class GrpcCoreClient implements SuiCoreClient {
     final page = _LedgerPage<Event>(pagination.limit);
     await for (final frame in stream) {
       if (frame.hasWatermark()) page.watermark(frame.watermark);
-      if (frame.hasEvent()) {
-        final event = frame.event;
-        page.add(
-          () => Event(
-            packageId: event.packageId,
-            module: event.module,
-            sender: event.sender,
-            eventType: event.eventType,
-            bcs: event.hasContents()
-                ? Uint8List.fromList(event.contents.value)
-                : Uint8List(0),
-            json: event.hasJson() ? _protoValueToMap(event.json) : null,
-            checkpoint: event.hasCheckpoint()
-                ? event.checkpoint.toString()
-                : null,
-            transactionDigest: event.hasTransactionDigest()
-                ? event.transactionDigest
-                : null,
-            eventIndex: event.hasEventIndex() ? event.eventIndex : null,
-          ),
-        );
-      }
+      if (frame.hasEvent()) page.add(() => _parseEvent(frame.event));
       if (frame.hasEnd()) page.end(frame.end);
     }
 

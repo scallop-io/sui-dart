@@ -768,3 +768,25 @@ String _ordinal(int n) {
         };
   return '$n$suffix';
 }
+
+class CheckpointResponse {
+  final String sequenceNumber;
+  final String? digest;
+  final String? epoch;
+  final String? timestampMs;
+  final String? previousDigest;
+  final String? totalNetworkTransactions;
+
+  /// Set only when transactions were asked for.
+  final List<TransactionResponse>? transactions;
+
+  const CheckpointResponse({
+    required this.sequenceNumber,
+    this.digest,
+    this.epoch,
+    this.timestampMs,
+    this.previousDigest,
+    this.totalNetworkTransactions,
+    this.transactions,
+  });
+}

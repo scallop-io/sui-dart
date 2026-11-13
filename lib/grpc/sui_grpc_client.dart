@@ -223,6 +223,19 @@ class SuiGrpcClient {
     );
   }
 
+  Stream<TransactionResponse> subscribeTransactions({
+    TransactionFilter? filter,
+    TransactionIncludeOptions? include,
+  }) => core.subscribeTransactions(filter: filter, include: include);
+
+  Stream<CheckpointResponse> subscribeCheckpoints({
+    TransactionFilter? filter,
+    TransactionIncludeOptions? transactions,
+  }) => core.subscribeCheckpoints(filter: filter, transactions: transactions);
+
+  Stream<Event> subscribeEvents({EventFilter? filter}) =>
+      core.subscribeEvents(filter: filter);
+
   Future<Page<Event>> listEvents({
     EventFilter? filter,
     String? after,
