@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:sui_dart/builder/transaction.dart'
@@ -299,4 +300,49 @@ ResolvedEventFilter resolveEventFilter(EventFilter filter) {
   return ResolvedEventFilter(
     eventType: normalizeStructTagString(filter.eventType!),
   );
+}
+
+extension WaitForTransaction on SuiCoreClient {
+  /// Throws [TimeoutException] after [timeout]. [pollSchedule] is offsets from
+  /// the start, then repeats its last gap.
+  Future<TransactionResponse> waitForTransaction(
+    String digest, {
+    Duration timeout = const Duration(seconds: 60),
+    List<Duration> pollSchedule = const [
+      Duration.zero,
+      Duration(milliseconds: 300),
+      Duration(milliseconds: 600),
+      Duration(milliseconds: 1500),
+      Duration(milliseconds: 3500),
+    ],
+    TransactionIncludeOptions? include,
+  }) async {
+    final started = DateTime.now();
+    final deadline = started.add(timeout);
+    final lastGap = pollSchedule.length < 2
+        ? const Duration(seconds: 2)
+        : pollSchedule.last - pollSchedule[pollSchedule.length - 2];
+
+    for (var i = 0; ; i++) {
+      final now = DateTime.now();
+      final next = i < pollSchedule.length
+          ? started.add(pollSchedule[i])
+          : now.add(lastGap);
+      if (!next.isBefore(deadline)) {
+        await Future<void>.delayed(deadline.difference(now));
+        break;
+      }
+      if (next.isAfter(now)) await Future<void>.delayed(next.difference(now));
+      try {
+        // a hung call must not outlive the deadline
+        return await getTransaction(
+          digest,
+          include: include,
+        ).timeout(deadline.difference(DateTime.now()));
+      } catch (_) {
+        // not indexed yet or transient: retry
+      }
+    }
+    throw TimeoutException('Transaction $digest not found', timeout);
+  }
 }
