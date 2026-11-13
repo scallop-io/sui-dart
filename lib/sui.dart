@@ -12,6 +12,7 @@ export 'builder/transaction_resolver.dart';
 export 'cryptography/ed25519_keypair.dart';
 export 'cryptography/ed25519_publickey.dart';
 export 'cryptography/helper.dart';
+export 'cryptography/intent.dart';
 export 'cryptography/keypair.dart';
 export 'cryptography/mnemonics.dart';
 export 'cryptography/mldsa65_keypair.dart';
