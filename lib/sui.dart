@@ -38,7 +38,8 @@ export 'types/framework.dart';
 export 'types/objects.dart';
 export 'types/common.dart';
 export 'types/faucet.dart';
-export 'utils/error.dart' show FaucetRateLimitError, SimulationError;
+export 'utils/error.dart'
+    show FaucetError, FaucetRateLimitError, SimulationError;
 export 'types/transactions.dart';
 export 'zklogin/zklogin.dart';
 export 'multisig/multsig_publickey.dart';

@@ -41,6 +41,20 @@ class FaucetResponseV2 {
   }
 }
 
+class FaucetResponseV3 {
+  final String digest;
+  final String recipient;
+  final BigInt amountMist;
+  final BigInt difficulty;
+
+  FaucetResponseV3({
+    required this.digest,
+    required this.recipient,
+    required this.amountMist,
+    required this.difficulty,
+  });
+}
+
 class FaucetResponse {
   final List<FaucetCoinInfo> transferredGasObjects;
   final String? error;
