@@ -1,3 +1,24 @@
+## 0.13.1
+
+### Added
+
+* `FaucetClient.requestSuiFromFaucetV3`: the proof-of-work faucet, the only
+  one testnet serves. Takes a `timeout` and `CancelToken`; HTTP errors throw
+  `FaucetError` with the faucet's `code` and any payout `digest`.
+* `AsyncSigner`, for signers that answer later (hardware wallets, remote
+  signers). `Signer` and every keypair are `AsyncSigner`s; keypairs gained
+  `signTransaction`.
+* `SuiCoreClient.waitForTransaction`: polls until a digest is found, throwing
+  `TimeoutException` after `timeout` (60 seconds by default).
+* `subscribeTransactions`, `subscribeEvents` and `subscribeCheckpoints` on the
+  gRPC client: live streams with the same filters as the list queries.
+* `IntentScope` is exported from `package:sui_dart/sui.dart`.
+
+### Changed
+
+* `SignOptions.signer` is an `AsyncSigner`, and `Transaction.sign` awaits it.
+  Passing a keypair works as before.
+
 ## 0.13.0
 
 ### Breaking
