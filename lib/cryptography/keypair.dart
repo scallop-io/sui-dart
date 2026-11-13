@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:bcs_dart/bcs.dart';
 import 'package:sui_dart/cryptography/intent.dart';
 import 'package:sui_dart/cryptography/signature.dart';
+import 'package:sui_dart/cryptography/signer.dart';
 import 'package:sui_dart/utils/sha.dart';
 
 class SignatureWithBytes {
@@ -14,8 +15,9 @@ class SignatureWithBytes {
 }
 
 /// A keypair used for signing transactions.
-mixin Keypair {
+mixin Keypair implements Signer {
   /// The public key for this keypair
+  @override
   PublicKey getPublicKey();
 
   /// The secret key for this keypair
@@ -25,6 +27,7 @@ mixin Keypair {
   Uint8List signData(Uint8List data);
 
   /// Get the key scheme of the keypair: Secp256k1 or Ed25519
+  @override
   SignatureScheme getKeyScheme();
 
   /// Verify signature
@@ -41,6 +44,7 @@ mixin Keypair {
     return signData(bytes);
   }
 
+  @override
   SignatureWithBytes signWithIntent(Uint8List bytes, IntentScope intent) {
     final intentMessage = messageWithIntent(intent, bytes);
     final digest = blake2b(intentMessage);
@@ -58,6 +62,14 @@ mixin Keypair {
     return signWithIntent(bytes, IntentScope.transactionData);
   }
 
+  @override
+  SignatureWithBytes signTransaction(Uint8List bytes) =>
+      signTransactionBlock(bytes);
+
+  @override
+  String toSuiAddress() => getPublicKey().toSuiAddress();
+
+  @override
   SignatureWithBytes signPersonalMessage(Uint8List bytes) {
     return signWithIntent(
       Bcs.vector(Bcs.u8()).serialize(bytes).toBytes(),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:bcs_dart/bcs.dart';
@@ -5,32 +6,43 @@ import 'package:sui_dart/cryptography/intent.dart';
 import 'package:sui_dart/cryptography/keypair.dart';
 import 'package:sui_dart/cryptography/signature.dart';
 
-/// A transport-agnostic signer. Keypairs sign directly; composite signers
-/// (e.g. [MultiSigSigner], [ZkLoginSigner]) override [signWithIntent], through
-/// which every signing method funnels.
-abstract class Signer {
-  /// The public key for this signer.
+/// May answer later (hardware wallet, remote signer). Implement [getPublicKey],
+/// [getKeyScheme] and [signWithIntent]; await every signing method.
+abstract class AsyncSigner {
   PublicKey getPublicKey();
 
-  /// The signature scheme of this signer.
   SignatureScheme getKeyScheme();
 
-  /// Sign [bytes] with the given intent; returns serialized signature and base64 bytes.
+  /// Serialized signature plus the signed [bytes] in base64.
+  FutureOr<SignatureWithBytes> signWithIntent(
+    Uint8List bytes,
+    IntentScope intent,
+  );
+
+  FutureOr<SignatureWithBytes> signTransaction(Uint8List bytes) =>
+      signWithIntent(bytes, IntentScope.transactionData);
+
+  FutureOr<SignatureWithBytes> signPersonalMessage(Uint8List bytes) =>
+      signWithIntent(
+        Bcs.vector(Bcs.u8()).serialize(bytes).toBytes(),
+        IntentScope.personalMessage,
+      );
+
+  String toSuiAddress() => getPublicKey().toSuiAddress();
+}
+
+/// Signs at once; composite signers override [signWithIntent].
+abstract class Signer extends AsyncSigner {
+  @override
   SignatureWithBytes signWithIntent(Uint8List bytes, IntentScope intent);
 
-  /// Sign transaction [bytes].
-  SignatureWithBytes signTransaction(Uint8List bytes) {
-    return signWithIntent(bytes, IntentScope.transactionData);
-  }
+  @override
+  SignatureWithBytes signTransaction(Uint8List bytes) =>
+      signWithIntent(bytes, IntentScope.transactionData);
 
-  /// Sign a personal message.
-  SignatureWithBytes signPersonalMessage(Uint8List bytes) {
-    return signWithIntent(
-      Bcs.vector(Bcs.u8()).serialize(bytes).toBytes(),
-      IntentScope.personalMessage,
-    );
-  }
-
-  /// The Sui address associated with this signer.
-  String toSuiAddress() => getPublicKey().toSuiAddress();
+  @override
+  SignatureWithBytes signPersonalMessage(Uint8List bytes) => signWithIntent(
+    Bcs.vector(Bcs.u8()).serialize(bytes).toBytes(),
+    IntentScope.personalMessage,
+  );
 }

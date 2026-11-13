@@ -14,6 +14,7 @@ import 'package:sui_dart/builder/transaction_resolver.dart';
 import 'package:sui_dart/builder/v1.dart';
 import 'package:sui_dart/core/sui_core_client.dart';
 import 'package:sui_dart/cryptography/keypair.dart';
+import 'package:sui_dart/cryptography/signer.dart';
 import 'package:sui_dart/grpc/types.dart'
     show ExecutionStatus, TransactionIncludeOptions;
 import 'package:sui_dart/types/common.dart';
@@ -135,7 +136,7 @@ class SerializeTransactionOptions extends BuildOptions {
 }
 
 class SignOptions extends BuildOptions {
-  Keypair signer;
+  AsyncSigner signer;
 
   SignOptions({
     required this.signer,
@@ -537,7 +538,7 @@ class Transaction {
   /// Build the transaction to BCS bytes, and sign it with the provided keypair.
   Future<SignatureWithBytes> sign(SignOptions options) async {
     final bytes = await build(options);
-    return options.signer.signTransactionBlock(bytes);
+    return options.signer.signTransaction(bytes);
   }
 
   /// Build the transaction to BCS bytes.
