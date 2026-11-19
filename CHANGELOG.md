@@ -1,3 +1,14 @@
+## 0.13.2
+
+### Changed
+
+* A `createBalance` intent funded from coin objects sends the remainder to the
+  sender's address balance with `coin::send_funds`, also when the amount is
+  exact, so no coin object is left behind. Coin-only intents and the gas coin
+  are unchanged.
+* A `createBalance` intent that the address balance covers alone withdraws with
+  `balance::redeem_funds`, so no coin is created.
+
 ## 0.13.1
 
 ### Added
