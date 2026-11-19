@@ -273,6 +273,251 @@ void main() {
     });
   });
 
+  group('remainder handling', () {
+    List<String> calls(List<dynamic> commands) => commands
+        .where((c) => c['\$kind'] == 'MoveCall')
+        .map((c) => '${c['MoveCall']['module']}::${c['MoveCall']['function']}')
+        .toList();
+
+    Map<String, dynamic> call(List<dynamic> commands, String function) =>
+        commands.firstWhere(
+          (c) =>
+              c['\$kind'] == 'MoveCall' &&
+              c['MoveCall']['function'] == function,
+        )['MoveCall'];
+
+    void sendBalance(Transaction tx, dynamic balance, [String? type]) {
+      tx.moveCall(
+        '0x2::balance::send_funds',
+        typeArguments: [type ?? _fooType],
+        arguments: [tx.object(balance), tx.pure.address(_recipient)],
+      );
+    }
+
+    test('a balance intent sends the change to the sender', () async {
+      final tx = Transaction();
+      sendBalance(tx, tx.add(createBalance(type: _fooType, balance: 60)));
+
+      final commands = await _resolve(tx, [_coin('0x1', '100')]);
+
+      expect(commands.map((c) => c['\$kind']), [
+        'SplitCoins',
+        'MoveCall',
+        'MoveCall',
+        'MoveCall',
+      ]);
+      expect(calls(commands), [
+        'coin::into_balance',
+        'coin::send_funds',
+        'balance::send_funds',
+      ]);
+      // the split coin is the one swept, so none survives
+      final swept = call(commands, 'send_funds')['arguments'];
+      expect(swept[0], commands[0]['SplitCoins']['coin']);
+      expect(
+        tx.getData().inputs![swept[1]['Input']]['Pure'],
+        Inputs.pure(SuiBcs.Address.serialize(_owner))['Pure'],
+      );
+      expect(commands[3]['MoveCall']['arguments'][0]['NestedResult'], [1, 0]);
+    });
+
+    test('an exact balance intent does not call destroy_zero', () async {
+      final tx = Transaction();
+      sendBalance(tx, tx.add(createBalance(type: _fooType, balance: 100)));
+
+      final commands = await _resolve(tx, [_coin('0x1', '100')]);
+
+      expect(calls(commands), [
+        'coin::into_balance',
+        'coin::send_funds',
+        'balance::send_funds',
+      ]);
+    });
+
+    test('a balance intent merges several coins and sweeps the base', () async {
+      final tx = Transaction();
+      sendBalance(tx, tx.add(createBalance(type: _fooType, balance: 150)));
+
+      final commands = await _resolve(tx, [
+        _coin('0x1', '60'),
+        _coin('0x2', '60'),
+        _coin('0x3', '60'),
+      ]);
+
+      expect(commands.map((c) => c['\$kind']), [
+        'MergeCoins',
+        'SplitCoins',
+        'MoveCall',
+        'MoveCall',
+        'MoveCall',
+      ]);
+      final merge = commands[0]['MergeCoins'];
+      expect(merge['sources'].length, 2);
+      expect(commands[1]['SplitCoins']['coin'], merge['destination']);
+      expect(
+        call(commands, 'send_funds')['arguments'][0],
+        merge['destination'],
+      );
+      expect(calls(commands), isNot(contains('coin::destroy_zero')));
+    });
+
+    test('a balance intent funded by coins and the address balance', () async {
+      final tx = Transaction();
+      sendBalance(tx, tx.add(createBalance(type: _fooType, balance: 150)));
+
+      final commands = await _resolve(tx, [
+        _coin('0x1', '100'),
+      ], addressBalance: BigInt.from(80));
+
+      expect(commands.map((c) => c['\$kind']), [
+        'MoveCall',
+        'MergeCoins',
+        'SplitCoins',
+        'MoveCall',
+        'MoveCall',
+        'MoveCall',
+      ]);
+      expect(calls(commands), [
+        'coin::redeem_funds',
+        'coin::into_balance',
+        'coin::send_funds',
+        'balance::send_funds',
+      ]);
+      expect(commands[5]['MoveCall']['arguments'][0]['NestedResult'], [3, 0]);
+    });
+
+    test('a SUI balance intent leaves the gas coin remainder alone', () async {
+      final tx = Transaction();
+      sendBalance(tx, tx.add(createBalance(balance: 100)), '0x2::sui::SUI');
+
+      final commands = await _resolve(tx, []);
+
+      expect(commands[0]['SplitCoins']['coin']['\$kind'], 'GasCoin');
+      expect(calls(commands), ['coin::into_balance', 'balance::send_funds']);
+    });
+
+    test('a SUI balance intent from the address balance cleans up', () async {
+      final tx = Transaction();
+      sendBalance(tx, tx.add(createBalance(balance: 100)), '0x2::sui::SUI');
+
+      final commands = await _resolve(tx, [], addressBalance: BigInt.from(500));
+
+      expect(calls(commands), ['balance::redeem_funds', 'balance::send_funds']);
+    });
+
+    test(
+      'balance intents covered by the address balance withdraw directly',
+      () async {
+        final tx = Transaction();
+        sendBalance(tx, tx.add(createBalance(type: _fooType, balance: 60)));
+        sendBalance(tx, tx.add(createBalance(type: _fooType, balance: 40)));
+
+        final commands = await _resolve(tx, [
+          _coin('0x1', '1000'),
+        ], addressBalance: BigInt.from(100));
+
+        expect(calls(commands), [
+          'balance::redeem_funds',
+          'balance::send_funds',
+          'balance::redeem_funds',
+          'balance::send_funds',
+        ]);
+        final inputs = tx.getData().inputs!;
+        expect(inputs.where((i) => i['Object'] != null), isEmpty);
+        expect(
+          inputs
+              .where((i) => i['FundsWithdrawal'] != null)
+              .map((i) => i['FundsWithdrawal']['reservation']['MaxAmountU64']),
+          ['60', '40'],
+        );
+        expect(commands[1]['MoveCall']['arguments'].first['NestedResult'], [
+          0,
+          0,
+        ]);
+        expect(commands[3]['MoveCall']['arguments'].first['NestedResult'], [
+          2,
+          0,
+        ]);
+      },
+    );
+
+    test(
+      'a coin intent beside a balance intent still merges and splits',
+      () async {
+        final tx = Transaction();
+        sendBalance(tx, tx.add(createBalance(type: _fooType, balance: 60)));
+        tx.transferObjects([
+          tx.add(coinWithBalance(type: _fooType, balance: 40)),
+        ], _recipient);
+
+        final commands = await _resolve(
+          tx,
+          [],
+          addressBalance: BigInt.from(100),
+        );
+
+        expect(calls(commands), [
+          'coin::redeem_funds',
+          'coin::into_balance',
+          'coin::send_funds',
+          'balance::send_funds',
+        ]);
+      },
+    );
+
+    test('a coin intent keeps its surplus in the coin', () async {
+      final tx = Transaction();
+      final coin = tx.add(coinWithBalance(type: _fooType, balance: 60));
+      tx.transferObjects([coin], _recipient);
+
+      final commands = await _resolve(tx, [_coin('0x1', '100')]);
+
+      expect(commands.map((c) => c['\$kind']), [
+        'SplitCoins',
+        'TransferObjects',
+      ]);
+    });
+
+    test('an exact coin intent still destroys the empty coin', () async {
+      final tx = Transaction();
+      final coin = tx.add(coinWithBalance(type: _fooType, balance: 100));
+      tx.transferObjects([coin], _recipient);
+
+      final commands = await _resolve(tx, [_coin('0x1', '100')]);
+
+      expect(calls(commands), ['coin::destroy_zero']);
+    });
+
+    test('coin and balance intents of one type keep their results', () async {
+      final tx = Transaction();
+      final coin = tx.add(coinWithBalance(type: _fooType, balance: 30));
+      final balance = tx.add(createBalance(type: _fooType, balance: 70));
+      tx.transferObjects([coin], _recipient);
+      sendBalance(tx, balance);
+
+      final commands = await _resolve(tx, [_coin('0x1', '500')]);
+
+      expect(commands.map((c) => c['\$kind']), [
+        'SplitCoins',
+        'MoveCall',
+        'MoveCall',
+        'TransferObjects',
+        'MoveCall',
+      ]);
+      expect(calls(commands), [
+        'coin::into_balance',
+        'coin::send_funds',
+        'balance::send_funds',
+      ]);
+      expect(commands[1]['MoveCall']['arguments'][0]['NestedResult'], [0, 1]);
+      expect(commands[3]['TransferObjects']['objects'][0]['NestedResult'], [
+        0,
+        0,
+      ]);
+      expect(commands[4]['MoveCall']['arguments'][0]['NestedResult'], [1, 0]);
+    });
+  });
+
   group('async serialization', () {
     test('isPreparedForSerialization reflects unresolved intents', () {
       final tx = Transaction();

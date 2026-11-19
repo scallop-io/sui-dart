@@ -86,8 +86,8 @@ typedef _IntentInfo = ({BigInt balance, String outputKind});
 /// Resolves all [COIN_WITH_BALANCE] intents in [transactionData] into concrete
 /// merge/split commands.
 ///
-/// A shortfall in owned coins is redeemed from the sender's address balance and
-/// the remainder returns there; a coin-only surplus stays as an owned coin.
+/// The remainder returns to the sender's address balance when it was used or an
+/// intent yields a balance; a coin-only surplus stays as an owned coin.
 Future<void> resolveCoinBalance(
   TransactionBlockDataBuilder transactionData,
   BuildOptions options,
@@ -197,13 +197,27 @@ Future<void> resolveCoinBalance(
     final type = intent.type;
     final coinType = type == 'gas' ? SUI_TYPE : type;
     final commands = <dynamic>[];
+    final intents = intentsByType[type]!;
+    final totalRequired = totalByType[type]!;
+    final addressBalance = addressBalanceByType[type] ?? BigInt.zero;
+
+    if (addressBalance >= totalRequired &&
+        intents.every((i) => i.outputKind == 'balance')) {
+      // no coin is made or touched
+      transactionData.replaceCommand(
+        index,
+        [_redeemFunds(transactionData, coinType, intent.balance, 'balance')],
+        <String, dynamic>{
+          '\$kind': 'NestedResult',
+          'NestedResult': [index, 0],
+        },
+      );
+      index++;
+      continue;
+    }
 
     if (!typeResults.containsKey(type)) {
-      final intents = intentsByType[type]!;
       final sources = <dynamic>[];
-
-      final totalRequired = totalByType[type]!;
-      final addressBalance = addressBalanceByType[type] ?? BigInt.zero;
 
       if (addressBalance >= totalRequired) {
         // covers it alone, so no coin object (or the gas coin) is touched.
@@ -294,29 +308,34 @@ Future<void> resolveCoinBalance(
         }
       }
       // Cleanup goes here, not appended: nothing may follow a Random MoveCall.
-      if (usedAddressBalance.contains(type)) {
-        // a redeemed coin can't dangle; send_funds also takes a zero remainder.
-        commands.add(
-          Commands.moveCall({
-            'target': '0x2::coin::send_funds',
-            'typeArguments': [coinType],
-            'arguments': [
-              baseCoin,
-              transactionData.addInput(
-                'pure',
-                Inputs.pure(SuiBcs.Address.serialize(sender)),
-              ),
-            ],
-          }),
-        );
-      } else if (type != 'gas' && exactBalanceByType[type] == true) {
-        commands.add(
-          Commands.moveCall({
-            'target': '0x2::coin::destroy_zero',
-            'typeArguments': [coinType],
-            'arguments': [baseCoin],
-          }),
-        );
+      final fromAddressBalance = usedAddressBalance.contains(type);
+      // a GasCoin remainder stays: it pays for gas
+      if (type != 'gas' || fromAddressBalance) {
+        if (fromAddressBalance ||
+            intents.any((i) => i.outputKind == 'balance')) {
+          // no coin may dangle; send_funds also takes a zero remainder
+          commands.add(
+            Commands.moveCall({
+              'target': '0x2::coin::send_funds',
+              'typeArguments': [coinType],
+              'arguments': [
+                baseCoin,
+                transactionData.addInput(
+                  'pure',
+                  Inputs.pure(SuiBcs.Address.serialize(sender)),
+                ),
+              ],
+            }),
+          );
+        } else if (exactBalanceByType[type] == true) {
+          commands.add(
+            Commands.moveCall({
+              'target': '0x2::coin::destroy_zero',
+              'typeArguments': [coinType],
+              'arguments': [baseCoin],
+            }),
+          );
+        }
       }
 
       typeResults[type] = results;
@@ -336,10 +355,11 @@ Future<void> resolveCoinBalance(
 Map<String, dynamic> _redeemFunds(
   TransactionBlockDataBuilder transactionData,
   String coinType,
-  BigInt amount,
-) {
+  BigInt amount, [
+  String module = 'coin',
+]) {
   return Commands.moveCall({
-    'target': '0x2::coin::redeem_funds',
+    'target': '0x2::$module::redeem_funds',
     'typeArguments': [coinType],
     'arguments': [
       transactionData.addInput(
