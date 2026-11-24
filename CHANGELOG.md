@@ -1,3 +1,35 @@
+## 0.14.0
+
+### Breaking
+
+* `TransactionResponse.transaction` is a typed `TransactionData`, not a base64
+  protobuf string.
+* `signPersonalMessage` returns the raw message as `bytes`.
+* `queryTransactionsByAddress` and `queryTransactionsBySender` pages are newest
+  first.
+* GraphQL `simulateTransaction` returns events only with `include.events`.
+* `verifyZkLoginSignature` takes an `intentScope` (personal messages).
+
+### Changed
+
+* Ledger queries take `after` and `before` together, in any order.
+* `moveCall`, `splitCoins` and `transferObjects` accept serialized values, raw
+  bytes, results and intents.
+
+### Fixed
+
+* gRPC: system state start time is in ms and keyed by field name;
+  `getCoinMetadata` returns null for an unknown coin; no negative u64 values.
+* GraphQL: object `include`, `getMoveFunction` signatures, full simulate
+  results, system events in `listEvents`.
+* Secp256 `verify` returns false instead of throwing; `publicKeyFromRawBytes`
+  checks `address` for every key type.
+* No more throws on the web in `deriveDynamicFieldId` and the V3 faucet.
+* JSON from other SDKs and v1 JSON restore correctly, and keep balance intents
+  working.
+* Balance intents respect withdrawals already in the transaction.
+* BCS: shared objects keep `NonExclusiveWrite`.
+
 ## 0.13.4
 
 ### Fixed
