@@ -91,9 +91,13 @@ class PasskeyPublicKey with PublicKey {
       }
 
       // WebAuthn carries the message to sign in the base64url `challenge` field.
-      final challenge = base64Url.decode(
-        base64Url.normalize(clientData['challenge'] as String),
-      );
+      final encoded = clientData['challenge'];
+      // normalize would also percent-decode, which is not base64
+      if (encoded is! String ||
+          !RegExp(r'^[A-Za-z0-9+/_=-]*$').hasMatch(encoded)) {
+        return false;
+      }
+      final challenge = base64Url.decode(base64Url.normalize(encoded));
       if (!bytesEqual(data, challenge)) return false;
 
       // The key embedded in the signature must be the one this object represents.

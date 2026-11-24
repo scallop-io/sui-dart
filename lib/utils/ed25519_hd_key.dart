@@ -81,6 +81,7 @@ Keys derivePath(
     throw ArgumentError("Invalid derivation path");
   }
 
+  if (seed.startsWith(RegExp('^0[xX]'))) seed = seed.substring(2);
   final seedLength = seed.length ~/ 2;
   if (seedLength < 16 || seedLength > 64) {
     throw ArgumentError(

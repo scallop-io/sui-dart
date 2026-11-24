@@ -237,7 +237,13 @@ class MultiSigPublicKey with PublicKey {
       return false;
     }
 
-    final parseSig = parsePartialSignatures(multisig);
+    final List<ParsedPartialMultiSigSignature> parseSig;
+    try {
+      parseSig = parsePartialSignatures(multisig);
+    } on FormatException {
+      // a member signature of another scheme: not valid, not malformed
+      return false;
+    }
     for (var item in parseSig) {
       final publicKey = item.publicKey;
       final weight = item.weight;

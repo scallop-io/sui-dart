@@ -38,11 +38,6 @@ class Ed25519PublicKey with PublicKey {
   }
 
   @override
-  bool equals(PublicKey publicKey) {
-    return _bn == (publicKey as Ed25519PublicKey)._bn;
-  }
-
-  @override
   String toBase64() {
     return base64Encode(toRawBytes());
   }
@@ -81,7 +76,14 @@ class Ed25519PublicKey with PublicKey {
   @override
   bool verify(Uint8List data, Uint8List signature) {
     if (signature.length != 64) {
-      signature = parseSerializedSignature(base64Encode(signature)).signature;
+      final parsed = parseSerializedSignature(base64Encode(signature));
+      if (parsed.signatureScheme != SignatureScheme.Ed25519) {
+        throw ArgumentError('Invalid signature scheme');
+      }
+      if (!bytesEqual(toRawBytes(), parsed.pubKey!.toRawBytes())) {
+        throw ArgumentError('Signature does not match public key');
+      }
+      signature = parsed.signature;
     }
     return ed25519.verify(ed25519.PublicKey(toRawBytes()), data, signature);
   }

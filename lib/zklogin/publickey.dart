@@ -147,7 +147,9 @@ class ZkLoginPublicIdentifier with PublicKey {
 
   @override
   bool verifyAddress(String address) {
-    return address == _baseToSuiAddress() || address == _toLegacyAddress();
+    final normalized = normalizeSuiAddress(address);
+    return normalized == _baseToSuiAddress() ||
+        normalized == _toLegacyAddress();
   }
 
   /// Verifies the signature against the provided PersonalMessage.

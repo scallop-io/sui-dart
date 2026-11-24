@@ -90,9 +90,15 @@ class PasskeyKeypair {
   ) async {
     final registration = await provider.create();
     final uncompressed = parseDerSPKI(registration.publicKeyDer);
-    final compressed = curve256r1Params.curve
-        .decodePoint(uncompressed)!
-        .getEncoded(true);
+    final curve = curve256r1Params.curve;
+    final compressed = curve.decodePoint(uncompressed)!.getEncoded(true);
+    // decodePoint does not check that an uncompressed point is on the curve
+    if (!bytesEqual(
+      curve.decodePoint(compressed)!.getEncoded(false),
+      uncompressed,
+    )) {
+      throw ArgumentError('Invalid passkey public key');
+    }
     return PasskeyKeypair(
       Uint8List.fromList(compressed),
       provider,

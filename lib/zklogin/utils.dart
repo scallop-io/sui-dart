@@ -18,6 +18,9 @@ int findFirstNonZeroIndex(Uint8List bytes) {
 
 /// Big-endian bytes of [num], left-padded with zeros to [width].
 Uint8List toPaddedBigEndianBytes(BigInt num, int width) {
+  if (num.isNegative) {
+    throw ArgumentError.value(num, 'num', 'must be non-negative');
+  }
   String hex = num.toRadixString(16);
   String paddedHex = hex.padLeft(width * 2, '0');
   return Hex.decode(paddedHex.substring(paddedHex.length - width * 2));

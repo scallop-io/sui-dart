@@ -66,6 +66,9 @@ class Secp256 {
     bool isCompressed = true,
   ]) {
     BigInt privKey = decodeBigIntToUnsigned(privateKey);
+    if (privKey == BigInt.zero || privKey >= _ecDomainParams.n) {
+      throw ArgumentError('Invalid private key: out of range');
+    }
     return getPublicKey(privKey, isCompressed);
   }
 

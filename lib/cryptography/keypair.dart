@@ -5,6 +5,7 @@ import 'package:bcs_dart/bcs.dart';
 import 'package:sui_dart/cryptography/intent.dart';
 import 'package:sui_dart/cryptography/signature.dart';
 import 'package:sui_dart/cryptography/signer.dart';
+import 'package:sui_dart/types/common.dart' show normalizeSuiAddress;
 import 'package:sui_dart/utils/sha.dart';
 
 class SignatureWithBytes {
@@ -176,7 +177,7 @@ mixin PublicKey {
 
   /// Verifies that the public key is associated with the provided address
   bool verifyAddress(String address) {
-    return toSuiAddress() == address;
+    return toSuiAddress() == normalizeSuiAddress(address);
   }
 
   /// Return signature scheme flag of the public key

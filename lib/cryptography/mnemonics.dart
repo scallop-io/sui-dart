@@ -21,6 +21,16 @@ bool isValidBIP32Path(String path) {
   return true;
 }
 
+/// Throws for an index of 2^31 or more: BIP32 would derive it as hardened.
+void checkBIP32Indexes(String path) {
+  for (final segment in path.split('/').skip(1)) {
+    final index = int.tryParse(segment.replaceAll("'", ''));
+    if (index == null || index >= 0x80000000) {
+      throw ArgumentError('Invalid index');
+    }
+  }
+}
+
 /// bip39 only accepts and hashes this form.
 String normalizeMnemonics(String mnemonics) => mnemonics
     .trim()

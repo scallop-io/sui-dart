@@ -116,6 +116,7 @@ class Secp256k1Keypair with Keypair {
     if (!isValidBIP32Path(path)) {
       throw ArgumentError('Invalid derivation path');
     }
+    checkBIP32Indexes(path);
     final key = BIP32.fromSeed(mnemonicToSeed(mnemonics)).derivePath(path);
     return Secp256k1Keypair(Secp256KeypairData(key.publicKey, key.privateKey!));
   }

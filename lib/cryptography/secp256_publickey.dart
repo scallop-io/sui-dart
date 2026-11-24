@@ -40,11 +40,6 @@ class Secp256PublicKey with PublicKey {
   }
 
   @override
-  bool equals(PublicKey publicKey) {
-    return _bn == (publicKey as Secp256PublicKey)._bn;
-  }
-
-  @override
   String toBase64() {
     return base64Encode(toRawBytes());
   }
@@ -86,7 +81,15 @@ class Secp256PublicKey with PublicKey {
   bool verify(Uint8List data, Uint8List signature) {
     final msgHash = sha256(data);
     if (signature.length != 64) {
-      signature = parseSerializedSignature(base64Encode(signature)).signature;
+      final parsed = parseSerializedSignature(base64Encode(signature));
+      if (SIGNATURE_SCHEME_TO_FLAG.schemeToFlag(parsed.signatureScheme) !=
+          flag()) {
+        throw ArgumentError('Invalid signature scheme');
+      }
+      if (!bytesEqual(toRawBytes(), parsed.pubKey!.toRawBytes())) {
+        throw ArgumentError('Signature does not match public key');
+      }
+      signature = parsed.signature;
     }
     switch (flag()) {
       case SIGNATURE_SCHEME_TO_FLAG.Secp256k1:
