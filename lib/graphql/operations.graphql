@@ -122,7 +122,12 @@ query GetEpoch {
   }
 }
 
-query GetDynamicFields($parentId: SuiAddress!, $first: Int, $after: String) {
+query GetDynamicFields(
+  $parentId: SuiAddress!
+  $first: Int
+  $after: String
+  $includeValue: Boolean = false
+) {
   object(address: $parentId) {
     dynamicFields(first: $first, after: $after) {
       pageInfo {
@@ -151,6 +156,7 @@ query GetDynamicFields($parentId: SuiAddress!, $first: Int, $after: String) {
             type {
               repr
             }
+            bcs @include(if: $includeValue)
           }
         }
       }

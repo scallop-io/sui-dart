@@ -789,6 +789,7 @@ class GrpcCoreClient implements SuiCoreClient {
     String parentId, {
     String? cursor,
     int? limit,
+    bool includeValue = false,
   }) async {
     final response = await _client.stateService.listDynamicFields(
       ListDynamicFieldsRequest(
@@ -796,7 +797,14 @@ class GrpcCoreClient implements SuiCoreClient {
         pageSize: limit,
         pageToken: cursor != null ? base64Decode(cursor) : null,
         readMask: FieldMask(
-          paths: ['kind', 'field_id', 'name', 'value_type', 'child_id'],
+          paths: [
+            'kind',
+            'field_id',
+            'name',
+            'value_type',
+            'child_id',
+            if (includeValue) 'value',
+          ],
         ),
       ),
     );
@@ -813,6 +821,11 @@ class GrpcCoreClient implements SuiCoreClient {
           objectType: field.valueType,
           objectId: field.childId.isNotEmpty ? field.childId : field.fieldId,
           type: _mapDynamicFieldKind(field.kind),
+          value:
+              field.kind == DynamicField_DynamicFieldKind.FIELD &&
+                  field.hasValue()
+              ? Uint8List.fromList(field.value.value)
+              : null,
         );
       }).toList(),
       hasNextPage: hasNext,

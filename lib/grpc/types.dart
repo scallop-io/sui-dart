@@ -580,11 +580,15 @@ class DynamicFieldEntry {
   final String objectId;
   final String type;
 
+  /// Value BCS; null unless asked for, and for dynamic object fields.
+  final Uint8List? value;
+
   const DynamicFieldEntry({
     required this.name,
     required this.objectType,
     required this.objectId,
     required this.type,
+    this.value,
   });
 }
 

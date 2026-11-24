@@ -101,10 +101,12 @@ abstract interface class SuiCoreClient {
 
   Future<ProtocolConfig> getProtocolConfig();
 
+  /// [includeValue] also fetches each field's value BCS.
   Future<Page<DynamicFieldEntry>> getDynamicFields(
     String parentId, {
     String? cursor,
     int? limit,
+    bool includeValue = false,
   });
 
   Future<VerifySignatureResult> verifyZkLoginSignature(

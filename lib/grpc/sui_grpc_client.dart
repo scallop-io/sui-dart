@@ -272,8 +272,14 @@ class SuiGrpcClient {
     String parentId, {
     String? cursor,
     int? limit,
+    bool includeValue = false,
   }) {
-    return core.getDynamicFields(parentId, cursor: cursor, limit: limit);
+    return core.getDynamicFields(
+      parentId,
+      cursor: cursor,
+      limit: limit,
+      includeValue: includeValue,
+    );
   }
 
   Future<VerifySignatureResult> verifyZkLoginSignature(

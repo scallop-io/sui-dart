@@ -302,6 +302,7 @@ class GraphQLCoreClient implements SuiCoreClient {
         objectType: value.type?.repr ?? '',
         objectId: node.address,
         type: 'DynamicField',
+        value: value.bcs == null ? null : base64Decode(value.bcs!),
       );
     }
     return DynamicFieldEntry(
@@ -919,6 +920,7 @@ class GraphQLCoreClient implements SuiCoreClient {
     String parentId, {
     String? cursor,
     int? limit,
+    bool includeValue = false,
   }) async {
     final data = await _client.executeData(
       _getDynamicFieldsOperation,
@@ -926,6 +928,7 @@ class GraphQLCoreClient implements SuiCoreClient {
         parentId: parentId,
         first: limit,
         after: cursor,
+        includeValue: includeValue,
       ),
     );
     final connection = data.object?.dynamicFields;

@@ -9292,10 +9292,12 @@ class Variables$Query$GetDynamicFields {
     required String parentId,
     int? first,
     String? after,
+    bool? includeValue,
   }) => Variables$Query$GetDynamicFields._({
     r'parentId': parentId,
     if (first != null) r'first': first,
     if (after != null) r'after': after,
+    if (includeValue != null) r'includeValue': includeValue,
   });
 
   Variables$Query$GetDynamicFields._(this._$data);
@@ -9312,6 +9314,10 @@ class Variables$Query$GetDynamicFields {
       final l$after = data['after'];
       result$data['after'] = (l$after as String?);
     }
+    if (data.containsKey('includeValue')) {
+      final l$includeValue = data['includeValue'];
+      result$data['includeValue'] = (l$includeValue as bool?);
+    }
     return Variables$Query$GetDynamicFields._(result$data);
   }
 
@@ -9322,6 +9328,8 @@ class Variables$Query$GetDynamicFields {
   int? get first => (_$data['first'] as int?);
 
   String? get after => (_$data['after'] as String?);
+
+  bool? get includeValue => (_$data['includeValue'] as bool?);
 
   Map<String, dynamic> toJson() {
     final result$data = <String, dynamic>{};
@@ -9334,6 +9342,10 @@ class Variables$Query$GetDynamicFields {
     if (_$data.containsKey('after')) {
       final l$after = after;
       result$data['after'] = l$after;
+    }
+    if (_$data.containsKey('includeValue')) {
+      final l$includeValue = includeValue;
+      result$data['includeValue'] = l$includeValue;
     }
     return result$data;
   }
@@ -9368,6 +9380,15 @@ class Variables$Query$GetDynamicFields {
     if (l$after != lOther$after) {
       return false;
     }
+    final l$includeValue = includeValue;
+    final lOther$includeValue = other.includeValue;
+    if (_$data.containsKey('includeValue') !=
+        other._$data.containsKey('includeValue')) {
+      return false;
+    }
+    if (l$includeValue != lOther$includeValue) {
+      return false;
+    }
     return true;
   }
 
@@ -9376,10 +9397,12 @@ class Variables$Query$GetDynamicFields {
     final l$parentId = parentId;
     final l$first = first;
     final l$after = after;
+    final l$includeValue = includeValue;
     return Object.hashAll([
       l$parentId,
       _$data.containsKey('first') ? l$first : const {},
       _$data.containsKey('after') ? l$after : const {},
+      _$data.containsKey('includeValue') ? l$includeValue : const {},
     ]);
   }
 }
@@ -9458,6 +9481,15 @@ const documentNodeQueryGetDynamicFields = DocumentNode(
             isNonNull: false,
           ),
           defaultValue: DefaultValueNode(value: null),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'includeValue')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
           directives: [],
         ),
       ],
@@ -9653,6 +9685,27 @@ const documentNodeQueryGetDynamicFields = DocumentNode(
                                               ),
                                             ],
                                           ),
+                                        ),
+                                        FieldNode(
+                                          name: NameNode(value: 'bcs'),
+                                          alias: null,
+                                          arguments: [],
+                                          directives: [
+                                            DirectiveNode(
+                                              name: NameNode(value: 'include'),
+                                              arguments: [
+                                                ArgumentNode(
+                                                  name: NameNode(value: 'if'),
+                                                  value: VariableNode(
+                                                    name: NameNode(
+                                                      value: 'includeValue',
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                          selectionSet: null,
                                         ),
                                       ],
                                     ),
@@ -10360,6 +10413,7 @@ class Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveValue
     implements Query$GetDynamicFields$object$dynamicFields$nodes$value {
   Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveValue({
     this.type,
+    this.bcs,
     this.$__typename = 'MoveValue',
   });
 
@@ -10367,6 +10421,7 @@ class Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveValue
     Map<String, dynamic> json,
   ) {
     final l$type = json['type'];
+    final l$bcs = json['bcs'];
     final l$$__typename = json['__typename'];
     return Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveValue(
       type: l$type == null
@@ -10374,6 +10429,7 @@ class Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveValue
           : Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveValue$type.fromJson(
               (l$type as Map<String, dynamic>),
             ),
+      bcs: (l$bcs as String?),
       $__typename: (l$$__typename as String),
     );
   }
@@ -10381,12 +10437,16 @@ class Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveValue
   final Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveValue$type?
   type;
 
+  final String? bcs;
+
   final String $__typename;
 
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
     final l$type = type;
     _resultData['type'] = l$type?.toJson();
+    final l$bcs = bcs;
+    _resultData['bcs'] = l$bcs;
     final l$$__typename = $__typename;
     _resultData['__typename'] = l$$__typename;
     return _resultData;
@@ -10395,8 +10455,9 @@ class Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveValue
   @override
   int get hashCode {
     final l$type = type;
+    final l$bcs = bcs;
     final l$$__typename = $__typename;
-    return Object.hashAll([l$type, l$$__typename]);
+    return Object.hashAll([l$type, l$bcs, l$$__typename]);
   }
 
   @override
@@ -10412,6 +10473,11 @@ class Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveValue
     final l$type = type;
     final lOther$type = other.type;
     if (l$type != lOther$type) {
+      return false;
+    }
+    final l$bcs = bcs;
+    final lOther$bcs = other.bcs;
+    if (l$bcs != lOther$bcs) {
       return false;
     }
     final l$$__typename = $__typename;
