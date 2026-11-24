@@ -375,7 +375,6 @@ void main() {
         signatures: const ['sig1', 'sig2'],
         epoch: '100',
         status: const ExecutionStatus(success: true),
-        transaction: 'base64tx',
         effects: const TransactionEffects(transactionDigest: 'effectsdigest'),
         events: [
           Event(

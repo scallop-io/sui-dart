@@ -7,6 +7,14 @@ import 'package:sui_dart/grpc/types.dart'
     show
         AbortDetail,
         EventFilter,
+        MoveTypeMutableReference,
+        MoveTypeParameter,
+        MoveTypePrimitive,
+        MoveTypeReference,
+        MoveTypeStruct,
+        MoveTypeVector,
+        ObjectIncludeOptions,
+        ObjectSuccess,
         ObjectError,
         ObjectErrorReason,
         QueryOrder,
@@ -407,6 +415,29 @@ void main() {
     expect(summary?.netCost, BigInt.from(250));
   });
 
+  test('history pages come newest first', () async {
+    final adapter = _MockAdapter(
+      (_) => {
+        'data': {
+          'transactions': {
+            'pageInfo': {'hasPreviousPage': false, 'startCursor': null},
+            'nodes': [
+              {'digest': 'older'},
+              {'digest': 'newer'},
+            ],
+          },
+        },
+      },
+    );
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final page = await client.queryTransactionsBySender('0xabc');
+    expect(page.transactions.map((t) => t.digest), ['newer', 'older']);
+  });
+
   test('sender history uses sentAddress and validates page size', () async {
     final adapter = _MockAdapter(
       (_) => {
@@ -768,26 +799,52 @@ void main() {
     expect(page.hasNextPage, isFalse);
   });
 
-  test('ledger queries reject conflicting pagination', () async {
+  test('ledger queries take a window and any order', () async {
+    final adapter = _MockAdapter(
+      (_) => {
+        'data': {
+          'events': {
+            'pageInfo': {'hasNextPage': false, 'hasPreviousPage': false},
+            'nodes': [],
+          },
+          'transactions': {
+            'pageInfo': {'hasNextPage': false, 'hasPreviousPage': false},
+            'nodes': [],
+          },
+        },
+      },
+    );
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    await client.listEvents(after: 'a', before: 'b', limit: 5);
+    expect(adapter.lastBody!['variables'], {
+      'filter': <String, dynamic>{},
+      'first': 5,
+      'after': 'a',
+      'before': 'b',
+    });
+
+    await client.listEvents(after: 'a', order: QueryOrder.descending, limit: 5);
+    expect(adapter.lastBody!['variables'], {
+      'filter': <String, dynamic>{},
+      'last': 5,
+      'after': 'a',
+    });
+
+    await client.listTransactions(
+      filter: const TransactionFilter(function: '0xab'),
+      after: 'a',
+    );
+    expect(adapter.lastBody!['variables']['filter'], {'function': _pkg});
+  });
+
+  test('an event filter takes one predicate', () {
     final client = SuiGraphQLClient(
       endpoint: 'https://example.test/graphql',
       dio: _dioWith(_MockAdapter((_) => {'data': <String, dynamic>{}})),
-    );
-
-    expect(
-      () => client.listEvents(after: 'a', before: 'b'),
-      throwsA(isA<ArgumentError>()),
-    );
-    expect(
-      () => client.listEvents(after: 'a', order: QueryOrder.descending),
-      throwsA(isA<ArgumentError>()),
-    );
-    expect(
-      () => client.listTransactions(
-        filter: const TransactionFilter(function: '0xab'),
-        after: 'a',
-      ),
-      throwsA(isA<ArgumentError>()),
     );
     expect(
       () => client.listEvents(
@@ -909,6 +966,124 @@ void main() {
       '0xd1': '0x2::foo::Gone',
     });
     expect(tx.effects, isNull);
+  });
+
+  test('getMoveFunction parses parameter and return signatures', () async {
+    final adapter = _MockAdapter(
+      (_) => {
+        'data': {
+          'package': {
+            'module': {
+              'function': {
+                'name': 'split',
+                'isEntry': false,
+                'visibility': 'PUBLIC',
+                'typeParameters': [
+                  {'constraints': []},
+                ],
+                'parameters': [
+                  {
+                    'signature': {
+                      'ref': '&mut',
+                      'body': {
+                        'datatype': {
+                          'package': '0x2',
+                          'module': 'coin',
+                          'type': 'Coin',
+                          'typeParameters': [
+                            {'typeParameter': 0},
+                          ],
+                        },
+                      },
+                    },
+                  },
+                  {
+                    'signature': {
+                      'ref': null,
+                      'body': {'vector': 'u64'},
+                    },
+                  },
+                ],
+                'return': [
+                  {
+                    'signature': {'ref': '&', 'body': 'bool'},
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    );
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final fn = await client.getMoveFunction('0x2', 'coin', 'split');
+    final coin = (fn.parameters[0] as MoveTypeMutableReference).body;
+    expect((coin as MoveTypeStruct).address, normalizeSuiAddress('0x2'));
+    expect((coin.typeArguments.single as MoveTypeParameter).index, 0);
+    final vector = fn.parameters[1] as MoveTypeVector;
+    expect((vector.element as MoveTypePrimitive).typeName, 'U64');
+    final ret = (fn.returnTypes.single as MoveTypeReference).body;
+    expect((ret as MoveTypePrimitive).typeName, 'Bool');
+  });
+
+  test('getObjects honors include and names packages', () async {
+    final adapter = _MockAdapter((body) {
+      final v = body['variables'] as Map;
+      expect(v['includeContent'], isTrue);
+      expect(v['includeObjectBcs'], isTrue);
+      return {
+        'data': {
+          'multiGetObjects': [
+            {
+              'address': '0x6',
+              'version': 5,
+              'digest': 'D',
+              'owner': null,
+              'objectBcs': 'AQI=',
+              'previousTransaction': {'digest': 'Prev'},
+              'asMoveObject': {
+                'contents': {
+                  'type': {'repr': '0x2::clock::Clock'},
+                  'json': {'timestamp_ms': '1'},
+                  'bcs': 'Aw==',
+                },
+              },
+              'asMovePackage': null,
+            },
+            {
+              'address': '0x2',
+              'version': 1,
+              'digest': 'P',
+              'owner': null,
+              'asMoveObject': null,
+              'asMovePackage': {'address': '0x2'},
+            },
+          ],
+        },
+      };
+    });
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final objects = await client.getObjects(
+      ['0x6', '0x2'],
+      include: const ObjectIncludeOptions(
+        content: true,
+        objectBcs: true,
+        previousTransaction: true,
+      ),
+    );
+    final clock = (objects[0] as ObjectSuccess).data;
+    expect(clock.content, [3]);
+    expect(clock.objectBcs, [1, 2]);
+    expect(clock.previousTransaction, 'Prev');
+    expect((objects[1] as ObjectSuccess).data.type, 'package');
   });
 
   test('a missing transaction throws TransactionError', () async {
@@ -1167,11 +1342,16 @@ void main() {
           'data': {
             'simulateTransaction': {
               'effects': {
-                'status': 'SUCCESS',
-                'gasEffects': {
-                  'gasObject': {'address': gasObject},
+                'transaction': {
+                  'digest': 'Sim1',
+                  'signatures': [],
+                  'effects': {
+                    'status': 'SUCCESS',
+                    'gasEffects': {
+                      'gasObject': {'address': gasObject},
+                    },
+                  },
                 },
-                'events': {'nodes': []},
               },
               'outputs': null,
             },
@@ -1198,18 +1378,23 @@ void main() {
         'data': {
           'simulateTransaction': {
             'effects': {
-              'status': 'FAILURE',
-              'executionError': {
-                'message': 'Error in 1st command, abort code: 7',
-                'abortCode': '7',
-                'instructionOffset': 3,
-                'module': {
-                  'name': 'pool',
-                  'package': {'address': _pkg},
+              'transaction': {
+                'digest': 'Sim2',
+                'signatures': [],
+                'effects': {
+                  'status': 'FAILURE',
+                  'executionError': {
+                    'message': 'Error in 1st command, abort code: 7',
+                    'abortCode': '7',
+                    'instructionOffset': 3,
+                    'module': {
+                      'name': 'pool',
+                      'package': {'address': _pkg},
+                    },
+                    'function': {'name': 'deposit'},
+                  },
                 },
-                'function': {'name': 'deposit'},
               },
-              'events': {'nodes': []},
             },
             'outputs': null,
           },
@@ -1226,6 +1411,7 @@ void main() {
     );
 
     final error = result.status.error!;
+    expect(result.digest, 'Sim2');
     expect(result.status.success, isFalse);
     expect(error.kind, 'MOVE_ABORT');
     expect(error.command, 0);
