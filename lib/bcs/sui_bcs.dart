@@ -52,9 +52,10 @@ class SuiBcs {
 
   static final ObjectDigest = Bcs.vector(Bcs.u8()).transform(
     name: 'ObjectDigest',
-    input: (String value) => fromB58(value),
+    // dynamic input: a String-typed one fails inside a struct's size check
+    input: (dynamic value) => fromB58(value as String),
     output: (List<int> value) => toB58(Uint8List.fromList(value)),
-    validate: (String value) {
+    validate: (dynamic value) {
       if (fromB58(value).length != 32) {
         throw Exception('ObjectDigest must be 32 bytes');
       }
@@ -67,11 +68,33 @@ class SuiBcs {
     'digest': ObjectDigest,
   });
 
-  static final SharedObjectRef = Bcs.struct('SharedObjectRef', {
-    'objectId': Address,
-    'initialSharedVersion': Bcs.u64(),
-    'mutable': Bcs.boolean(),
-  });
+  /// Last byte: Immutable, Mutable or NonExclusiveWrite (0 and 1 match a bool).
+  static final SharedObjectRef =
+      Bcs.struct('SharedObjectRef', {
+        'objectId': Address,
+        'initialSharedVersion': Bcs.u64(),
+        'mutability': Bcs.u8(),
+      }).transform(
+        input: (dynamic value) => {
+          'objectId': value['objectId'],
+          'initialSharedVersion': value['initialSharedVersion'],
+          'mutability': value['mutability'] == 'NonExclusiveWrite'
+              ? 2
+              : (value['mutable'] == true ? 1 : 0),
+        },
+        output: (dynamic value) {
+          final mutability = value['mutability'] as int;
+          if (mutability > 2) {
+            throw ArgumentError('Unknown shared object mutability $mutability');
+          }
+          return <String, dynamic>{
+            'objectId': value['objectId'],
+            'initialSharedVersion': value['initialSharedVersion'],
+            'mutable': mutability == 1,
+            if (mutability == 2) 'mutability': 'NonExclusiveWrite',
+          };
+        },
+      );
 
   static final ObjectArg = Bcs.enumeration('ObjectArg', {
     'ImmOrOwnedObject': SuiObjectRef,
