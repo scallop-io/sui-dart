@@ -178,12 +178,20 @@ class Transaction {
   }
 
   void setSender(String sender) {
-    _blockData.sender = sender;
+    _blockData.sender = _address(sender);
+  }
+
+  static String _address(String value) {
+    final normalized = normalizeSuiAddress(value);
+    if (!isValidSuiAddress(normalized)) {
+      throw ArgumentError('Invalid Sui address: $value');
+    }
+    return normalized;
   }
 
   /// Sets the sender only if not already set. Useful for sponsored transactions.
   void setSenderIfNotSet(String sender) {
-    _blockData.sender ??= sender;
+    _blockData.sender ??= _address(sender);
   }
 
   void setExpiration(int? epoch) {
@@ -205,7 +213,7 @@ class Transaction {
   }
 
   void setGasOwner(String owner) {
-    _blockData.gasData.owner = owner;
+    _blockData.gasData.owner = _address(owner);
   }
 
   void setGasPayment(List<SuiObjectRef> payments) {
@@ -281,13 +289,13 @@ class Transaction {
       return value.toJson();
     }
 
-    if (value is Map && value['\$kind'] != null) {
-      final kind = value['\$kind'];
-      if (kind == 'GasCoin' ||
-          kind == 'Input' ||
-          kind == 'Result' ||
-          kind == 'NestedResult') {
-        return value as Map<String, dynamic>;
+    if (value is Map) {
+      const kinds = ['GasCoin', 'Input', 'Result', 'NestedResult'];
+      // restored JSON may carry an argument without `$kind`
+      final kind =
+          value['\$kind'] ?? kinds.where((k) => value[k] != null).firstOrNull;
+      if (kinds.contains(kind)) {
+        return {...Map<String, dynamic>.from(value), '\$kind': kind};
       }
     }
 
@@ -376,7 +384,7 @@ class Transaction {
     // Intent helpers (e.g. `coinWithBalance`) are passed as a function of the
     // transaction; invoke them so they can register resolvers and add commands.
     if (transaction is Function) {
-      return transaction(this);
+      return _added.putIfAbsent(transaction, () => transaction(this));
     }
     _blockData.commands.add(_own(transaction));
     return TransactionResult(_blockData.commands.length - 1);
@@ -393,6 +401,8 @@ class Transaction {
     if (value is List && value is! TypedData) return value.map(_own).toList();
     return value;
   }
+
+  final Map<Function, dynamic> _added = Map.identity();
 
   final Map<String, IntentResolver> _intentResolvers = {};
 
@@ -512,7 +522,7 @@ class Transaction {
         modules: modules,
         dependencies: dependencies,
         package: packageId,
-        ticket: ticket,
+        ticket: object(ticket),
       ),
     );
   }
@@ -640,9 +650,9 @@ class Transaction {
 
     await _resolveIntents(options);
 
-    if (_assumesAddressBalanceGas(options)) setGasPayment(const []);
-
     _normalizeRawArguments();
+
+    if (_assumesAddressBalanceGas(options)) setGasPayment(const []);
 
     if (_needsResolution(options)) {
       await expectClient(options).resolveTransactionPlugin()(

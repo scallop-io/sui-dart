@@ -1,6 +1,5 @@
 // ignore_for_file: constant_identifier_names
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:bcs_dart/bcs_type.dart';
 import 'package:sui_dart/bcs/sui_bcs.dart';
@@ -83,7 +82,7 @@ BcsType? getPureBcsSchema(dynamic typeSignature) {
       case 'u256':
         return SuiBcs.U256;
       default:
-        throw ArgumentError("Unknown type signature $typeSignature");
+        return null;
     }
   }
 
@@ -91,8 +90,7 @@ BcsType? getPureBcsSchema(dynamic typeSignature) {
       typeSignature.containsKey('vector')) {
     if (typeSignature['vector'] == 'u8') {
       return SuiBcs.VECTOR(SuiBcs.U8).transform(
-        input: (dynamic val) =>
-            val is String ? Uint8List.fromList(val.codeUnits) : val,
+        input: (dynamic val) => val is String ? utf8.encode(val) : val,
         output: (val) => val,
       );
     }

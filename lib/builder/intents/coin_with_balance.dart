@@ -72,7 +72,12 @@ CoinWithBalanceBuilder _intent({
         name: COIN_WITH_BALANCE,
         data: {
           'type': coinType == SUI_TYPE && useGasCoin ? 'gas' : coinType,
-          'balance': BigInt.parse(balance.toString()),
+          'balance':
+              balance is double &&
+                  balance.isFinite &&
+                  balance == balance.truncateToDouble()
+              ? BigInt.from(balance)
+              : BigInt.parse(balance.toString()),
           'outputKind': outputKind,
         },
       ),

@@ -4,7 +4,15 @@ import 'dart:typed_data';
 import 'package:bcs_dart/bcs.dart';
 import 'package:sui_dart/types/common.dart';
 
-enum UpgradePolicy { COMPATIBLE, ADDITIVE, DEP_ONLY }
+/// [value] is the u8 that `0x2::package` expects.
+enum UpgradePolicy {
+  COMPATIBLE(0),
+  ADDITIVE(128),
+  DEP_ONLY(192);
+
+  const UpgradePolicy(this.value);
+  final int value;
+}
 
 class Commands {
   static Map<String, dynamic> moveCall(dynamic input) {

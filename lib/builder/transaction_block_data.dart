@@ -68,8 +68,8 @@ class GasConfig {
 
   factory GasConfig.fromJson(Map<String, dynamic> json) {
     return GasConfig(
-      budget: BigInt.tryParse(json["budget"]?.toString() ?? ""),
-      price: BigInt.tryParse(json["price"]?.toString() ?? ""),
+      budget: _jsonU64(json["budget"], 'budget'),
+      price: _jsonU64(json["price"], 'price'),
       payment: json["payment"]
           ?.map<SuiObjectRef>((e) => SuiObjectRef.fromJson(e))
           .toList(),
@@ -121,7 +121,16 @@ class TransactionData {
 }
 
 String prepareSuiAddress(String address) {
-  return normalizeSuiAddress(address).replaceAll('0x', '');
+  return normalizeSuiAddress(address).substring(2);
+}
+
+BigInt? _jsonU64(dynamic value, String field) {
+  if (value == null) return null;
+  final parsed = BigInt.tryParse('$value');
+  if (parsed == null || parsed.isNegative || parsed.bitLength > 64) {
+    throw ArgumentError('Invalid u64 for gas $field: $value');
+  }
+  return parsed;
 }
 
 const _kinds = {

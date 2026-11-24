@@ -46,7 +46,7 @@ class Inputs {
       objectId = data.objectId;
     } else {
       mutable = data["mutable"];
-      initialSharedVersion = data["initialSharedVersion"];
+      initialSharedVersion = int.parse('${data["initialSharedVersion"]}');
       objectId = data["objectId"];
     }
     return {

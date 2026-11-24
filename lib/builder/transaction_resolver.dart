@@ -239,7 +239,7 @@ grpc_transaction.Transaction transactionDataToGrpcTransaction(
 
   final tx = grpc_transaction.Transaction(
     version: 1,
-    sender: data.sender,
+    sender: data.sender == null ? null : normalizeSuiAddress(data.sender!),
     kind: grpc_transaction.TransactionKind(
       kind: grpc_transaction.TransactionKind_Kind.PROGRAMMABLE_TRANSACTION,
       programmableTransaction: (grpc_transaction.ProgrammableTransaction()
@@ -250,12 +250,14 @@ grpc_transaction.Transaction transactionDataToGrpcTransaction(
       objects: data.gasData.payment
           ?.map(
             (ref) => ObjectReference()
-              ..objectId = ref.objectId
+              ..objectId = normalizeSuiAddress(ref.objectId)
               ..version = Int64.parseRadix(ref.version.toString(), 10)
               ..digest = ref.digest,
           )
           .toList(),
-      owner: data.gasData.owner ?? data.sender,
+      owner: (data.gasData.owner ?? data.sender) == null
+          ? null
+          : normalizeSuiAddress((data.gasData.owner ?? data.sender)!),
       price: data.gasData.price != null
           ? Int64.parseRadix(data.gasData.price.toString(), 10)
           : null,
