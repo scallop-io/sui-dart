@@ -111,7 +111,7 @@ class TransactionData {
       version: data["version"],
       gasData: GasConfig.fromJson(data["gasData"]),
       inputs: List<Map<String, dynamic>>.from(data["inputs"]),
-      commands: (data["commands"] as List).cast<Map<dynamic, dynamic>>(),
+      commands: List<Map<dynamic, dynamic>>.from(data["commands"]),
       sender: data["sender"],
       expiration: data["expiration"] == null
           ? null
@@ -392,24 +392,22 @@ class TransactionBlockDataBuilder {
 
       switch (arg["\$kind"]) {
         case 'Result':
-          if (arg["Result"] == index && resultIndex is int) {
-            arg["Result"] = resultIndex;
-          }
-          if (arg["Result"] > index) {
-            arg["Result"] += sizeDiff;
-          }
-          break;
+          var i = arg["Result"] as int;
+          if (i == index && resultIndex is int) i = resultIndex;
+          if (i > index) i += sizeDiff;
+          return {"\$kind": 'Result', "Result": i};
         case 'NestedResult':
-          if (arg["NestedResult"][0] == index && resultIndex is int) {
-            return {
-              "\$kind": 'NestedResult',
-              "NestedResult": [resultIndex, arg["NestedResult"][1]],
-            };
+          final nested = arg["NestedResult"] as List;
+          var i = nested[0] as int;
+          if (i == index && resultIndex is int) {
+            i = resultIndex;
+          } else if (i > index) {
+            i += sizeDiff;
           }
-          if (arg["NestedResult"][0] > index) {
-            arg["NestedResult"][0] += sizeDiff;
-          }
-          break;
+          return {
+            "\$kind": 'NestedResult',
+            "NestedResult": [i, nested[1]],
+          };
       }
       return arg;
     });
@@ -476,8 +474,8 @@ class TransactionBlockDataBuilder {
   TransactionData snapshot() {
     return TransactionData.fromJson({
       "gasData": gasData.toJson(),
-      "inputs": inputs,
-      "commands": commands,
+      "inputs": _deepClone(inputs),
+      "commands": _deepClone(commands),
       "sender": sender,
       "version": version,
       "expiration": expiration?.toJson(),

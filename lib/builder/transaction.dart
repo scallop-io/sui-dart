@@ -42,16 +42,11 @@ class TransactionResult {
   TransactionResult(this.index);
 
   Map<String, dynamic> get result => {"\$kind": 'Result', "Result": index};
-  final Map<String, dynamic> _nestedResult = <String, dynamic>{};
 
-  Map<String, dynamic> nestedResult(dynamic subIndex) {
-    final result = {
-      "\$kind": 'NestedResult',
-      "NestedResult": [index, subIndex],
-    };
-    _nestedResult.addAll(result);
-    return result;
-  }
+  Map<String, dynamic> nestedResult(dynamic subIndex) => {
+    "\$kind": 'NestedResult',
+    "NestedResult": [index, subIndex],
+  };
 
   dynamic operator [](dynamic indexKey) {
     if (result.containsKey(indexKey)) {
@@ -70,9 +65,7 @@ class TransactionResult {
     return result.containsKey(key);
   }
 
-  Map<String, dynamic> toJson() {
-    return _nestedResult.isNotEmpty ? _nestedResult : result;
-  }
+  Map<String, dynamic> toJson() => result;
 }
 
 SuiCoreClient expectClient(BuildOptions options) {
@@ -371,8 +364,20 @@ class Transaction {
     if (transaction is Function) {
       return transaction(this);
     }
-    _blockData.commands.add(transaction);
+    _blockData.commands.add(_own(transaction));
     return TransactionResult(_blockData.commands.length - 1);
+  }
+
+  /// Copies arguments so a shared map isn't shifted twice by intents.
+  static dynamic _own(dynamic value) {
+    if (value is TransactionResult) return value.result;
+    if (value is Map) {
+      return <String, dynamic>{
+        for (final e in value.entries) '${e.key}': _own(e.value),
+      };
+    }
+    if (value is List && value is! TypedData) return value.map(_own).toList();
+    return value;
   }
 
   final Map<String, IntentResolver> _intentResolvers = {};
