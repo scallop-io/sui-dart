@@ -16,7 +16,7 @@ String formatAddress(String address) {
 
 /// Shorten a digest to its first 10 characters followed by an ellipsis.
 String formatDigest(String digest) {
-  return '${digest.substring(0, 10)}$_ellipsis';
+  return '${digest.length > 10 ? digest.substring(0, 10) : digest}$_ellipsis';
 }
 
 final _amountRegex = RegExp(r'^-?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$');

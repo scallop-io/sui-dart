@@ -15,7 +15,7 @@ String deriveDynamicFieldId({
   required String keyTypeTag,
   required Uint8List keyBcs,
 }) {
-  final parentBytes = Hex.decode(normalizeSuiAddress(parentObjectId));
+  final parentBytes = SuiBcs.Address.serialize(parentObjectId).toBytes();
   final keyTypeTagBcs = SuiBcs.TypeTag.serialize(keyTypeTag).toBytes();
 
   // setUint64 throws on the web; the high 4 bytes stay zero

@@ -10,7 +10,8 @@ import 'package:sui_dart/utils/error.dart';
 
 class FaucetClient {
   final String endpoint;
-  FaucetClient(this.endpoint);
+  FaucetClient(String endpoint)
+    : endpoint = endpoint.replaceFirst(RegExp(r'/+$'), '');
 
   /// Proof-of-work faucet (testnet serves only this); submits once, no retry.
   /// [timeout] spans the whole flow. Throws [TimeoutException], [FaucetRateLimitError] or [FaucetError].
@@ -106,18 +107,29 @@ class FaucetClient {
           'nonce': proof.nonce,
           'hashHex': proof.hashHex,
         });
+        final amount = result is Map
+            ? parseFaucetU64(result['amountMist'])
+            : null;
+        final difficulty = result is Map
+            ? parseFaucetU64(result['difficulty'])
+            : null;
         if (result is! Map ||
             result['status'] != 'success' ||
             result['recipient'] != recipient ||
             result['digest'] is! String ||
-            !isValidTransactionDigest(result['digest'])) {
+            !isValidTransactionDigest(result['digest']) ||
+            amount == null ||
+            amount == BigInt.zero ||
+            difficulty == null ||
+            difficulty < BigInt.two ||
+            difficulty > BigInt.one << 48) {
           throw const FormatException('Invalid faucet response');
         }
         return FaucetResponseV3(
           digest: result['digest'],
           recipient: recipient,
-          amountMist: BigInt.parse(result['amountMist']),
-          difficulty: BigInt.parse(result['difficulty']),
+          amountMist: amount,
+          difficulty: difficulty,
         );
       }
     } finally {
@@ -132,19 +144,23 @@ class FaucetClient {
       "FixedAmountRequest": {"recipient": recipient},
     };
 
-    try {
-      final resp = await http.post("$endpoint/v2/gas", data: data);
-      final parsed = FaucetResponseV2.fromJson(resp.data);
-      if (!parsed.isSuccess) {
-        throw Exception('Faucet request failed: ${parsed.failureInternal}');
-      }
-      return parsed;
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 429) {
-        throw FaucetRateLimitError();
-      }
-      rethrow;
+    // the faucet reports a failure in the body of a non-2xx response
+    final resp = await http.post(
+      "$endpoint/v2/gas",
+      data: data,
+      options: Options(validateStatus: (_) => true),
+    );
+    if (resp.statusCode == 429) throw FaucetRateLimitError();
+    if (resp.data is! Map) {
+      throw FormatException(
+        'Unexpected faucet response, status ${resp.statusCode}',
+      );
     }
+    final parsed = FaucetResponseV2.fromJson(resp.data);
+    if (!parsed.isSuccess) {
+      throw Exception('Faucet request failed: ${parsed.failureInternal}');
+    }
+    return parsed;
   }
 
   @Deprecated('Use requestSuiFromFaucetV2; the /gas endpoint is deprecated.')

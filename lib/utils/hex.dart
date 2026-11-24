@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+final _hexDigits = RegExp(r'^[0-9a-fA-F]*$');
+
 class Hex {
   static String encode(List<int> bytes) {
     var buffer = StringBuffer();
@@ -14,6 +16,10 @@ class Hex {
 
   static Uint8List decode(String hex) {
     String str = trimHex(hex);
+    // int.parse would take a sign or a space
+    if (!_hexDigits.hasMatch(str)) {
+      throw FormatException('Invalid hex string $hex');
+    }
     if (str.length % 2 != 0) {
       str = "0$str";
     }

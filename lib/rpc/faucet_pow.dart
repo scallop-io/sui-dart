@@ -8,6 +8,13 @@ import 'package:sui_dart/utils/hex.dart';
 
 final _u64 = BigInt.one << 64;
 final _u64Pattern = RegExp(r'^(0|[1-9][0-9]{0,19})$');
+
+BigInt? parseFaucetU64(Object? value) {
+  if (value is! String || !_u64Pattern.hasMatch(value)) return null;
+  final parsed = BigInt.parse(value);
+  return parsed < _u64 ? parsed : null;
+}
+
 final _addressPattern = RegExp(r'^0x[0-9a-f]{64}$');
 final _base64Pattern = RegExp(
   r'^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$',
