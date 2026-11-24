@@ -12,7 +12,8 @@ import 'package:sui_dart/grpc/types.dart'
         QueryOrder,
         TransactionError,
         TransactionErrorReason,
-        TransactionFilter;
+        TransactionFilter,
+        TransactionIncludeOptions;
 import 'package:sui_dart/sui.dart';
 import 'package:test/test.dart';
 
@@ -628,6 +629,7 @@ void main() {
             'nodes': [
               {
                 'digest': 'D1',
+                'signatures': [],
                 'effects': {
                   'status': 'SUCCESS',
                   'timestamp': '2026-07-20T00:00:00Z',
@@ -635,6 +637,7 @@ void main() {
               },
               {
                 'digest': 'D2',
+                'signatures': [],
                 'effects': {'status': 'FAILURE', 'timestamp': null},
               },
             ],
@@ -679,10 +682,12 @@ void main() {
             'nodes': [
               {
                 'digest': 'older',
+                'signatures': [],
                 'effects': {'status': 'SUCCESS', 'timestamp': null},
               },
               {
                 'digest': 'newer',
+                'signatures': [],
                 'effects': {'status': 'SUCCESS', 'timestamp': null},
               },
             ],
@@ -812,6 +817,100 @@ void main() {
     expect(error.objectId, '0x1');
   });
 
+  test('getTransaction keeps the error and honors include', () async {
+    Map<String, dynamic> change(String amount) => {
+      'owner': {'address': '0x1'},
+      'coinType': {'repr': '0x2::sui::SUI'},
+      'amount': amount,
+    };
+    final adapter = _MockAdapter((body) {
+      final v = body['variables'] as Map;
+      if (body['operationName'] == 'GetTransactionBalanceChanges') {
+        expect(v['after'], 'bc-1');
+        return {
+          'data': {
+            'transaction': {
+              'effects': {
+                'balanceChanges': {
+                  'pageInfo': {'hasNextPage': false, 'endCursor': null},
+                  'nodes': [change('7')],
+                },
+              },
+            },
+          },
+        };
+      }
+      expect(v['includeEvents'], isTrue);
+      expect(v['includeEffectsJson'], isTrue);
+      expect(v['includeEffects'], isNot(isTrue));
+      return {
+        'data': {
+          'transaction': {
+            'digest': 'Dig1',
+            'signatures': [
+              {'signatureBytes': 'AAEC'},
+            ],
+            'effects': {
+              'status': 'FAILURE',
+              'timestamp': null,
+              'epoch': {'epochId': 900},
+              'executionError': {
+                'message': 'InsufficientGas',
+                'abortCode': null,
+              },
+              'effectsJson': {
+                'changedObjects': [
+                  {
+                    'objectId': '0xc0',
+                    'objectType': '0x2::coin::Coin<0x2::sui::SUI>',
+                  },
+                  {
+                    'objectId': '0xd1',
+                    'outputState': 'OUTPUT_OBJECT_STATE_DOES_NOT_EXIST',
+                    'objectType': '0x2::foo::Gone',
+                  },
+                ],
+              },
+              'events': {
+                'pageInfo': {'hasNextPage': false, 'endCursor': null},
+                'nodes': [],
+              },
+              'balanceChanges': {
+                'pageInfo': {'hasNextPage': true, 'endCursor': 'bc-1'},
+                'nodes': [change('-5')],
+              },
+            },
+          },
+        },
+      };
+    });
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final tx = await client.getTransaction(
+      'Dig1',
+      include: const TransactionIncludeOptions(
+        events: true,
+        balanceChanges: true,
+        objectTypes: true,
+      ),
+    );
+
+    expect(tx.status.success, isFalse);
+    expect(tx.status.error!.message, 'InsufficientGas');
+    expect(tx.epoch, '900');
+    expect(tx.signatures, ['AAEC']);
+    expect(tx.events, isEmpty);
+    expect(tx.balanceChanges!.map((c) => c.amount), ['-5', '7']);
+    expect(tx.objectTypes, {
+      '0xc0': '0x2::coin::Coin<0x2::sui::SUI>',
+      '0xd1': '0x2::foo::Gone',
+    });
+    expect(tx.effects, isNull);
+  });
+
   test('a missing transaction throws TransactionError', () async {
     final adapter = _MockAdapter(
       (_) => {
@@ -868,7 +967,7 @@ void main() {
     final adapter = _MockAdapter(
       (body) => {
         'data': {
-          'object': {
+          'address': {
             'dynamicFields': {
               'pageInfo': {'hasNextPage': false, 'endCursor': null},
               'nodes': [
@@ -1000,6 +1099,7 @@ void main() {
         'data': {
           'transaction': {
             'digest': '0xabc',
+            'signatures': [],
             'effects': {
               'status': 'SUCCESS',
               'timestamp': '2026-08-28T03:09:19.500Z',
