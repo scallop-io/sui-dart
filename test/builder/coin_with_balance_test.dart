@@ -273,6 +273,66 @@ void main() {
     });
   });
 
+  group('later arguments after an intent expands', () {
+    final pool = [_coin('0x1', '60'), _coin('0x2', '60')];
+
+    test('a result used twice is shifted once', () async {
+      final tx = Transaction();
+      tx.add(coinWithBalance(type: _fooType, balance: 100));
+      final split = tx.splitCoins(tx.gas, [1, 2]);
+      final a = split[0];
+      tx.mergeCoins(a, [split[1]]);
+      tx.transferObjects([a], _recipient);
+
+      final commands = await _resolve(tx, pool);
+      final splitAt = commands.lastIndexWhere(
+        (c) => c['\$kind'] == 'SplitCoins',
+      );
+      final merge = commands.lastWhere((c) => c['\$kind'] == 'MergeCoins');
+      final transfer = commands.last['TransferObjects'];
+      expect(merge['MergeCoins']['destination']['NestedResult'], [splitAt, 0]);
+      expect(merge['MergeCoins']['sources'][0]['NestedResult'], [splitAt, 1]);
+      expect(transfer['objects'][0]['NestedResult'], [splitAt, 0]);
+    });
+
+    test('a whole result passed on is shifted, not crashed on', () async {
+      final tx = Transaction();
+      final coin = tx.add(coinWithBalance(type: _fooType, balance: 100));
+      final value = tx.moveCall(
+        '0x2::coin::value',
+        typeArguments: [_fooType],
+        arguments: [coin],
+      );
+      tx.moveCall('0x2::foo::bar', arguments: [value]);
+      tx.splitCoins(value, [1]);
+
+      final commands = await _resolve(tx, pool);
+      final valueAt = commands.indexWhere(
+        (c) => c['MoveCall']?['function'] == 'value',
+      );
+      final bar = commands.firstWhere(
+        (c) => c['MoveCall']?['function'] == 'bar',
+      );
+      expect(bar['MoveCall']['arguments'][0]['Result'], valueAt);
+      expect(commands.last['SplitCoins']['coin']['Result'], valueAt);
+    });
+
+    test('resolving a copy leaves the original alone', () async {
+      final original = Transaction();
+      final coin = original.add(coinWithBalance(type: _fooType, balance: 100));
+      original.transferObjects([coin], _recipient);
+      final before = original.getData().commands!.length;
+
+      final copy = Transaction(original);
+      copy.addIntentResolver(COIN_WITH_BALANCE, resolveCoinBalance);
+      await _resolve(copy, pool);
+      copy.moveCall('0x2::foo::bar');
+
+      expect(original.getData().commands, hasLength(before));
+      expect(_hasIntent(original.getData().commands!), isTrue);
+    });
+  });
+
   group('remainder handling', () {
     List<String> calls(List<dynamic> commands) => commands
         .where((c) => c['\$kind'] == 'MoveCall')
