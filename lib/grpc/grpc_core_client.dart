@@ -544,15 +544,13 @@ class GrpcCoreClient implements SuiCoreClient {
             filter: resolved == null ? null : _transactionFilter(resolved),
           ),
         )
-        .where((frame) => frame.hasCheckpoint() || frame.hasCursor())
+        // a filtered stream also sends progress frames: a cursor, no checkpoint
+        .where((frame) => frame.hasCheckpoint())
         .map((frame) {
           final cp = frame.checkpoint;
           final summary = cp.summary;
           return CheckpointResponse(
-            // cursor is always set, even if the mask drops sequence_number
-            sequenceNumber:
-                (cp.hasSequenceNumber() ? cp.sequenceNumber : frame.cursor)
-                    .toString(),
+            sequenceNumber: cp.sequenceNumber.toString(),
             digest: cp.hasDigest() ? cp.digest : null,
             epoch: summary.hasEpoch() ? summary.epoch.toString() : null,
             timestampMs: summary.hasTimestamp()
@@ -961,6 +959,7 @@ class GrpcCoreClient implements SuiCoreClient {
       'checkpoint',
       'timestamp',
       'effects.status',
+      'effects.epoch',
     ];
 
     if (include?.transaction == true) paths.add('transaction');
@@ -968,7 +967,12 @@ class GrpcCoreClient implements SuiCoreClient {
     if (include?.events == true) paths.add('events');
     if (include?.balanceChanges == true) paths.add('balance_changes');
     if (include?.bcs == true) paths.add('transaction.bcs');
-    if (include?.commandResults == true) paths.add('command_outputs');
+    if (include?.objectTypes == true) {
+      paths.addAll([
+        'effects.changed_objects.object_id',
+        'effects.changed_objects.object_type',
+      ]);
+    }
 
     return FieldMask(paths: paths);
   }
@@ -979,6 +983,7 @@ class GrpcCoreClient implements SuiCoreClient {
       'transaction.digest',
       'transaction.signatures',
       'transaction.effects.status',
+      'transaction.effects.epoch',
     ];
 
     if (include?.transaction == true) paths.add('transaction.transaction');
@@ -995,6 +1000,12 @@ class GrpcCoreClient implements SuiCoreClient {
       paths.add('transaction.balance_changes');
     }
     if (include?.bcs == true) paths.add('transaction.transaction.bcs');
+    if (include?.objectTypes == true) {
+      paths.addAll([
+        'transaction.effects.changed_objects.object_id',
+        'transaction.effects.changed_objects.object_type',
+      ]);
+    }
     if (include?.commandResults == true) paths.add('command_outputs');
 
     return FieldMask(paths: paths);
@@ -1077,6 +1088,12 @@ class GrpcCoreClient implements SuiCoreClient {
               );
             }).toList()
           : null,
+      objectTypes: include?.objectTypes == true
+          ? {
+              for (final obj in tx.effects.changedObjects)
+                if (obj.hasObjectType()) obj.objectId: obj.objectType,
+            }
+          : null,
       balanceChanges: include?.balanceChanges == true
           ? tx.balanceChanges.map((change) {
               return BalanceChange(
@@ -1101,7 +1118,14 @@ class GrpcCoreClient implements SuiCoreClient {
     );
   }
 
-  TransactionEffects _parseTransactionEffects(
+  /// Effects in the gRPC proto3 JSON form, as GraphQL `effectsJson` returns.
+  static TransactionEffects parseEffectsJson(Map<String, dynamic> json) =>
+      _parseTransactionEffects(
+        pb_effects.TransactionEffects()
+          ..mergeFromProto3Json(json, ignoreUnknownFields: true),
+      );
+
+  static TransactionEffects _parseTransactionEffects(
     pb_effects.TransactionEffects effects,
   ) {
     return TransactionEffects(
@@ -1180,7 +1204,7 @@ class GrpcCoreClient implements SuiCoreClient {
     );
   }
 
-  ExecutionError _parseExecutionError(pb_exec.ExecutionError error) {
+  static ExecutionError _parseExecutionError(pb_exec.ExecutionError error) {
     ExecutionErrorDetail? detail;
 
     switch (error.whichErrorDetails()) {
@@ -1258,7 +1282,7 @@ class GrpcCoreClient implements SuiCoreClient {
     );
   }
 
-  MoveAbort _parseMoveAbort(pb_exec.MoveAbort abort) {
+  static MoveAbort _parseMoveAbort(pb_exec.MoveAbort abort) {
     String? cleverError;
     String? cleverErrorRaw;
 
