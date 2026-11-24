@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:bcs_dart/bcs.dart';
 import 'package:grpc/grpc.dart';
 
+import 'package:sui_dart/cryptography/intent.dart' show IntentScope;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/ledger_service.pbgrpc.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/move_package_service.pbgrpc.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/name_service.pbgrpc.dart';
@@ -286,8 +287,14 @@ class SuiGrpcClient {
     Uint8List bytes,
     String signature, {
     String? address,
+    IntentScope intentScope = IntentScope.transactionData,
   }) {
-    return core.verifyZkLoginSignature(bytes, signature, address: address);
+    return core.verifyZkLoginSignature(
+      bytes,
+      signature,
+      address: address,
+      intentScope: intentScope,
+    );
   }
 
   Future<String?> defaultNameServiceName(String address) {

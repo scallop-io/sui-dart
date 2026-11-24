@@ -1,9 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:bcs_dart/bcs.dart' show Bcs;
 import 'package:fixnum/fixnum.dart';
 import 'package:grpc/grpc.dart' show GrpcError, StatusCode;
 import 'package:protobuf/protobuf.dart';
+import 'package:sui_dart/builder/transaction_block_data.dart'
+    show tryParseTransactionData;
+import 'package:sui_dart/cryptography/intent.dart' show IntentScope;
 import 'package:sui_dart/grpc/generated/google/rpc/status.pb.dart'
     as rpc_status;
 import 'package:protobuf/well_known_types/google/protobuf/field_mask.pb.dart';
@@ -272,11 +276,11 @@ class GrpcCoreClient implements SuiCoreClient {
       data: response.objects.map((obj) {
         return CoinData(
           objectId: obj.objectId,
-          version: obj.version.toString(),
+          version: obj.version.toStringUnsigned(),
           digest: obj.digest,
           owner: obj.hasOwner() ? _mapOwner(obj.owner) : const UnknownOwner(),
           type: normalizedCoinType,
-          balance: obj.balance.toString(),
+          balance: obj.balance.toStringUnsigned(),
         );
       }).toList(),
       hasNextPage: hasNext,
@@ -298,9 +302,9 @@ class GrpcCoreClient implements SuiCoreClient {
     final balance = response.balance;
     return Balance(
       coinType: balance.coinType,
-      balance: balance.balance.toString(),
-      coinBalance: balance.coinBalance.toString(),
-      addressBalance: balance.addressBalance.toString(),
+      balance: balance.balance.toStringUnsigned(),
+      coinBalance: balance.coinBalance.toStringUnsigned(),
+      addressBalance: balance.addressBalance.toStringUnsigned(),
     );
   }
 
@@ -308,9 +312,15 @@ class GrpcCoreClient implements SuiCoreClient {
   Future<CoinMetadata?> getCoinMetadata(String coinType) async {
     final normalizedCoinType = normalizeStructTagString(coinType);
 
-    final response = await _client.stateService.getCoinInfo(
-      GetCoinInfoRequest(coinType: normalizedCoinType),
-    );
+    final GetCoinInfoResponse response;
+    try {
+      response = await _client.stateService.getCoinInfo(
+        GetCoinInfoRequest(coinType: normalizedCoinType),
+      );
+    } on GrpcError catch (error) {
+      if (error.code == StatusCode.notFound) return null;
+      rethrow;
+    }
 
     if (!response.hasMetadata()) return null;
 
@@ -346,9 +356,9 @@ class GrpcCoreClient implements SuiCoreClient {
     return allBalances.map((balance) {
       return Balance(
         coinType: balance.coinType,
-        balance: balance.balance.toString(),
-        coinBalance: balance.coinBalance.toString(),
-        addressBalance: balance.addressBalance.toString(),
+        balance: balance.balance.toStringUnsigned(),
+        coinBalance: balance.coinBalance.toStringUnsigned(),
+        addressBalance: balance.addressBalance.toStringUnsigned(),
       );
     }).toList();
   }
@@ -427,7 +437,7 @@ class GrpcCoreClient implements SuiCoreClient {
     final response = await _client.transactionExecutionService
         .simulateTransaction(
           SimulateTransactionRequest(
-            transaction: transactionBlock.toGrpcTransaction(),
+            transaction: transactionBlock.toGrpcSimulationTransaction(),
             readMask: readMask,
             doGasSelection: gasSelection,
             checks: checksEnabled == false
@@ -493,7 +503,9 @@ class GrpcCoreClient implements SuiCoreClient {
         ? Uint8List.fromList(event.contents.value)
         : Uint8List(0),
     json: event.hasJson() ? _protoValueToMap(event.json) : null,
-    checkpoint: event.hasCheckpoint() ? event.checkpoint.toString() : null,
+    checkpoint: event.hasCheckpoint()
+        ? event.checkpoint.toStringUnsigned()
+        : null,
     transactionDigest: event.hasTransactionDigest()
         ? event.transactionDigest
         : null,
@@ -550,9 +562,9 @@ class GrpcCoreClient implements SuiCoreClient {
           final cp = frame.checkpoint;
           final summary = cp.summary;
           return CheckpointResponse(
-            sequenceNumber: cp.sequenceNumber.toString(),
+            sequenceNumber: cp.sequenceNumber.toStringUnsigned(),
             digest: cp.hasDigest() ? cp.digest : null,
-            epoch: summary.hasEpoch() ? summary.epoch.toString() : null,
+            epoch: summary.hasEpoch() ? summary.epoch.toStringUnsigned() : null,
             timestampMs: summary.hasTimestamp()
                 ? (summary.timestamp.seconds * Int64(1000) +
                           Int64(summary.timestamp.nanos ~/ 1000000))
@@ -562,7 +574,7 @@ class GrpcCoreClient implements SuiCoreClient {
                 ? summary.previousDigest
                 : null,
             totalNetworkTransactions: summary.hasTotalNetworkTransactions()
-                ? summary.totalNetworkTransactions.toString()
+                ? summary.totalNetworkTransactions.toStringUnsigned()
                 : null,
             transactions: transactions == null
                 ? null
@@ -606,7 +618,6 @@ class GrpcCoreClient implements SuiCoreClient {
       limit: limit,
     );
     final resolved = filter == null ? null : resolveTransactionFilter(filter);
-    validateTransactionQuery(resolved, pagination);
 
     final stream = _client.ledgerService.listTransactions(
       ListTransactionsRequest(
@@ -736,7 +747,7 @@ class GrpcCoreClient implements SuiCoreClient {
       GetEpochRequest(readMask: FieldMask(paths: ['reference_gas_price'])),
     );
 
-    return response.epoch.referenceGasPrice.toString();
+    return response.epoch.referenceGasPrice.toStringUnsigned();
   }
 
   @override
@@ -747,9 +758,20 @@ class GrpcCoreClient implements SuiCoreClient {
           paths: [
             'epoch',
             'reference_gas_price',
-            'system_state',
             'start',
-            'end',
+            'system_state.version',
+            'system_state.epoch',
+            'system_state.protocol_version',
+            'system_state.reference_gas_price',
+            'system_state.epoch_start_timestamp_ms',
+            'system_state.safe_mode',
+            'system_state.safe_mode_storage_rewards',
+            'system_state.safe_mode_computation_rewards',
+            'system_state.safe_mode_storage_rebates',
+            'system_state.safe_mode_non_refundable_storage_fee',
+            'system_state.parameters',
+            'system_state.storage_fund',
+            'system_state.stake_subsidy',
           ],
         ),
       ),
@@ -757,13 +779,15 @@ class GrpcCoreClient implements SuiCoreClient {
 
     final epoch = response.epoch;
     return SystemState(
-      epoch: epoch.epoch.toString(),
-      referenceGasPrice: epoch.referenceGasPrice.toString(),
+      epoch: epoch.epoch.toStringUnsigned(),
+      referenceGasPrice: epoch.referenceGasPrice.toStringUnsigned(),
       systemState: epoch.hasSystemState()
-          ? epoch.systemState.writeToJsonMap()
+          ? epoch.systemState.toProto3Json() as Map<String, dynamic>
           : null,
       epochStartTimestampMs: epoch.hasStart()
-          ? epoch.start.seconds.toString()
+          ? (epoch.start.seconds * Int64(1000) +
+                    Int64(epoch.start.nanos ~/ 1000000))
+                .toString()
           : null,
     );
   }
@@ -776,7 +800,7 @@ class GrpcCoreClient implements SuiCoreClient {
 
     final config = response.epoch.protocolConfig;
     return ProtocolConfig(
-      protocolVersion: config.protocolVersion.toString(),
+      protocolVersion: config.protocolVersion.toStringUnsigned(),
       featureFlags: Map.of(config.featureFlags),
       attributes: Map.of(config.attributes),
     );
@@ -836,13 +860,27 @@ class GrpcCoreClient implements SuiCoreClient {
     Uint8List bytes,
     String signature, {
     String? address,
+    IntentScope intentScope = IntentScope.transactionData,
   }) async {
+    final personal = intentScope == IntentScope.personalMessage;
+    final Uint8List signatureBytes;
+    try {
+      signatureBytes = base64Decode(signature);
+    } on FormatException {
+      return const VerifySignatureResult(
+        isValid: false,
+        reason: 'Cannot parse signature',
+      );
+    }
     final response = await _client.signatureVerificationService.verifySignature(
       VerifySignatureRequest(
-        message: grpc_bcs.Bcs(name: 'TransactionData', value: bytes),
-        signature: UserSignature(
-          bcs: grpc_bcs.Bcs(value: base64Decode(signature)),
+        message: grpc_bcs.Bcs(
+          name: personal ? 'PersonalMessage' : 'TransactionData',
+          value: personal
+              ? Bcs.vector(Bcs.u8()).serialize(bytes).toBytes()
+              : bytes,
         ),
+        signature: UserSignature(bcs: grpc_bcs.Bcs(value: signatureBytes)),
         address: address,
       ),
     );
@@ -962,7 +1000,7 @@ class GrpcCoreClient implements SuiCoreClient {
       'effects.epoch',
     ];
 
-    if (include?.transaction == true) paths.add('transaction');
+    if (include?.transaction == true) paths.add('transaction.bcs');
     if (include?.effects == true) paths.add('effects');
     if (include?.events == true) paths.add('events');
     if (include?.balanceChanges == true) paths.add('balance_changes');
@@ -986,7 +1024,7 @@ class GrpcCoreClient implements SuiCoreClient {
       'transaction.effects.epoch',
     ];
 
-    if (include?.transaction == true) paths.add('transaction.transaction');
+    if (include?.transaction == true) paths.add('transaction.transaction.bcs');
     if (include?.effects == true) {
       paths.add('transaction.effects');
     } else {
@@ -1017,7 +1055,7 @@ class GrpcCoreClient implements SuiCoreClient {
   ) {
     return ObjectData(
       objectId: obj.objectId,
-      version: obj.version.toString(),
+      version: obj.version.toStringUnsigned(),
       digest: obj.digest,
       owner: obj.hasOwner() ? _mapOwner(obj.owner) : const UnknownOwner(),
       type: obj.objectType,
@@ -1055,7 +1093,7 @@ class GrpcCoreClient implements SuiCoreClient {
 
     // Extract epoch from effects
     final epoch = (tx.hasEffects() && tx.effects.hasEpoch())
-        ? tx.effects.epoch.toString()
+        ? tx.effects.epoch.toStringUnsigned()
         : null;
 
     // Extract signatures
@@ -1068,8 +1106,13 @@ class GrpcCoreClient implements SuiCoreClient {
       signatures: signatures,
       epoch: epoch,
       status: status,
-      transaction: (include?.transaction == true && tx.hasTransaction())
-          ? base64Encode(tx.transaction.writeToBuffer())
+      transaction:
+          (include?.transaction == true &&
+              tx.hasTransaction() &&
+              tx.transaction.hasBcs())
+          ? tryParseTransactionData(
+              Uint8List.fromList(tx.transaction.bcs.value),
+            )
           : null,
       effects: (include?.effects == true && tx.hasEffects())
           ? _parseTransactionEffects(tx.effects)
@@ -1109,7 +1152,7 @@ class GrpcCoreClient implements SuiCoreClient {
               tx.transaction.hasBcs())
           ? Uint8List.fromList(tx.transaction.bcs.value)
           : null,
-      checkpoint: tx.hasCheckpoint() ? tx.checkpoint.toString() : null,
+      checkpoint: tx.hasCheckpoint() ? tx.checkpoint.toStringUnsigned() : null,
       timestampMs: tx.hasTimestamp()
           ? (tx.timestamp.seconds * Int64(1000) +
                     Int64(tx.timestamp.nanos ~/ 1000000))
@@ -1134,7 +1177,7 @@ class GrpcCoreClient implements SuiCoreClient {
           ? effects.transactionDigest
           : null,
       lamportVersion: effects.hasLamportVersion()
-          ? effects.lamportVersion.toString()
+          ? effects.lamportVersion.toStringUnsigned()
           : null,
       status: effects.hasStatus()
           ? ExecutionStatus(
@@ -1146,11 +1189,12 @@ class GrpcCoreClient implements SuiCoreClient {
           : null,
       gasUsed: effects.hasGasUsed()
           ? GasUsed(
-              computationCost: effects.gasUsed.computationCost.toString(),
-              storageCost: effects.gasUsed.storageCost.toString(),
-              storageRebate: effects.gasUsed.storageRebate.toString(),
+              computationCost: effects.gasUsed.computationCost
+                  .toStringUnsigned(),
+              storageCost: effects.gasUsed.storageCost.toStringUnsigned(),
+              storageRebate: effects.gasUsed.storageRebate.toStringUnsigned(),
               nonRefundableStorageFee: effects.gasUsed.nonRefundableStorageFee
-                  .toString(),
+                  .toStringUnsigned(),
             )
           : null,
       gasObject: effects.hasGasObject()
@@ -1171,14 +1215,14 @@ class GrpcCoreClient implements SuiCoreClient {
                 inputState: _mapInputObjectState(obj.inputState),
                 outputState: _mapOutputObjectState(obj.outputState),
                 inputVersion: obj.hasInputVersion()
-                    ? obj.inputVersion.toString()
+                    ? obj.inputVersion.toStringUnsigned()
                     : null,
                 inputDigest: obj.hasInputDigest() ? obj.inputDigest : null,
                 inputOwner: obj.hasInputOwner()
                     ? _mapOwner(obj.inputOwner)
                     : null,
                 outputVersion: obj.hasOutputVersion()
-                    ? obj.outputVersion.toString()
+                    ? obj.outputVersion.toStringUnsigned()
                     : null,
                 outputDigest: obj.hasOutputDigest() ? obj.outputDigest : null,
                 outputOwner: obj.hasOutputOwner()
@@ -1193,7 +1237,7 @@ class GrpcCoreClient implements SuiCoreClient {
               return UnchangedConsensusObject(
                 kind: _mapUnchangedConsensusObjectKind(obj.kind),
                 objectId: obj.objectId,
-                version: obj.version.toString(),
+                version: obj.version.toStringUnsigned(),
                 digest: obj.digest.isNotEmpty ? obj.digest : null,
                 objectType: obj.objectType.isNotEmpty ? obj.objectType : null,
               );
@@ -1213,8 +1257,8 @@ class GrpcCoreClient implements SuiCoreClient {
         break;
       case pb_exec.ExecutionError_ErrorDetails.sizeError:
         detail = SizeErrorDetail(
-          size: error.sizeError.size.toString(),
-          maxSize: error.sizeError.maxSize.toString(),
+          size: error.sizeError.size.toStringUnsigned(),
+          maxSize: error.sizeError.maxSize.toStringUnsigned(),
         );
         break;
       case pb_exec.ExecutionError_ErrorDetails.commandArgumentError:
@@ -1296,7 +1340,7 @@ class GrpcCoreClient implements SuiCoreClient {
     }
 
     return MoveAbort(
-      abortCode: abort.abortCode.toString(),
+      abortCode: abort.abortCode.toStringUnsigned(),
       location: abort.hasLocation()
           ? MoveAbortLocation(
               package: abort.location.package,
@@ -1324,13 +1368,13 @@ class GrpcCoreClient implements SuiCoreClient {
       case pb_owner.Owner_OwnerKind.OBJECT:
         return ObjectOwner(owner.address);
       case pb_owner.Owner_OwnerKind.SHARED:
-        return SharedOwner(owner.version.toString());
+        return SharedOwner(owner.version.toStringUnsigned());
       case pb_owner.Owner_OwnerKind.IMMUTABLE:
         return const ImmutableOwner();
       case pb_owner.Owner_OwnerKind.CONSENSUS_ADDRESS:
         return ConsensusAddressOwner(
           address: owner.address,
-          startVersion: owner.version.toString(),
+          startVersion: owner.version.toStringUnsigned(),
         );
       default:
         return const UnknownOwner();

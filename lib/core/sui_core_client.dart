@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:sui_dart/cryptography/intent.dart' show IntentScope;
 import 'package:sui_dart/builder/transaction.dart'
     show Transaction, TransactionPlugin;
 import 'package:sui_dart/grpc/types.dart';
@@ -109,10 +110,12 @@ abstract interface class SuiCoreClient {
     bool includeValue = false,
   });
 
+  /// [bytes] is the raw message for [IntentScope.personalMessage].
   Future<VerifySignatureResult> verifyZkLoginSignature(
     Uint8List bytes,
     String signature, {
     String? address,
+    IntentScope intentScope = IntentScope.transactionData,
   });
 
   Future<String?> defaultNameServiceName(String address);
@@ -144,32 +147,19 @@ class ResolvedPagination {
     this.after,
     this.before,
   });
-
-  bool get hasBound => after != null || before != null;
 }
 
-/// [after] and [before] are exclusive positions. A query takes at most one, and
-/// it has to match the direction: [after] ascending, [before] descending.
+/// [after] and [before] are exclusive bounds, whatever the order, and can be
+/// combined. With only [before] the query reads descending.
 ResolvedPagination resolvePagination({
   String? after,
   String? before,
   QueryOrder? order,
   int? limit,
 }) {
-  if (after != null && before != null) {
-    throw ArgumentError('Only one of `after` or `before` may be given');
-  }
-
   final descending = order != null
       ? order == QueryOrder.descending
-      : before != null;
-
-  if (after != null && descending) {
-    throw ArgumentError('`after` cannot be combined with a descending query');
-  }
-  if (before != null && !descending) {
-    throw ArgumentError('`before` cannot be combined with an ascending query');
-  }
+      : before != null && after == null;
 
   return ResolvedPagination(
     descending: descending,
@@ -226,22 +216,6 @@ ResolvedTransactionFilter resolveTransactionFilter(TransactionFilter filter) {
     module: parts.length > 1 ? parts[1] : null,
     function: parts.length > 2 ? parts[2] : null,
   );
-}
-
-/// A function filter can only be paged when fully qualified: a package- or
-/// module-level filter has no stable cursor to resume from.
-void validateTransactionQuery(
-  ResolvedTransactionFilter? filter,
-  ResolvedPagination pagination,
-) {
-  if (filter?.package != null &&
-      pagination.hasBound &&
-      (filter!.module == null || filter.function == null)) {
-    throw ArgumentError(
-      'Paging transactions filtered by function requires a fully qualified '
-      '"package::module::function"',
-    );
-  }
 }
 
 /// An [EventFilter] narrowed to one predicate.

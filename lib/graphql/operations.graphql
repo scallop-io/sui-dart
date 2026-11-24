@@ -137,57 +137,36 @@ query GetMoveFunction($package: SuiAddress!, $module: String!, $function: String
         typeParameters {
           constraints
         }
+        parameters {
+          signature
+        }
+        return {
+          signature
+        }
       }
     }
   }
 }
 
-query SimulateTransaction($tx: JSON!, $checksEnabled: Boolean, $doGasSelection: Boolean) {
+query SimulateTransaction(
+  $tx: JSON!
+  $checksEnabled: Boolean
+  $doGasSelection: Boolean
+  $includeEffects: Boolean = false
+  $includeEvents: Boolean = false
+  $includeBalanceChanges: Boolean = false
+  $includeEffectsJson: Boolean = false
+  $includeBcs: Boolean = false
+) {
   simulateTransaction(transaction: $tx, checksEnabled: $checksEnabled, doGasSelection: $doGasSelection) {
     effects {
-      status
-      epoch {
-        epochId
-      }
-      executionError {
-        message
-        abortCode
-        sourceLineNumber
-        instructionOffset
-        identifier
-        constant
-        module {
-          name
-          package {
-            address
-          }
-        }
-        function {
-          name
-        }
-      }
       transaction {
-        transactionBcs
-      }
-      gasEffects {
-        gasObject {
-          address
-        }
-      }
-      events(first: 50) {
-        nodes {
-          transactionModule {
-            name
-          }
-          sender {
-            address
-          }
-          contents {
-            type {
-              repr
+        ...CoreTransactionFields
+        effects {
+          gasEffects {
+            gasObject {
+              address
             }
-            json
-            bcs
           }
         }
       }
@@ -291,7 +270,16 @@ fragment CoreOwnerFields on Owner {
   }
 }
 
-query GetOwnedObjects($address: SuiAddress!, $type: String, $first: Int, $after: String) {
+query GetOwnedObjects(
+  $address: SuiAddress!
+  $type: String
+  $first: Int
+  $after: String
+  $includeContent: Boolean = false
+  $includePreviousTransaction: Boolean = false
+  $includeObjectBcs: Boolean = false
+  $includeDisplay: Boolean = false
+) {
   address(address: $address) {
     objects(first: $first, after: $after, filter: {type: $type}) {
       pageInfo {
@@ -305,18 +293,37 @@ query GetOwnedObjects($address: SuiAddress!, $type: String, $first: Int, $after:
         owner {
           ...CoreOwnerFields
         }
+        objectBcs @include(if: $includeObjectBcs)
+        previousTransaction @include(if: $includePreviousTransaction) {
+          digest
+        }
         contents {
-          type {
-            repr
-          }
-          json
+          ...CoreObjectContents
         }
       }
     }
   }
 }
 
-query MultiGetObjects($keys: [ObjectKey!]!) {
+# json is always read: coins and existing callers rely on it
+fragment CoreObjectContents on MoveValue {
+  type {
+    repr
+  }
+  json
+  bcs @include(if: $includeContent)
+  display @include(if: $includeDisplay) {
+    output
+  }
+}
+
+query MultiGetObjects(
+  $keys: [ObjectKey!]!
+  $includeContent: Boolean = false
+  $includePreviousTransaction: Boolean = false
+  $includeObjectBcs: Boolean = false
+  $includeDisplay: Boolean = false
+) {
   multiGetObjects(keys: $keys) {
     address
     version
@@ -324,13 +331,17 @@ query MultiGetObjects($keys: [ObjectKey!]!) {
     owner {
       ...CoreOwnerFields
     }
+    objectBcs @include(if: $includeObjectBcs)
+    previousTransaction @include(if: $includePreviousTransaction) {
+      digest
+    }
     asMoveObject {
       contents {
-        type {
-          repr
-        }
-        json
+        ...CoreObjectContents
       }
+    }
+    asMovePackage {
+      address
     }
   }
 }

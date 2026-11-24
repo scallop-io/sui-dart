@@ -22,6 +22,8 @@ targets:
               type: "Map<String, dynamic>"
             ObjectID:
               type: String
+            OpenMoveTypeSignature:
+              type: "Map<String, dynamic>"
             SuiAddress:
               type: String
             UInt53:

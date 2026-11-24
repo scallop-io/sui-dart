@@ -2813,6 +2813,262 @@ class Fragment$CoreOwnerFields$$Immutable implements Fragment$CoreOwnerFields {
   }
 }
 
+class Fragment$CoreObjectContents {
+  Fragment$CoreObjectContents({this.type, this.json, this.bcs, this.display});
+
+  factory Fragment$CoreObjectContents.fromJson(Map<String, dynamic> json) {
+    final l$type = json['type'];
+    final l$json = json['json'];
+    final l$bcs = json['bcs'];
+    final l$display = json['display'];
+    return Fragment$CoreObjectContents(
+      type: l$type == null
+          ? null
+          : Fragment$CoreObjectContents$type.fromJson(
+              (l$type as Map<String, dynamic>),
+            ),
+      json: (l$json as Map<String, dynamic>?),
+      bcs: (l$bcs as String?),
+      display: l$display == null
+          ? null
+          : Fragment$CoreObjectContents$display.fromJson(
+              (l$display as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final Fragment$CoreObjectContents$type? type;
+
+  final Map<String, dynamic>? json;
+
+  final String? bcs;
+
+  final Fragment$CoreObjectContents$display? display;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$type = type;
+    _resultData['type'] = l$type?.toJson();
+    final l$json = json;
+    _resultData['json'] = l$json;
+    final l$bcs = bcs;
+    _resultData['bcs'] = l$bcs;
+    final l$display = display;
+    _resultData['display'] = l$display?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$type = type;
+    final l$json = json;
+    final l$bcs = bcs;
+    final l$display = display;
+    return Object.hashAll([l$type, l$json, l$bcs, l$display]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Fragment$CoreObjectContents ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$type = type;
+    final lOther$type = other.type;
+    if (l$type != lOther$type) {
+      return false;
+    }
+    final l$json = json;
+    final lOther$json = other.json;
+    if (l$json != lOther$json) {
+      return false;
+    }
+    final l$bcs = bcs;
+    final lOther$bcs = other.bcs;
+    if (l$bcs != lOther$bcs) {
+      return false;
+    }
+    final l$display = display;
+    final lOther$display = other.display;
+    if (l$display != lOther$display) {
+      return false;
+    }
+    return true;
+  }
+}
+
+const fragmentDefinitionCoreObjectContents = FragmentDefinitionNode(
+  name: NameNode(value: 'CoreObjectContents'),
+  typeCondition: TypeConditionNode(
+    on: NamedTypeNode(name: NameNode(value: 'MoveValue'), isNonNull: false),
+  ),
+  directives: [],
+  selectionSet: SelectionSetNode(
+    selections: [
+      FieldNode(
+        name: NameNode(value: 'type'),
+        alias: null,
+        arguments: [],
+        directives: [],
+        selectionSet: SelectionSetNode(
+          selections: [
+            FieldNode(
+              name: NameNode(value: 'repr'),
+              alias: null,
+              arguments: [],
+              directives: [],
+              selectionSet: null,
+            ),
+          ],
+        ),
+      ),
+      FieldNode(
+        name: NameNode(value: 'json'),
+        alias: null,
+        arguments: [],
+        directives: [],
+        selectionSet: null,
+      ),
+      FieldNode(
+        name: NameNode(value: 'bcs'),
+        alias: null,
+        arguments: [],
+        directives: [
+          DirectiveNode(
+            name: NameNode(value: 'include'),
+            arguments: [
+              ArgumentNode(
+                name: NameNode(value: 'if'),
+                value: VariableNode(name: NameNode(value: 'includeContent')),
+              ),
+            ],
+          ),
+        ],
+        selectionSet: null,
+      ),
+      FieldNode(
+        name: NameNode(value: 'display'),
+        alias: null,
+        arguments: [],
+        directives: [
+          DirectiveNode(
+            name: NameNode(value: 'include'),
+            arguments: [
+              ArgumentNode(
+                name: NameNode(value: 'if'),
+                value: VariableNode(name: NameNode(value: 'includeDisplay')),
+              ),
+            ],
+          ),
+        ],
+        selectionSet: SelectionSetNode(
+          selections: [
+            FieldNode(
+              name: NameNode(value: 'output'),
+              alias: null,
+              arguments: [],
+              directives: [],
+              selectionSet: null,
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+);
+const documentNodeFragmentCoreObjectContents = DocumentNode(
+  definitions: [fragmentDefinitionCoreObjectContents],
+);
+
+class Fragment$CoreObjectContents$type {
+  Fragment$CoreObjectContents$type({required this.repr});
+
+  factory Fragment$CoreObjectContents$type.fromJson(Map<String, dynamic> json) {
+    final l$repr = json['repr'];
+    return Fragment$CoreObjectContents$type(repr: (l$repr as String));
+  }
+
+  final String repr;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$repr = repr;
+    _resultData['repr'] = l$repr;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$repr = repr;
+    return Object.hashAll([l$repr]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Fragment$CoreObjectContents$type ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$repr = repr;
+    final lOther$repr = other.repr;
+    if (l$repr != lOther$repr) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Fragment$CoreObjectContents$display {
+  Fragment$CoreObjectContents$display({this.output});
+
+  factory Fragment$CoreObjectContents$display.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$output = json['output'];
+    return Fragment$CoreObjectContents$display(
+      output: (l$output as Map<String, dynamic>?),
+    );
+  }
+
+  final Map<String, dynamic>? output;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$output = output;
+    _resultData['output'] = l$output;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$output = output;
+    return Object.hashAll([l$output]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Fragment$CoreObjectContents$display ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$output = output;
+    final lOther$output = other.output;
+    if (l$output != lOther$output) {
+      return false;
+    }
+    return true;
+  }
+}
+
 class Fragment$CoreBalanceFields {
   Fragment$CoreBalanceFields({
     this.coinType,
@@ -9186,6 +9442,40 @@ const documentNodeQueryGetMoveFunction = DocumentNode(
                                 ],
                               ),
                             ),
+                            FieldNode(
+                              name: NameNode(value: 'parameters'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: SelectionSetNode(
+                                selections: [
+                                  FieldNode(
+                                    name: NameNode(value: 'signature'),
+                                    alias: null,
+                                    arguments: [],
+                                    directives: [],
+                                    selectionSet: null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'return'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: SelectionSetNode(
+                                selections: [
+                                  FieldNode(
+                                    name: NameNode(value: 'signature'),
+                                    alias: null,
+                                    arguments: [],
+                                    directives: [],
+                                    selectionSet: null,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -9303,6 +9593,8 @@ class Query$GetMoveFunction$package$module$function {
     this.isEntry,
     this.visibility,
     this.typeParameters,
+    this.parameters,
+    this.$return,
   });
 
   factory Query$GetMoveFunction$package$module$function.fromJson(
@@ -9312,6 +9604,8 @@ class Query$GetMoveFunction$package$module$function {
     final l$isEntry = json['isEntry'];
     final l$visibility = json['visibility'];
     final l$typeParameters = json['typeParameters'];
+    final l$parameters = json['parameters'];
+    final l$$return = json['return'];
     return Query$GetMoveFunction$package$module$function(
       name: (l$name as String),
       isEntry: (l$isEntry as bool?),
@@ -9322,6 +9616,22 @@ class Query$GetMoveFunction$package$module$function {
           ?.map(
             (e) =>
                 Query$GetMoveFunction$package$module$function$typeParameters.fromJson(
+                  (e as Map<String, dynamic>),
+                ),
+          )
+          .toList(),
+      parameters: (l$parameters as List<dynamic>?)
+          ?.map(
+            (e) =>
+                Query$GetMoveFunction$package$module$function$parameters.fromJson(
+                  (e as Map<String, dynamic>),
+                ),
+          )
+          .toList(),
+      $return: (l$$return as List<dynamic>?)
+          ?.map(
+            (e) =>
+                Query$GetMoveFunction$package$module$function$return.fromJson(
                   (e as Map<String, dynamic>),
                 ),
           )
@@ -9338,6 +9648,11 @@ class Query$GetMoveFunction$package$module$function {
   final List<Query$GetMoveFunction$package$module$function$typeParameters>?
   typeParameters;
 
+  final List<Query$GetMoveFunction$package$module$function$parameters>?
+  parameters;
+
+  final List<Query$GetMoveFunction$package$module$function$return>? $return;
+
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
     final l$name = name;
@@ -9352,6 +9667,10 @@ class Query$GetMoveFunction$package$module$function {
     _resultData['typeParameters'] = l$typeParameters
         ?.map((e) => e.toJson())
         .toList();
+    final l$parameters = parameters;
+    _resultData['parameters'] = l$parameters?.map((e) => e.toJson()).toList();
+    final l$$return = $return;
+    _resultData['return'] = l$$return?.map((e) => e.toJson()).toList();
     return _resultData;
   }
 
@@ -9361,6 +9680,8 @@ class Query$GetMoveFunction$package$module$function {
     final l$isEntry = isEntry;
     final l$visibility = visibility;
     final l$typeParameters = typeParameters;
+    final l$parameters = parameters;
+    final l$$return = $return;
     return Object.hashAll([
       l$name,
       l$isEntry,
@@ -9368,6 +9689,8 @@ class Query$GetMoveFunction$package$module$function {
       l$typeParameters == null
           ? null
           : Object.hashAll(l$typeParameters.map((v) => v)),
+      l$parameters == null ? null : Object.hashAll(l$parameters.map((v) => v)),
+      l$$return == null ? null : Object.hashAll(l$$return.map((v) => v)),
     ]);
   }
 
@@ -9409,6 +9732,38 @@ class Query$GetMoveFunction$package$module$function {
         }
       }
     } else if (l$typeParameters != lOther$typeParameters) {
+      return false;
+    }
+    final l$parameters = parameters;
+    final lOther$parameters = other.parameters;
+    if (l$parameters != null && lOther$parameters != null) {
+      if (l$parameters.length != lOther$parameters.length) {
+        return false;
+      }
+      for (int i = 0; i < l$parameters.length; i++) {
+        final l$parameters$entry = l$parameters[i];
+        final lOther$parameters$entry = lOther$parameters[i];
+        if (l$parameters$entry != lOther$parameters$entry) {
+          return false;
+        }
+      }
+    } else if (l$parameters != lOther$parameters) {
+      return false;
+    }
+    final l$$return = $return;
+    final lOther$$return = other.$return;
+    if (l$$return != null && lOther$$return != null) {
+      if (l$$return.length != lOther$$return.length) {
+        return false;
+      }
+      for (int i = 0; i < l$$return.length; i++) {
+        final l$$return$entry = l$$return[i];
+        final lOther$$return$entry = lOther$$return[i];
+        if (l$$return$entry != lOther$$return$entry) {
+          return false;
+        }
+      }
+    } else if (l$$return != lOther$$return) {
       return false;
     }
     return true;
@@ -9474,15 +9829,120 @@ class Query$GetMoveFunction$package$module$function$typeParameters {
   }
 }
 
+class Query$GetMoveFunction$package$module$function$parameters {
+  Query$GetMoveFunction$package$module$function$parameters({
+    required this.signature,
+  });
+
+  factory Query$GetMoveFunction$package$module$function$parameters.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$signature = json['signature'];
+    return Query$GetMoveFunction$package$module$function$parameters(
+      signature: (l$signature as Map<String, dynamic>),
+    );
+  }
+
+  final Map<String, dynamic> signature;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$signature = signature;
+    _resultData['signature'] = l$signature;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$signature = signature;
+    return Object.hashAll([l$signature]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Query$GetMoveFunction$package$module$function$parameters ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$signature = signature;
+    final lOther$signature = other.signature;
+    if (l$signature != lOther$signature) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$GetMoveFunction$package$module$function$return {
+  Query$GetMoveFunction$package$module$function$return({
+    required this.signature,
+  });
+
+  factory Query$GetMoveFunction$package$module$function$return.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$signature = json['signature'];
+    return Query$GetMoveFunction$package$module$function$return(
+      signature: (l$signature as Map<String, dynamic>),
+    );
+  }
+
+  final Map<String, dynamic> signature;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$signature = signature;
+    _resultData['signature'] = l$signature;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$signature = signature;
+    return Object.hashAll([l$signature]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Query$GetMoveFunction$package$module$function$return ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$signature = signature;
+    final lOther$signature = other.signature;
+    if (l$signature != lOther$signature) {
+      return false;
+    }
+    return true;
+  }
+}
+
 class Variables$Query$SimulateTransaction {
   factory Variables$Query$SimulateTransaction({
     required Map<String, dynamic> tx,
     bool? checksEnabled,
     bool? doGasSelection,
+    bool? includeEffects,
+    bool? includeEvents,
+    bool? includeBalanceChanges,
+    bool? includeEffectsJson,
+    bool? includeBcs,
   }) => Variables$Query$SimulateTransaction._({
     r'tx': tx,
     if (checksEnabled != null) r'checksEnabled': checksEnabled,
     if (doGasSelection != null) r'doGasSelection': doGasSelection,
+    if (includeEffects != null) r'includeEffects': includeEffects,
+    if (includeEvents != null) r'includeEvents': includeEvents,
+    if (includeBalanceChanges != null)
+      r'includeBalanceChanges': includeBalanceChanges,
+    if (includeEffectsJson != null) r'includeEffectsJson': includeEffectsJson,
+    if (includeBcs != null) r'includeBcs': includeBcs,
   });
 
   Variables$Query$SimulateTransaction._(this._$data);
@@ -9501,6 +9961,26 @@ class Variables$Query$SimulateTransaction {
       final l$doGasSelection = data['doGasSelection'];
       result$data['doGasSelection'] = (l$doGasSelection as bool?);
     }
+    if (data.containsKey('includeEffects')) {
+      final l$includeEffects = data['includeEffects'];
+      result$data['includeEffects'] = (l$includeEffects as bool?);
+    }
+    if (data.containsKey('includeEvents')) {
+      final l$includeEvents = data['includeEvents'];
+      result$data['includeEvents'] = (l$includeEvents as bool?);
+    }
+    if (data.containsKey('includeBalanceChanges')) {
+      final l$includeBalanceChanges = data['includeBalanceChanges'];
+      result$data['includeBalanceChanges'] = (l$includeBalanceChanges as bool?);
+    }
+    if (data.containsKey('includeEffectsJson')) {
+      final l$includeEffectsJson = data['includeEffectsJson'];
+      result$data['includeEffectsJson'] = (l$includeEffectsJson as bool?);
+    }
+    if (data.containsKey('includeBcs')) {
+      final l$includeBcs = data['includeBcs'];
+      result$data['includeBcs'] = (l$includeBcs as bool?);
+    }
     return Variables$Query$SimulateTransaction._(result$data);
   }
 
@@ -9511,6 +9991,16 @@ class Variables$Query$SimulateTransaction {
   bool? get checksEnabled => (_$data['checksEnabled'] as bool?);
 
   bool? get doGasSelection => (_$data['doGasSelection'] as bool?);
+
+  bool? get includeEffects => (_$data['includeEffects'] as bool?);
+
+  bool? get includeEvents => (_$data['includeEvents'] as bool?);
+
+  bool? get includeBalanceChanges => (_$data['includeBalanceChanges'] as bool?);
+
+  bool? get includeEffectsJson => (_$data['includeEffectsJson'] as bool?);
+
+  bool? get includeBcs => (_$data['includeBcs'] as bool?);
 
   Map<String, dynamic> toJson() {
     final result$data = <String, dynamic>{};
@@ -9523,6 +10013,26 @@ class Variables$Query$SimulateTransaction {
     if (_$data.containsKey('doGasSelection')) {
       final l$doGasSelection = doGasSelection;
       result$data['doGasSelection'] = l$doGasSelection;
+    }
+    if (_$data.containsKey('includeEffects')) {
+      final l$includeEffects = includeEffects;
+      result$data['includeEffects'] = l$includeEffects;
+    }
+    if (_$data.containsKey('includeEvents')) {
+      final l$includeEvents = includeEvents;
+      result$data['includeEvents'] = l$includeEvents;
+    }
+    if (_$data.containsKey('includeBalanceChanges')) {
+      final l$includeBalanceChanges = includeBalanceChanges;
+      result$data['includeBalanceChanges'] = l$includeBalanceChanges;
+    }
+    if (_$data.containsKey('includeEffectsJson')) {
+      final l$includeEffectsJson = includeEffectsJson;
+      result$data['includeEffectsJson'] = l$includeEffectsJson;
+    }
+    if (_$data.containsKey('includeBcs')) {
+      final l$includeBcs = includeBcs;
+      result$data['includeBcs'] = l$includeBcs;
     }
     return result$data;
   }
@@ -9559,6 +10069,51 @@ class Variables$Query$SimulateTransaction {
     if (l$doGasSelection != lOther$doGasSelection) {
       return false;
     }
+    final l$includeEffects = includeEffects;
+    final lOther$includeEffects = other.includeEffects;
+    if (_$data.containsKey('includeEffects') !=
+        other._$data.containsKey('includeEffects')) {
+      return false;
+    }
+    if (l$includeEffects != lOther$includeEffects) {
+      return false;
+    }
+    final l$includeEvents = includeEvents;
+    final lOther$includeEvents = other.includeEvents;
+    if (_$data.containsKey('includeEvents') !=
+        other._$data.containsKey('includeEvents')) {
+      return false;
+    }
+    if (l$includeEvents != lOther$includeEvents) {
+      return false;
+    }
+    final l$includeBalanceChanges = includeBalanceChanges;
+    final lOther$includeBalanceChanges = other.includeBalanceChanges;
+    if (_$data.containsKey('includeBalanceChanges') !=
+        other._$data.containsKey('includeBalanceChanges')) {
+      return false;
+    }
+    if (l$includeBalanceChanges != lOther$includeBalanceChanges) {
+      return false;
+    }
+    final l$includeEffectsJson = includeEffectsJson;
+    final lOther$includeEffectsJson = other.includeEffectsJson;
+    if (_$data.containsKey('includeEffectsJson') !=
+        other._$data.containsKey('includeEffectsJson')) {
+      return false;
+    }
+    if (l$includeEffectsJson != lOther$includeEffectsJson) {
+      return false;
+    }
+    final l$includeBcs = includeBcs;
+    final lOther$includeBcs = other.includeBcs;
+    if (_$data.containsKey('includeBcs') !=
+        other._$data.containsKey('includeBcs')) {
+      return false;
+    }
+    if (l$includeBcs != lOther$includeBcs) {
+      return false;
+    }
     return true;
   }
 
@@ -9567,10 +10122,24 @@ class Variables$Query$SimulateTransaction {
     final l$tx = tx;
     final l$checksEnabled = checksEnabled;
     final l$doGasSelection = doGasSelection;
+    final l$includeEffects = includeEffects;
+    final l$includeEvents = includeEvents;
+    final l$includeBalanceChanges = includeBalanceChanges;
+    final l$includeEffectsJson = includeEffectsJson;
+    final l$includeBcs = includeBcs;
     return Object.hashAll([
       l$tx,
       _$data.containsKey('checksEnabled') ? l$checksEnabled : const {},
       _$data.containsKey('doGasSelection') ? l$doGasSelection : const {},
+      _$data.containsKey('includeEffects') ? l$includeEffects : const {},
+      _$data.containsKey('includeEvents') ? l$includeEvents : const {},
+      _$data.containsKey('includeBalanceChanges')
+          ? l$includeBalanceChanges
+          : const {},
+      _$data.containsKey('includeEffectsJson')
+          ? l$includeEffectsJson
+          : const {},
+      _$data.containsKey('includeBcs') ? l$includeBcs : const {},
     ]);
   }
 }
@@ -9651,6 +10220,53 @@ const documentNodeQuerySimulateTransaction = DocumentNode(
           defaultValue: DefaultValueNode(value: null),
           directives: [],
         ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'includeEffects')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'includeEvents')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(
+            name: NameNode(value: 'includeBalanceChanges'),
+          ),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'includeEffectsJson')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'includeBcs')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
       ],
       directives: [],
       selectionSet: SelectionSetNode(
@@ -9683,245 +10299,41 @@ const documentNodeQuerySimulateTransaction = DocumentNode(
                   selectionSet: SelectionSetNode(
                     selections: [
                       FieldNode(
-                        name: NameNode(value: 'status'),
-                        alias: null,
-                        arguments: [],
-                        directives: [],
-                        selectionSet: null,
-                      ),
-                      FieldNode(
-                        name: NameNode(value: 'epoch'),
-                        alias: null,
-                        arguments: [],
-                        directives: [],
-                        selectionSet: SelectionSetNode(
-                          selections: [
-                            FieldNode(
-                              name: NameNode(value: 'epochId'),
-                              alias: null,
-                              arguments: [],
-                              directives: [],
-                              selectionSet: null,
-                            ),
-                          ],
-                        ),
-                      ),
-                      FieldNode(
-                        name: NameNode(value: 'executionError'),
-                        alias: null,
-                        arguments: [],
-                        directives: [],
-                        selectionSet: SelectionSetNode(
-                          selections: [
-                            FieldNode(
-                              name: NameNode(value: 'message'),
-                              alias: null,
-                              arguments: [],
-                              directives: [],
-                              selectionSet: null,
-                            ),
-                            FieldNode(
-                              name: NameNode(value: 'abortCode'),
-                              alias: null,
-                              arguments: [],
-                              directives: [],
-                              selectionSet: null,
-                            ),
-                            FieldNode(
-                              name: NameNode(value: 'sourceLineNumber'),
-                              alias: null,
-                              arguments: [],
-                              directives: [],
-                              selectionSet: null,
-                            ),
-                            FieldNode(
-                              name: NameNode(value: 'instructionOffset'),
-                              alias: null,
-                              arguments: [],
-                              directives: [],
-                              selectionSet: null,
-                            ),
-                            FieldNode(
-                              name: NameNode(value: 'identifier'),
-                              alias: null,
-                              arguments: [],
-                              directives: [],
-                              selectionSet: null,
-                            ),
-                            FieldNode(
-                              name: NameNode(value: 'constant'),
-                              alias: null,
-                              arguments: [],
-                              directives: [],
-                              selectionSet: null,
-                            ),
-                            FieldNode(
-                              name: NameNode(value: 'module'),
-                              alias: null,
-                              arguments: [],
-                              directives: [],
-                              selectionSet: SelectionSetNode(
-                                selections: [
-                                  FieldNode(
-                                    name: NameNode(value: 'name'),
-                                    alias: null,
-                                    arguments: [],
-                                    directives: [],
-                                    selectionSet: null,
-                                  ),
-                                  FieldNode(
-                                    name: NameNode(value: 'package'),
-                                    alias: null,
-                                    arguments: [],
-                                    directives: [],
-                                    selectionSet: SelectionSetNode(
-                                      selections: [
-                                        FieldNode(
-                                          name: NameNode(value: 'address'),
-                                          alias: null,
-                                          arguments: [],
-                                          directives: [],
-                                          selectionSet: null,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            FieldNode(
-                              name: NameNode(value: 'function'),
-                              alias: null,
-                              arguments: [],
-                              directives: [],
-                              selectionSet: SelectionSetNode(
-                                selections: [
-                                  FieldNode(
-                                    name: NameNode(value: 'name'),
-                                    alias: null,
-                                    arguments: [],
-                                    directives: [],
-                                    selectionSet: null,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      FieldNode(
                         name: NameNode(value: 'transaction'),
                         alias: null,
                         arguments: [],
                         directives: [],
                         selectionSet: SelectionSetNode(
                           selections: [
-                            FieldNode(
-                              name: NameNode(value: 'transactionBcs'),
-                              alias: null,
-                              arguments: [],
+                            FragmentSpreadNode(
+                              name: NameNode(value: 'CoreTransactionFields'),
                               directives: [],
-                              selectionSet: null,
                             ),
-                          ],
-                        ),
-                      ),
-                      FieldNode(
-                        name: NameNode(value: 'gasEffects'),
-                        alias: null,
-                        arguments: [],
-                        directives: [],
-                        selectionSet: SelectionSetNode(
-                          selections: [
                             FieldNode(
-                              name: NameNode(value: 'gasObject'),
+                              name: NameNode(value: 'effects'),
                               alias: null,
                               arguments: [],
                               directives: [],
                               selectionSet: SelectionSetNode(
                                 selections: [
                                   FieldNode(
-                                    name: NameNode(value: 'address'),
-                                    alias: null,
-                                    arguments: [],
-                                    directives: [],
-                                    selectionSet: null,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      FieldNode(
-                        name: NameNode(value: 'events'),
-                        alias: null,
-                        arguments: [
-                          ArgumentNode(
-                            name: NameNode(value: 'first'),
-                            value: IntValueNode(value: '50'),
-                          ),
-                        ],
-                        directives: [],
-                        selectionSet: SelectionSetNode(
-                          selections: [
-                            FieldNode(
-                              name: NameNode(value: 'nodes'),
-                              alias: null,
-                              arguments: [],
-                              directives: [],
-                              selectionSet: SelectionSetNode(
-                                selections: [
-                                  FieldNode(
-                                    name: NameNode(value: 'transactionModule'),
+                                    name: NameNode(value: 'gasEffects'),
                                     alias: null,
                                     arguments: [],
                                     directives: [],
                                     selectionSet: SelectionSetNode(
                                       selections: [
                                         FieldNode(
-                                          name: NameNode(value: 'name'),
-                                          alias: null,
-                                          arguments: [],
-                                          directives: [],
-                                          selectionSet: null,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  FieldNode(
-                                    name: NameNode(value: 'sender'),
-                                    alias: null,
-                                    arguments: [],
-                                    directives: [],
-                                    selectionSet: SelectionSetNode(
-                                      selections: [
-                                        FieldNode(
-                                          name: NameNode(value: 'address'),
-                                          alias: null,
-                                          arguments: [],
-                                          directives: [],
-                                          selectionSet: null,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  FieldNode(
-                                    name: NameNode(value: 'contents'),
-                                    alias: null,
-                                    arguments: [],
-                                    directives: [],
-                                    selectionSet: SelectionSetNode(
-                                      selections: [
-                                        FieldNode(
-                                          name: NameNode(value: 'type'),
+                                          name: NameNode(value: 'gasObject'),
                                           alias: null,
                                           arguments: [],
                                           directives: [],
                                           selectionSet: SelectionSetNode(
                                             selections: [
                                               FieldNode(
-                                                name: NameNode(value: 'repr'),
+                                                name: NameNode(
+                                                  value: 'address',
+                                                ),
                                                 alias: null,
                                                 arguments: [],
                                                 directives: [],
@@ -9929,20 +10341,6 @@ const documentNodeQuerySimulateTransaction = DocumentNode(
                                               ),
                                             ],
                                           ),
-                                        ),
-                                        FieldNode(
-                                          name: NameNode(value: 'json'),
-                                          alias: null,
-                                          arguments: [],
-                                          directives: [],
-                                          selectionSet: null,
-                                        ),
-                                        FieldNode(
-                                          name: NameNode(value: 'bcs'),
-                                          alias: null,
-                                          arguments: [],
-                                          directives: [],
-                                          selectionSet: null,
                                         ),
                                       ],
                                     ),
@@ -10026,6 +10424,9 @@ const documentNodeQuerySimulateTransaction = DocumentNode(
         ],
       ),
     ),
+    fragmentDefinitionCoreTransactionFields,
+    fragmentDefinitionCoreBalanceChangePage,
+    fragmentDefinitionCoreEventPage,
   ],
 );
 
@@ -10112,106 +10513,35 @@ class Query$SimulateTransaction$simulateTransaction {
 }
 
 class Query$SimulateTransaction$simulateTransaction$effects {
-  Query$SimulateTransaction$simulateTransaction$effects({
-    this.status,
-    this.epoch,
-    this.executionError,
-    this.transaction,
-    this.gasEffects,
-    this.events,
-  });
+  Query$SimulateTransaction$simulateTransaction$effects({this.transaction});
 
   factory Query$SimulateTransaction$simulateTransaction$effects.fromJson(
     Map<String, dynamic> json,
   ) {
-    final l$status = json['status'];
-    final l$epoch = json['epoch'];
-    final l$executionError = json['executionError'];
     final l$transaction = json['transaction'];
-    final l$gasEffects = json['gasEffects'];
-    final l$events = json['events'];
     return Query$SimulateTransaction$simulateTransaction$effects(
-      status: l$status == null
-          ? null
-          : fromJson$Enum$ExecutionStatus((l$status as String)),
-      epoch: l$epoch == null
-          ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$epoch.fromJson(
-              (l$epoch as Map<String, dynamic>),
-            ),
-      executionError: l$executionError == null
-          ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$executionError.fromJson(
-              (l$executionError as Map<String, dynamic>),
-            ),
       transaction: l$transaction == null
           ? null
           : Query$SimulateTransaction$simulateTransaction$effects$transaction.fromJson(
               (l$transaction as Map<String, dynamic>),
             ),
-      gasEffects: l$gasEffects == null
-          ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$gasEffects.fromJson(
-              (l$gasEffects as Map<String, dynamic>),
-            ),
-      events: l$events == null
-          ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$events.fromJson(
-              (l$events as Map<String, dynamic>),
-            ),
     );
   }
-
-  final Enum$ExecutionStatus? status;
-
-  final Query$SimulateTransaction$simulateTransaction$effects$epoch? epoch;
-
-  final Query$SimulateTransaction$simulateTransaction$effects$executionError?
-  executionError;
 
   final Query$SimulateTransaction$simulateTransaction$effects$transaction?
   transaction;
 
-  final Query$SimulateTransaction$simulateTransaction$effects$gasEffects?
-  gasEffects;
-
-  final Query$SimulateTransaction$simulateTransaction$effects$events? events;
-
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
-    final l$status = status;
-    _resultData['status'] = l$status == null
-        ? null
-        : toJson$Enum$ExecutionStatus(l$status);
-    final l$epoch = epoch;
-    _resultData['epoch'] = l$epoch?.toJson();
-    final l$executionError = executionError;
-    _resultData['executionError'] = l$executionError?.toJson();
     final l$transaction = transaction;
     _resultData['transaction'] = l$transaction?.toJson();
-    final l$gasEffects = gasEffects;
-    _resultData['gasEffects'] = l$gasEffects?.toJson();
-    final l$events = events;
-    _resultData['events'] = l$events?.toJson();
     return _resultData;
   }
 
   @override
   int get hashCode {
-    final l$status = status;
-    final l$epoch = epoch;
-    final l$executionError = executionError;
     final l$transaction = transaction;
-    final l$gasEffects = gasEffects;
-    final l$events = events;
-    return Object.hashAll([
-      l$status,
-      l$epoch,
-      l$executionError,
-      l$transaction,
-      l$gasEffects,
-      l$events,
-    ]);
+    return Object.hashAll([l$transaction]);
   }
 
   @override
@@ -10223,9 +10553,345 @@ class Query$SimulateTransaction$simulateTransaction$effects {
         runtimeType != other.runtimeType) {
       return false;
     }
+    final l$transaction = transaction;
+    final lOther$transaction = other.transaction;
+    if (l$transaction != lOther$transaction) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$transaction
+    implements Fragment$CoreTransactionFields {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction({
+    required this.digest,
+    this.transactionBcs,
+    required this.signatures,
+    this.effects,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$digest = json['digest'];
+    final l$transactionBcs = json['transactionBcs'];
+    final l$signatures = json['signatures'];
+    final l$effects = json['effects'];
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction(
+      digest: (l$digest as String),
+      transactionBcs: (l$transactionBcs as String?),
+      signatures: (l$signatures as List<dynamic>)
+          .map(
+            (e) =>
+                Query$SimulateTransaction$simulateTransaction$effects$transaction$signatures.fromJson(
+                  (e as Map<String, dynamic>),
+                ),
+          )
+          .toList(),
+      effects: l$effects == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$transaction$effects.fromJson(
+              (l$effects as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final String digest;
+
+  final String? transactionBcs;
+
+  final List<
+    Query$SimulateTransaction$simulateTransaction$effects$transaction$signatures
+  >
+  signatures;
+
+  final Query$SimulateTransaction$simulateTransaction$effects$transaction$effects?
+  effects;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$digest = digest;
+    _resultData['digest'] = l$digest;
+    final l$transactionBcs = transactionBcs;
+    _resultData['transactionBcs'] = l$transactionBcs;
+    final l$signatures = signatures;
+    _resultData['signatures'] = l$signatures.map((e) => e.toJson()).toList();
+    final l$effects = effects;
+    _resultData['effects'] = l$effects?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$digest = digest;
+    final l$transactionBcs = transactionBcs;
+    final l$signatures = signatures;
+    final l$effects = effects;
+    return Object.hashAll([
+      l$digest,
+      l$transactionBcs,
+      Object.hashAll(l$signatures.map((v) => v)),
+      l$effects,
+    ]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$digest = digest;
+    final lOther$digest = other.digest;
+    if (l$digest != lOther$digest) {
+      return false;
+    }
+    final l$transactionBcs = transactionBcs;
+    final lOther$transactionBcs = other.transactionBcs;
+    if (l$transactionBcs != lOther$transactionBcs) {
+      return false;
+    }
+    final l$signatures = signatures;
+    final lOther$signatures = other.signatures;
+    if (l$signatures.length != lOther$signatures.length) {
+      return false;
+    }
+    for (int i = 0; i < l$signatures.length; i++) {
+      final l$signatures$entry = l$signatures[i];
+      final lOther$signatures$entry = lOther$signatures[i];
+      if (l$signatures$entry != lOther$signatures$entry) {
+        return false;
+      }
+    }
+    final l$effects = effects;
+    final lOther$effects = other.effects;
+    if (l$effects != lOther$effects) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$transaction$signatures
+    implements Fragment$CoreTransactionFields$signatures {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction$signatures({
+    this.signatureBytes,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction$signatures.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$signatureBytes = json['signatureBytes'];
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction$signatures(
+      signatureBytes: (l$signatureBytes as String?),
+    );
+  }
+
+  final String? signatureBytes;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$signatureBytes = signatureBytes;
+    _resultData['signatureBytes'] = l$signatureBytes;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$signatureBytes = signatureBytes;
+    return Object.hashAll([l$signatureBytes]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction$signatures ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$signatureBytes = signatureBytes;
+    final lOther$signatureBytes = other.signatureBytes;
+    if (l$signatureBytes != lOther$signatureBytes) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$transaction$effects
+    implements Fragment$CoreTransactionFields$effects {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction$effects({
+    this.status,
+    this.timestamp,
+    this.checkpoint,
+    this.epoch,
+    this.executionError,
+    this.effectsBcs,
+    this.effectsJson,
+    this.balanceChanges,
+    this.events,
+    this.gasEffects,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction$effects.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$status = json['status'];
+    final l$timestamp = json['timestamp'];
+    final l$checkpoint = json['checkpoint'];
+    final l$epoch = json['epoch'];
+    final l$executionError = json['executionError'];
+    final l$effectsBcs = json['effectsBcs'];
+    final l$effectsJson = json['effectsJson'];
+    final l$balanceChanges = json['balanceChanges'];
+    final l$events = json['events'];
+    final l$gasEffects = json['gasEffects'];
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction$effects(
+      status: l$status == null
+          ? null
+          : fromJson$Enum$ExecutionStatus((l$status as String)),
+      timestamp: (l$timestamp as String?),
+      checkpoint: l$checkpoint == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$checkpoint.fromJson(
+              (l$checkpoint as Map<String, dynamic>),
+            ),
+      epoch: l$epoch == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$epoch.fromJson(
+              (l$epoch as Map<String, dynamic>),
+            ),
+      executionError: l$executionError == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError.fromJson(
+              (l$executionError as Map<String, dynamic>),
+            ),
+      effectsBcs: (l$effectsBcs as String?),
+      effectsJson: (l$effectsJson as Map<String, dynamic>?),
+      balanceChanges: l$balanceChanges == null
+          ? null
+          : Fragment$CoreBalanceChangePage.fromJson(
+              (l$balanceChanges as Map<String, dynamic>),
+            ),
+      events: l$events == null
+          ? null
+          : Fragment$CoreEventPage.fromJson((l$events as Map<String, dynamic>)),
+      gasEffects: l$gasEffects == null
+          ? null
+          : Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects.fromJson(
+              (l$gasEffects as Map<String, dynamic>),
+            ),
+    );
+  }
+
+  final Enum$ExecutionStatus? status;
+
+  final String? timestamp;
+
+  final Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$checkpoint?
+  checkpoint;
+
+  final Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$epoch?
+  epoch;
+
+  final Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError?
+  executionError;
+
+  final String? effectsBcs;
+
+  final Map<String, dynamic>? effectsJson;
+
+  final Fragment$CoreBalanceChangePage? balanceChanges;
+
+  final Fragment$CoreEventPage? events;
+
+  final Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects?
+  gasEffects;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$status = status;
+    _resultData['status'] = l$status == null
+        ? null
+        : toJson$Enum$ExecutionStatus(l$status);
+    final l$timestamp = timestamp;
+    _resultData['timestamp'] = l$timestamp;
+    final l$checkpoint = checkpoint;
+    _resultData['checkpoint'] = l$checkpoint?.toJson();
+    final l$epoch = epoch;
+    _resultData['epoch'] = l$epoch?.toJson();
+    final l$executionError = executionError;
+    _resultData['executionError'] = l$executionError?.toJson();
+    final l$effectsBcs = effectsBcs;
+    _resultData['effectsBcs'] = l$effectsBcs;
+    final l$effectsJson = effectsJson;
+    _resultData['effectsJson'] = l$effectsJson;
+    final l$balanceChanges = balanceChanges;
+    _resultData['balanceChanges'] = l$balanceChanges?.toJson();
+    final l$events = events;
+    _resultData['events'] = l$events?.toJson();
+    final l$gasEffects = gasEffects;
+    _resultData['gasEffects'] = l$gasEffects?.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$status = status;
+    final l$timestamp = timestamp;
+    final l$checkpoint = checkpoint;
+    final l$epoch = epoch;
+    final l$executionError = executionError;
+    final l$effectsBcs = effectsBcs;
+    final l$effectsJson = effectsJson;
+    final l$balanceChanges = balanceChanges;
+    final l$events = events;
+    final l$gasEffects = gasEffects;
+    return Object.hashAll([
+      l$status,
+      l$timestamp,
+      l$checkpoint,
+      l$epoch,
+      l$executionError,
+      l$effectsBcs,
+      l$effectsJson,
+      l$balanceChanges,
+      l$events,
+      l$gasEffects,
+    ]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction$effects ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
     final l$status = status;
     final lOther$status = other.status;
     if (l$status != lOther$status) {
+      return false;
+    }
+    final l$timestamp = timestamp;
+    final lOther$timestamp = other.timestamp;
+    if (l$timestamp != lOther$timestamp) {
+      return false;
+    }
+    final l$checkpoint = checkpoint;
+    final lOther$checkpoint = other.checkpoint;
+    if (l$checkpoint != lOther$checkpoint) {
       return false;
     }
     final l$epoch = epoch;
@@ -10238,14 +10904,19 @@ class Query$SimulateTransaction$simulateTransaction$effects {
     if (l$executionError != lOther$executionError) {
       return false;
     }
-    final l$transaction = transaction;
-    final lOther$transaction = other.transaction;
-    if (l$transaction != lOther$transaction) {
+    final l$effectsBcs = effectsBcs;
+    final lOther$effectsBcs = other.effectsBcs;
+    if (l$effectsBcs != lOther$effectsBcs) {
       return false;
     }
-    final l$gasEffects = gasEffects;
-    final lOther$gasEffects = other.gasEffects;
-    if (l$gasEffects != lOther$gasEffects) {
+    final l$effectsJson = effectsJson;
+    final lOther$effectsJson = other.effectsJson;
+    if (l$effectsJson != lOther$effectsJson) {
+      return false;
+    }
+    final l$balanceChanges = balanceChanges;
+    final lOther$balanceChanges = other.balanceChanges;
+    if (l$balanceChanges != lOther$balanceChanges) {
       return false;
     }
     final l$events = events;
@@ -10253,20 +10924,75 @@ class Query$SimulateTransaction$simulateTransaction$effects {
     if (l$events != lOther$events) {
       return false;
     }
+    final l$gasEffects = gasEffects;
+    final lOther$gasEffects = other.gasEffects;
+    if (l$gasEffects != lOther$gasEffects) {
+      return false;
+    }
     return true;
   }
 }
 
-class Query$SimulateTransaction$simulateTransaction$effects$epoch {
-  Query$SimulateTransaction$simulateTransaction$effects$epoch({
+class Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$checkpoint
+    implements Fragment$CoreTransactionFields$effects$checkpoint {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$checkpoint({
+    required this.sequenceNumber,
+  });
+
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$checkpoint.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$sequenceNumber = json['sequenceNumber'];
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$checkpoint(
+      sequenceNumber: (l$sequenceNumber as int),
+    );
+  }
+
+  final int sequenceNumber;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$sequenceNumber = sequenceNumber;
+    _resultData['sequenceNumber'] = l$sequenceNumber;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$sequenceNumber = sequenceNumber;
+    return Object.hashAll([l$sequenceNumber]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$checkpoint ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$sequenceNumber = sequenceNumber;
+    final lOther$sequenceNumber = other.sequenceNumber;
+    if (l$sequenceNumber != lOther$sequenceNumber) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$epoch
+    implements Fragment$CoreTransactionFields$effects$epoch {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$epoch({
     required this.epochId,
   });
 
-  factory Query$SimulateTransaction$simulateTransaction$effects$epoch.fromJson(
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$epoch.fromJson(
     Map<String, dynamic> json,
   ) {
     final l$epochId = json['epochId'];
-    return Query$SimulateTransaction$simulateTransaction$effects$epoch(
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$epoch(
       epochId: (l$epochId as int),
     );
   }
@@ -10291,7 +11017,8 @@ class Query$SimulateTransaction$simulateTransaction$effects$epoch {
     if (identical(this, other)) {
       return true;
     }
-    if (other is! Query$SimulateTransaction$simulateTransaction$effects$epoch ||
+    if (other
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$epoch ||
         runtimeType != other.runtimeType) {
       return false;
     }
@@ -10304,8 +11031,9 @@ class Query$SimulateTransaction$simulateTransaction$effects$epoch {
   }
 }
 
-class Query$SimulateTransaction$simulateTransaction$effects$executionError {
-  Query$SimulateTransaction$simulateTransaction$effects$executionError({
+class Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError
+    implements Fragment$CoreTransactionFields$effects$executionError {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError({
     required this.message,
     this.abortCode,
     this.sourceLineNumber,
@@ -10316,7 +11044,7 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError {
     this.function,
   });
 
-  factory Query$SimulateTransaction$simulateTransaction$effects$executionError.fromJson(
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError.fromJson(
     Map<String, dynamic> json,
   ) {
     final l$message = json['message'];
@@ -10327,7 +11055,7 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError {
     final l$constant = json['constant'];
     final l$module = json['module'];
     final l$function = json['function'];
-    return Query$SimulateTransaction$simulateTransaction$effects$executionError(
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError(
       message: (l$message as String),
       abortCode: (l$abortCode as String?),
       sourceLineNumber: (l$sourceLineNumber as int?),
@@ -10336,12 +11064,12 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError {
       constant: (l$constant as String?),
       module: l$module == null
           ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$executionError$module.fromJson(
+          : Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module.fromJson(
               (l$module as Map<String, dynamic>),
             ),
       function: l$function == null
           ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$executionError$function.fromJson(
+          : Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$function.fromJson(
               (l$function as Map<String, dynamic>),
             ),
     );
@@ -10359,10 +11087,10 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError {
 
   final String? constant;
 
-  final Query$SimulateTransaction$simulateTransaction$effects$executionError$module?
+  final Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module?
   module;
 
-  final Query$SimulateTransaction$simulateTransaction$effects$executionError$function?
+  final Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$function?
   function;
 
   Map<String, dynamic> toJson() {
@@ -10414,7 +11142,7 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError {
       return true;
     }
     if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$executionError ||
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError ||
         runtimeType != other.runtimeType) {
       return false;
     }
@@ -10462,22 +11190,23 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError {
   }
 }
 
-class Query$SimulateTransaction$simulateTransaction$effects$executionError$module {
-  Query$SimulateTransaction$simulateTransaction$effects$executionError$module({
+class Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module
+    implements Fragment$CoreTransactionFields$effects$executionError$module {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module({
     required this.name,
     this.package,
   });
 
-  factory Query$SimulateTransaction$simulateTransaction$effects$executionError$module.fromJson(
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module.fromJson(
     Map<String, dynamic> json,
   ) {
     final l$name = json['name'];
     final l$package = json['package'];
-    return Query$SimulateTransaction$simulateTransaction$effects$executionError$module(
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module(
       name: (l$name as String),
       package: l$package == null
           ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package.fromJson(
+          : Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package.fromJson(
               (l$package as Map<String, dynamic>),
             ),
     );
@@ -10485,7 +11214,7 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError$modul
 
   final String name;
 
-  final Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package?
+  final Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package?
   package;
 
   Map<String, dynamic> toJson() {
@@ -10510,7 +11239,7 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError$modul
       return true;
     }
     if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$executionError$module ||
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module ||
         runtimeType != other.runtimeType) {
       return false;
     }
@@ -10528,16 +11257,18 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError$modul
   }
 }
 
-class Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package {
-  Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package({
+class Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package
+    implements
+        Fragment$CoreTransactionFields$effects$executionError$module$package {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package({
     required this.address,
   });
 
-  factory Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package.fromJson(
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package.fromJson(
     Map<String, dynamic> json,
   ) {
     final l$address = json['address'];
-    return Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package(
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package(
       address: (l$address as String),
     );
   }
@@ -10563,7 +11294,7 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError$modul
       return true;
     }
     if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$executionError$module$package ||
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$module$package ||
         runtimeType != other.runtimeType) {
       return false;
     }
@@ -10576,16 +11307,17 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError$modul
   }
 }
 
-class Query$SimulateTransaction$simulateTransaction$effects$executionError$function {
-  Query$SimulateTransaction$simulateTransaction$effects$executionError$function({
+class Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$function
+    implements Fragment$CoreTransactionFields$effects$executionError$function {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$function({
     required this.name,
   });
 
-  factory Query$SimulateTransaction$simulateTransaction$effects$executionError$function.fromJson(
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$function.fromJson(
     Map<String, dynamic> json,
   ) {
     final l$name = json['name'];
-    return Query$SimulateTransaction$simulateTransaction$effects$executionError$function(
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$function(
       name: (l$name as String),
     );
   }
@@ -10611,7 +11343,7 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError$funct
       return true;
     }
     if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$executionError$function ||
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$executionError$function ||
         runtimeType != other.runtimeType) {
       return false;
     }
@@ -10624,73 +11356,25 @@ class Query$SimulateTransaction$simulateTransaction$effects$executionError$funct
   }
 }
 
-class Query$SimulateTransaction$simulateTransaction$effects$transaction {
-  Query$SimulateTransaction$simulateTransaction$effects$transaction({
-    this.transactionBcs,
-  });
-
-  factory Query$SimulateTransaction$simulateTransaction$effects$transaction.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final l$transactionBcs = json['transactionBcs'];
-    return Query$SimulateTransaction$simulateTransaction$effects$transaction(
-      transactionBcs: (l$transactionBcs as String?),
-    );
-  }
-
-  final String? transactionBcs;
-
-  Map<String, dynamic> toJson() {
-    final _resultData = <String, dynamic>{};
-    final l$transactionBcs = transactionBcs;
-    _resultData['transactionBcs'] = l$transactionBcs;
-    return _resultData;
-  }
-
-  @override
-  int get hashCode {
-    final l$transactionBcs = transactionBcs;
-    return Object.hashAll([l$transactionBcs]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$transaction ||
-        runtimeType != other.runtimeType) {
-      return false;
-    }
-    final l$transactionBcs = transactionBcs;
-    final lOther$transactionBcs = other.transactionBcs;
-    if (l$transactionBcs != lOther$transactionBcs) {
-      return false;
-    }
-    return true;
-  }
-}
-
-class Query$SimulateTransaction$simulateTransaction$effects$gasEffects {
-  Query$SimulateTransaction$simulateTransaction$effects$gasEffects({
+class Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects({
     this.gasObject,
   });
 
-  factory Query$SimulateTransaction$simulateTransaction$effects$gasEffects.fromJson(
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects.fromJson(
     Map<String, dynamic> json,
   ) {
     final l$gasObject = json['gasObject'];
-    return Query$SimulateTransaction$simulateTransaction$effects$gasEffects(
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects(
       gasObject: l$gasObject == null
           ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject.fromJson(
+          : Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects$gasObject.fromJson(
               (l$gasObject as Map<String, dynamic>),
             ),
     );
   }
 
-  final Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject?
+  final Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects$gasObject?
   gasObject;
 
   Map<String, dynamic> toJson() {
@@ -10712,7 +11396,7 @@ class Query$SimulateTransaction$simulateTransaction$effects$gasEffects {
       return true;
     }
     if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$gasEffects ||
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects ||
         runtimeType != other.runtimeType) {
       return false;
     }
@@ -10725,16 +11409,16 @@ class Query$SimulateTransaction$simulateTransaction$effects$gasEffects {
   }
 }
 
-class Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject {
-  Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject({
+class Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects$gasObject {
+  Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects$gasObject({
     required this.address,
   });
 
-  factory Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject.fromJson(
+  factory Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects$gasObject.fromJson(
     Map<String, dynamic> json,
   ) {
     final l$address = json['address'];
-    return Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject(
+    return Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects$gasObject(
       address: (l$address as String),
     );
   }
@@ -10760,388 +11444,13 @@ class Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject
       return true;
     }
     if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$gasEffects$gasObject ||
+            is! Query$SimulateTransaction$simulateTransaction$effects$transaction$effects$gasEffects$gasObject ||
         runtimeType != other.runtimeType) {
       return false;
     }
     final l$address = address;
     final lOther$address = other.address;
     if (l$address != lOther$address) {
-      return false;
-    }
-    return true;
-  }
-}
-
-class Query$SimulateTransaction$simulateTransaction$effects$events {
-  Query$SimulateTransaction$simulateTransaction$effects$events({
-    required this.nodes,
-  });
-
-  factory Query$SimulateTransaction$simulateTransaction$effects$events.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final l$nodes = json['nodes'];
-    return Query$SimulateTransaction$simulateTransaction$effects$events(
-      nodes: (l$nodes as List<dynamic>)
-          .map(
-            (e) =>
-                Query$SimulateTransaction$simulateTransaction$effects$events$nodes.fromJson(
-                  (e as Map<String, dynamic>),
-                ),
-          )
-          .toList(),
-    );
-  }
-
-  final List<Query$SimulateTransaction$simulateTransaction$effects$events$nodes>
-  nodes;
-
-  Map<String, dynamic> toJson() {
-    final _resultData = <String, dynamic>{};
-    final l$nodes = nodes;
-    _resultData['nodes'] = l$nodes.map((e) => e.toJson()).toList();
-    return _resultData;
-  }
-
-  @override
-  int get hashCode {
-    final l$nodes = nodes;
-    return Object.hashAll([Object.hashAll(l$nodes.map((v) => v))]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$events ||
-        runtimeType != other.runtimeType) {
-      return false;
-    }
-    final l$nodes = nodes;
-    final lOther$nodes = other.nodes;
-    if (l$nodes.length != lOther$nodes.length) {
-      return false;
-    }
-    for (int i = 0; i < l$nodes.length; i++) {
-      final l$nodes$entry = l$nodes[i];
-      final lOther$nodes$entry = lOther$nodes[i];
-      if (l$nodes$entry != lOther$nodes$entry) {
-        return false;
-      }
-    }
-    return true;
-  }
-}
-
-class Query$SimulateTransaction$simulateTransaction$effects$events$nodes {
-  Query$SimulateTransaction$simulateTransaction$effects$events$nodes({
-    this.transactionModule,
-    this.sender,
-    this.contents,
-  });
-
-  factory Query$SimulateTransaction$simulateTransaction$effects$events$nodes.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final l$transactionModule = json['transactionModule'];
-    final l$sender = json['sender'];
-    final l$contents = json['contents'];
-    return Query$SimulateTransaction$simulateTransaction$effects$events$nodes(
-      transactionModule: l$transactionModule == null
-          ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$events$nodes$transactionModule.fromJson(
-              (l$transactionModule as Map<String, dynamic>),
-            ),
-      sender: l$sender == null
-          ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$events$nodes$sender.fromJson(
-              (l$sender as Map<String, dynamic>),
-            ),
-      contents: l$contents == null
-          ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents.fromJson(
-              (l$contents as Map<String, dynamic>),
-            ),
-    );
-  }
-
-  final Query$SimulateTransaction$simulateTransaction$effects$events$nodes$transactionModule?
-  transactionModule;
-
-  final Query$SimulateTransaction$simulateTransaction$effects$events$nodes$sender?
-  sender;
-
-  final Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents?
-  contents;
-
-  Map<String, dynamic> toJson() {
-    final _resultData = <String, dynamic>{};
-    final l$transactionModule = transactionModule;
-    _resultData['transactionModule'] = l$transactionModule?.toJson();
-    final l$sender = sender;
-    _resultData['sender'] = l$sender?.toJson();
-    final l$contents = contents;
-    _resultData['contents'] = l$contents?.toJson();
-    return _resultData;
-  }
-
-  @override
-  int get hashCode {
-    final l$transactionModule = transactionModule;
-    final l$sender = sender;
-    final l$contents = contents;
-    return Object.hashAll([l$transactionModule, l$sender, l$contents]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$events$nodes ||
-        runtimeType != other.runtimeType) {
-      return false;
-    }
-    final l$transactionModule = transactionModule;
-    final lOther$transactionModule = other.transactionModule;
-    if (l$transactionModule != lOther$transactionModule) {
-      return false;
-    }
-    final l$sender = sender;
-    final lOther$sender = other.sender;
-    if (l$sender != lOther$sender) {
-      return false;
-    }
-    final l$contents = contents;
-    final lOther$contents = other.contents;
-    if (l$contents != lOther$contents) {
-      return false;
-    }
-    return true;
-  }
-}
-
-class Query$SimulateTransaction$simulateTransaction$effects$events$nodes$transactionModule {
-  Query$SimulateTransaction$simulateTransaction$effects$events$nodes$transactionModule({
-    required this.name,
-  });
-
-  factory Query$SimulateTransaction$simulateTransaction$effects$events$nodes$transactionModule.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final l$name = json['name'];
-    return Query$SimulateTransaction$simulateTransaction$effects$events$nodes$transactionModule(
-      name: (l$name as String),
-    );
-  }
-
-  final String name;
-
-  Map<String, dynamic> toJson() {
-    final _resultData = <String, dynamic>{};
-    final l$name = name;
-    _resultData['name'] = l$name;
-    return _resultData;
-  }
-
-  @override
-  int get hashCode {
-    final l$name = name;
-    return Object.hashAll([l$name]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$events$nodes$transactionModule ||
-        runtimeType != other.runtimeType) {
-      return false;
-    }
-    final l$name = name;
-    final lOther$name = other.name;
-    if (l$name != lOther$name) {
-      return false;
-    }
-    return true;
-  }
-}
-
-class Query$SimulateTransaction$simulateTransaction$effects$events$nodes$sender {
-  Query$SimulateTransaction$simulateTransaction$effects$events$nodes$sender({
-    required this.address,
-  });
-
-  factory Query$SimulateTransaction$simulateTransaction$effects$events$nodes$sender.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final l$address = json['address'];
-    return Query$SimulateTransaction$simulateTransaction$effects$events$nodes$sender(
-      address: (l$address as String),
-    );
-  }
-
-  final String address;
-
-  Map<String, dynamic> toJson() {
-    final _resultData = <String, dynamic>{};
-    final l$address = address;
-    _resultData['address'] = l$address;
-    return _resultData;
-  }
-
-  @override
-  int get hashCode {
-    final l$address = address;
-    return Object.hashAll([l$address]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$events$nodes$sender ||
-        runtimeType != other.runtimeType) {
-      return false;
-    }
-    final l$address = address;
-    final lOther$address = other.address;
-    if (l$address != lOther$address) {
-      return false;
-    }
-    return true;
-  }
-}
-
-class Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents {
-  Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents({
-    this.type,
-    this.json,
-    this.bcs,
-  });
-
-  factory Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final l$type = json['type'];
-    final l$json = json['json'];
-    final l$bcs = json['bcs'];
-    return Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents(
-      type: l$type == null
-          ? null
-          : Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents$type.fromJson(
-              (l$type as Map<String, dynamic>),
-            ),
-      json: (l$json as Map<String, dynamic>?),
-      bcs: (l$bcs as String?),
-    );
-  }
-
-  final Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents$type?
-  type;
-
-  final Map<String, dynamic>? json;
-
-  final String? bcs;
-
-  Map<String, dynamic> toJson() {
-    final _resultData = <String, dynamic>{};
-    final l$type = type;
-    _resultData['type'] = l$type?.toJson();
-    final l$json = json;
-    _resultData['json'] = l$json;
-    final l$bcs = bcs;
-    _resultData['bcs'] = l$bcs;
-    return _resultData;
-  }
-
-  @override
-  int get hashCode {
-    final l$type = type;
-    final l$json = json;
-    final l$bcs = bcs;
-    return Object.hashAll([l$type, l$json, l$bcs]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents ||
-        runtimeType != other.runtimeType) {
-      return false;
-    }
-    final l$type = type;
-    final lOther$type = other.type;
-    if (l$type != lOther$type) {
-      return false;
-    }
-    final l$json = json;
-    final lOther$json = other.json;
-    if (l$json != lOther$json) {
-      return false;
-    }
-    final l$bcs = bcs;
-    final lOther$bcs = other.bcs;
-    if (l$bcs != lOther$bcs) {
-      return false;
-    }
-    return true;
-  }
-}
-
-class Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents$type {
-  Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents$type({
-    required this.repr,
-  });
-
-  factory Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents$type.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final l$repr = json['repr'];
-    return Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents$type(
-      repr: (l$repr as String),
-    );
-  }
-
-  final String repr;
-
-  Map<String, dynamic> toJson() {
-    final _resultData = <String, dynamic>{};
-    final l$repr = repr;
-    _resultData['repr'] = l$repr;
-    return _resultData;
-  }
-
-  @override
-  int get hashCode {
-    final l$repr = repr;
-    return Object.hashAll([l$repr]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other
-            is! Query$SimulateTransaction$simulateTransaction$effects$events$nodes$contents$type ||
-        runtimeType != other.runtimeType) {
-      return false;
-    }
-    final l$repr = repr;
-    final lOther$repr = other.repr;
-    if (l$repr != lOther$repr) {
       return false;
     }
     return true;
@@ -13175,11 +13484,20 @@ class Variables$Query$GetOwnedObjects {
     String? type,
     int? first,
     String? after,
+    bool? includeContent,
+    bool? includePreviousTransaction,
+    bool? includeObjectBcs,
+    bool? includeDisplay,
   }) => Variables$Query$GetOwnedObjects._({
     r'address': address,
     if (type != null) r'type': type,
     if (first != null) r'first': first,
     if (after != null) r'after': after,
+    if (includeContent != null) r'includeContent': includeContent,
+    if (includePreviousTransaction != null)
+      r'includePreviousTransaction': includePreviousTransaction,
+    if (includeObjectBcs != null) r'includeObjectBcs': includeObjectBcs,
+    if (includeDisplay != null) r'includeDisplay': includeDisplay,
   });
 
   Variables$Query$GetOwnedObjects._(this._$data);
@@ -13200,6 +13518,23 @@ class Variables$Query$GetOwnedObjects {
       final l$after = data['after'];
       result$data['after'] = (l$after as String?);
     }
+    if (data.containsKey('includeContent')) {
+      final l$includeContent = data['includeContent'];
+      result$data['includeContent'] = (l$includeContent as bool?);
+    }
+    if (data.containsKey('includePreviousTransaction')) {
+      final l$includePreviousTransaction = data['includePreviousTransaction'];
+      result$data['includePreviousTransaction'] =
+          (l$includePreviousTransaction as bool?);
+    }
+    if (data.containsKey('includeObjectBcs')) {
+      final l$includeObjectBcs = data['includeObjectBcs'];
+      result$data['includeObjectBcs'] = (l$includeObjectBcs as bool?);
+    }
+    if (data.containsKey('includeDisplay')) {
+      final l$includeDisplay = data['includeDisplay'];
+      result$data['includeDisplay'] = (l$includeDisplay as bool?);
+    }
     return Variables$Query$GetOwnedObjects._(result$data);
   }
 
@@ -13212,6 +13547,15 @@ class Variables$Query$GetOwnedObjects {
   int? get first => (_$data['first'] as int?);
 
   String? get after => (_$data['after'] as String?);
+
+  bool? get includeContent => (_$data['includeContent'] as bool?);
+
+  bool? get includePreviousTransaction =>
+      (_$data['includePreviousTransaction'] as bool?);
+
+  bool? get includeObjectBcs => (_$data['includeObjectBcs'] as bool?);
+
+  bool? get includeDisplay => (_$data['includeDisplay'] as bool?);
 
   Map<String, dynamic> toJson() {
     final result$data = <String, dynamic>{};
@@ -13228,6 +13572,22 @@ class Variables$Query$GetOwnedObjects {
     if (_$data.containsKey('after')) {
       final l$after = after;
       result$data['after'] = l$after;
+    }
+    if (_$data.containsKey('includeContent')) {
+      final l$includeContent = includeContent;
+      result$data['includeContent'] = l$includeContent;
+    }
+    if (_$data.containsKey('includePreviousTransaction')) {
+      final l$includePreviousTransaction = includePreviousTransaction;
+      result$data['includePreviousTransaction'] = l$includePreviousTransaction;
+    }
+    if (_$data.containsKey('includeObjectBcs')) {
+      final l$includeObjectBcs = includeObjectBcs;
+      result$data['includeObjectBcs'] = l$includeObjectBcs;
+    }
+    if (_$data.containsKey('includeDisplay')) {
+      final l$includeDisplay = includeDisplay;
+      result$data['includeDisplay'] = l$includeDisplay;
     }
     return result$data;
   }
@@ -13270,6 +13630,42 @@ class Variables$Query$GetOwnedObjects {
     if (l$after != lOther$after) {
       return false;
     }
+    final l$includeContent = includeContent;
+    final lOther$includeContent = other.includeContent;
+    if (_$data.containsKey('includeContent') !=
+        other._$data.containsKey('includeContent')) {
+      return false;
+    }
+    if (l$includeContent != lOther$includeContent) {
+      return false;
+    }
+    final l$includePreviousTransaction = includePreviousTransaction;
+    final lOther$includePreviousTransaction = other.includePreviousTransaction;
+    if (_$data.containsKey('includePreviousTransaction') !=
+        other._$data.containsKey('includePreviousTransaction')) {
+      return false;
+    }
+    if (l$includePreviousTransaction != lOther$includePreviousTransaction) {
+      return false;
+    }
+    final l$includeObjectBcs = includeObjectBcs;
+    final lOther$includeObjectBcs = other.includeObjectBcs;
+    if (_$data.containsKey('includeObjectBcs') !=
+        other._$data.containsKey('includeObjectBcs')) {
+      return false;
+    }
+    if (l$includeObjectBcs != lOther$includeObjectBcs) {
+      return false;
+    }
+    final l$includeDisplay = includeDisplay;
+    final lOther$includeDisplay = other.includeDisplay;
+    if (_$data.containsKey('includeDisplay') !=
+        other._$data.containsKey('includeDisplay')) {
+      return false;
+    }
+    if (l$includeDisplay != lOther$includeDisplay) {
+      return false;
+    }
     return true;
   }
 
@@ -13279,11 +13675,21 @@ class Variables$Query$GetOwnedObjects {
     final l$type = type;
     final l$first = first;
     final l$after = after;
+    final l$includeContent = includeContent;
+    final l$includePreviousTransaction = includePreviousTransaction;
+    final l$includeObjectBcs = includeObjectBcs;
+    final l$includeDisplay = includeDisplay;
     return Object.hashAll([
       l$address,
       _$data.containsKey('type') ? l$type : const {},
       _$data.containsKey('first') ? l$first : const {},
       _$data.containsKey('after') ? l$after : const {},
+      _$data.containsKey('includeContent') ? l$includeContent : const {},
+      _$data.containsKey('includePreviousTransaction')
+          ? l$includePreviousTransaction
+          : const {},
+      _$data.containsKey('includeObjectBcs') ? l$includeObjectBcs : const {},
+      _$data.containsKey('includeDisplay') ? l$includeDisplay : const {},
     ]);
   }
 }
@@ -13371,6 +13777,44 @@ const documentNodeQueryGetOwnedObjects = DocumentNode(
             isNonNull: false,
           ),
           defaultValue: DefaultValueNode(value: null),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'includeContent')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(
+            name: NameNode(value: 'includePreviousTransaction'),
+          ),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'includeObjectBcs')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'includeDisplay')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
           directives: [],
         ),
       ],
@@ -13483,35 +13927,67 @@ const documentNodeQueryGetOwnedObjects = DocumentNode(
                               ),
                             ),
                             FieldNode(
+                              name: NameNode(value: 'objectBcs'),
+                              alias: null,
+                              arguments: [],
+                              directives: [
+                                DirectiveNode(
+                                  name: NameNode(value: 'include'),
+                                  arguments: [
+                                    ArgumentNode(
+                                      name: NameNode(value: 'if'),
+                                      value: VariableNode(
+                                        name: NameNode(
+                                          value: 'includeObjectBcs',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'previousTransaction'),
+                              alias: null,
+                              arguments: [],
+                              directives: [
+                                DirectiveNode(
+                                  name: NameNode(value: 'include'),
+                                  arguments: [
+                                    ArgumentNode(
+                                      name: NameNode(value: 'if'),
+                                      value: VariableNode(
+                                        name: NameNode(
+                                          value: 'includePreviousTransaction',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              selectionSet: SelectionSetNode(
+                                selections: [
+                                  FieldNode(
+                                    name: NameNode(value: 'digest'),
+                                    alias: null,
+                                    arguments: [],
+                                    directives: [],
+                                    selectionSet: null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            FieldNode(
                               name: NameNode(value: 'contents'),
                               alias: null,
                               arguments: [],
                               directives: [],
                               selectionSet: SelectionSetNode(
                                 selections: [
-                                  FieldNode(
-                                    name: NameNode(value: 'type'),
-                                    alias: null,
-                                    arguments: [],
+                                  FragmentSpreadNode(
+                                    name: NameNode(value: 'CoreObjectContents'),
                                     directives: [],
-                                    selectionSet: SelectionSetNode(
-                                      selections: [
-                                        FieldNode(
-                                          name: NameNode(value: 'repr'),
-                                          alias: null,
-                                          arguments: [],
-                                          directives: [],
-                                          selectionSet: null,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  FieldNode(
-                                    name: NameNode(value: 'json'),
-                                    alias: null,
-                                    arguments: [],
-                                    directives: [],
-                                    selectionSet: null,
                                   ),
                                 ],
                               ),
@@ -13529,6 +14005,7 @@ const documentNodeQueryGetOwnedObjects = DocumentNode(
       ),
     ),
     fragmentDefinitionCoreOwnerFields,
+    fragmentDefinitionCoreObjectContents,
   ],
 );
 
@@ -13720,6 +14197,8 @@ class Query$GetOwnedObjects$address$objects$nodes {
     this.version,
     this.digest,
     this.owner,
+    this.objectBcs,
+    this.previousTransaction,
     this.contents,
   });
 
@@ -13730,6 +14209,8 @@ class Query$GetOwnedObjects$address$objects$nodes {
     final l$version = json['version'];
     final l$digest = json['digest'];
     final l$owner = json['owner'];
+    final l$objectBcs = json['objectBcs'];
+    final l$previousTransaction = json['previousTransaction'];
     final l$contents = json['contents'];
     return Query$GetOwnedObjects$address$objects$nodes(
       address: (l$address as String),
@@ -13740,9 +14221,15 @@ class Query$GetOwnedObjects$address$objects$nodes {
           : Fragment$CoreOwnerFields.fromJson(
               (l$owner as Map<String, dynamic>),
             ),
+      objectBcs: (l$objectBcs as String?),
+      previousTransaction: l$previousTransaction == null
+          ? null
+          : Query$GetOwnedObjects$address$objects$nodes$previousTransaction.fromJson(
+              (l$previousTransaction as Map<String, dynamic>),
+            ),
       contents: l$contents == null
           ? null
-          : Query$GetOwnedObjects$address$objects$nodes$contents.fromJson(
+          : Fragment$CoreObjectContents.fromJson(
               (l$contents as Map<String, dynamic>),
             ),
     );
@@ -13756,7 +14243,12 @@ class Query$GetOwnedObjects$address$objects$nodes {
 
   final Fragment$CoreOwnerFields? owner;
 
-  final Query$GetOwnedObjects$address$objects$nodes$contents? contents;
+  final String? objectBcs;
+
+  final Query$GetOwnedObjects$address$objects$nodes$previousTransaction?
+  previousTransaction;
+
+  final Fragment$CoreObjectContents? contents;
 
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
@@ -13768,6 +14260,10 @@ class Query$GetOwnedObjects$address$objects$nodes {
     _resultData['digest'] = l$digest;
     final l$owner = owner;
     _resultData['owner'] = l$owner?.toJson();
+    final l$objectBcs = objectBcs;
+    _resultData['objectBcs'] = l$objectBcs;
+    final l$previousTransaction = previousTransaction;
+    _resultData['previousTransaction'] = l$previousTransaction?.toJson();
     final l$contents = contents;
     _resultData['contents'] = l$contents?.toJson();
     return _resultData;
@@ -13779,12 +14275,16 @@ class Query$GetOwnedObjects$address$objects$nodes {
     final l$version = version;
     final l$digest = digest;
     final l$owner = owner;
+    final l$objectBcs = objectBcs;
+    final l$previousTransaction = previousTransaction;
     final l$contents = contents;
     return Object.hashAll([
       l$address,
       l$version,
       l$digest,
       l$owner,
+      l$objectBcs,
+      l$previousTransaction,
       l$contents,
     ]);
   }
@@ -13818,6 +14318,16 @@ class Query$GetOwnedObjects$address$objects$nodes {
     if (l$owner != lOther$owner) {
       return false;
     }
+    final l$objectBcs = objectBcs;
+    final lOther$objectBcs = other.objectBcs;
+    if (l$objectBcs != lOther$objectBcs) {
+      return false;
+    }
+    final l$previousTransaction = previousTransaction;
+    final lOther$previousTransaction = other.previousTransaction;
+    if (l$previousTransaction != lOther$previousTransaction) {
+      return false;
+    }
     final l$contents = contents;
     final lOther$contents = other.contents;
     if (l$contents != lOther$contents) {
@@ -13827,94 +14337,33 @@ class Query$GetOwnedObjects$address$objects$nodes {
   }
 }
 
-class Query$GetOwnedObjects$address$objects$nodes$contents {
-  Query$GetOwnedObjects$address$objects$nodes$contents({this.type, this.json});
-
-  factory Query$GetOwnedObjects$address$objects$nodes$contents.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final l$type = json['type'];
-    final l$json = json['json'];
-    return Query$GetOwnedObjects$address$objects$nodes$contents(
-      type: l$type == null
-          ? null
-          : Query$GetOwnedObjects$address$objects$nodes$contents$type.fromJson(
-              (l$type as Map<String, dynamic>),
-            ),
-      json: (l$json as Map<String, dynamic>?),
-    );
-  }
-
-  final Query$GetOwnedObjects$address$objects$nodes$contents$type? type;
-
-  final Map<String, dynamic>? json;
-
-  Map<String, dynamic> toJson() {
-    final _resultData = <String, dynamic>{};
-    final l$type = type;
-    _resultData['type'] = l$type?.toJson();
-    final l$json = json;
-    _resultData['json'] = l$json;
-    return _resultData;
-  }
-
-  @override
-  int get hashCode {
-    final l$type = type;
-    final l$json = json;
-    return Object.hashAll([l$type, l$json]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other is! Query$GetOwnedObjects$address$objects$nodes$contents ||
-        runtimeType != other.runtimeType) {
-      return false;
-    }
-    final l$type = type;
-    final lOther$type = other.type;
-    if (l$type != lOther$type) {
-      return false;
-    }
-    final l$json = json;
-    final lOther$json = other.json;
-    if (l$json != lOther$json) {
-      return false;
-    }
-    return true;
-  }
-}
-
-class Query$GetOwnedObjects$address$objects$nodes$contents$type {
-  Query$GetOwnedObjects$address$objects$nodes$contents$type({
-    required this.repr,
+class Query$GetOwnedObjects$address$objects$nodes$previousTransaction {
+  Query$GetOwnedObjects$address$objects$nodes$previousTransaction({
+    required this.digest,
   });
 
-  factory Query$GetOwnedObjects$address$objects$nodes$contents$type.fromJson(
+  factory Query$GetOwnedObjects$address$objects$nodes$previousTransaction.fromJson(
     Map<String, dynamic> json,
   ) {
-    final l$repr = json['repr'];
-    return Query$GetOwnedObjects$address$objects$nodes$contents$type(
-      repr: (l$repr as String),
+    final l$digest = json['digest'];
+    return Query$GetOwnedObjects$address$objects$nodes$previousTransaction(
+      digest: (l$digest as String),
     );
   }
 
-  final String repr;
+  final String digest;
 
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
-    final l$repr = repr;
-    _resultData['repr'] = l$repr;
+    final l$digest = digest;
+    _resultData['digest'] = l$digest;
     return _resultData;
   }
 
   @override
   int get hashCode {
-    final l$repr = repr;
-    return Object.hashAll([l$repr]);
+    final l$digest = digest;
+    return Object.hashAll([l$digest]);
   }
 
   @override
@@ -13922,13 +14371,14 @@ class Query$GetOwnedObjects$address$objects$nodes$contents$type {
     if (identical(this, other)) {
       return true;
     }
-    if (other is! Query$GetOwnedObjects$address$objects$nodes$contents$type ||
+    if (other
+            is! Query$GetOwnedObjects$address$objects$nodes$previousTransaction ||
         runtimeType != other.runtimeType) {
       return false;
     }
-    final l$repr = repr;
-    final lOther$repr = other.repr;
-    if (l$repr != lOther$repr) {
+    final l$digest = digest;
+    final lOther$digest = other.digest;
+    if (l$digest != lOther$digest) {
       return false;
     }
     return true;
@@ -13938,7 +14388,18 @@ class Query$GetOwnedObjects$address$objects$nodes$contents$type {
 class Variables$Query$MultiGetObjects {
   factory Variables$Query$MultiGetObjects({
     required List<Input$ObjectKey> keys,
-  }) => Variables$Query$MultiGetObjects._({r'keys': keys});
+    bool? includeContent,
+    bool? includePreviousTransaction,
+    bool? includeObjectBcs,
+    bool? includeDisplay,
+  }) => Variables$Query$MultiGetObjects._({
+    r'keys': keys,
+    if (includeContent != null) r'includeContent': includeContent,
+    if (includePreviousTransaction != null)
+      r'includePreviousTransaction': includePreviousTransaction,
+    if (includeObjectBcs != null) r'includeObjectBcs': includeObjectBcs,
+    if (includeDisplay != null) r'includeDisplay': includeDisplay,
+  });
 
   Variables$Query$MultiGetObjects._(this._$data);
 
@@ -13948,6 +14409,23 @@ class Variables$Query$MultiGetObjects {
     result$data['keys'] = (l$keys as List<dynamic>)
         .map((e) => Input$ObjectKey.fromJson((e as Map<String, dynamic>)))
         .toList();
+    if (data.containsKey('includeContent')) {
+      final l$includeContent = data['includeContent'];
+      result$data['includeContent'] = (l$includeContent as bool?);
+    }
+    if (data.containsKey('includePreviousTransaction')) {
+      final l$includePreviousTransaction = data['includePreviousTransaction'];
+      result$data['includePreviousTransaction'] =
+          (l$includePreviousTransaction as bool?);
+    }
+    if (data.containsKey('includeObjectBcs')) {
+      final l$includeObjectBcs = data['includeObjectBcs'];
+      result$data['includeObjectBcs'] = (l$includeObjectBcs as bool?);
+    }
+    if (data.containsKey('includeDisplay')) {
+      final l$includeDisplay = data['includeDisplay'];
+      result$data['includeDisplay'] = (l$includeDisplay as bool?);
+    }
     return Variables$Query$MultiGetObjects._(result$data);
   }
 
@@ -13955,10 +14433,35 @@ class Variables$Query$MultiGetObjects {
 
   List<Input$ObjectKey> get keys => (_$data['keys'] as List<Input$ObjectKey>);
 
+  bool? get includeContent => (_$data['includeContent'] as bool?);
+
+  bool? get includePreviousTransaction =>
+      (_$data['includePreviousTransaction'] as bool?);
+
+  bool? get includeObjectBcs => (_$data['includeObjectBcs'] as bool?);
+
+  bool? get includeDisplay => (_$data['includeDisplay'] as bool?);
+
   Map<String, dynamic> toJson() {
     final result$data = <String, dynamic>{};
     final l$keys = keys;
     result$data['keys'] = l$keys.map((e) => e.toJson()).toList();
+    if (_$data.containsKey('includeContent')) {
+      final l$includeContent = includeContent;
+      result$data['includeContent'] = l$includeContent;
+    }
+    if (_$data.containsKey('includePreviousTransaction')) {
+      final l$includePreviousTransaction = includePreviousTransaction;
+      result$data['includePreviousTransaction'] = l$includePreviousTransaction;
+    }
+    if (_$data.containsKey('includeObjectBcs')) {
+      final l$includeObjectBcs = includeObjectBcs;
+      result$data['includeObjectBcs'] = l$includeObjectBcs;
+    }
+    if (_$data.containsKey('includeDisplay')) {
+      final l$includeDisplay = includeDisplay;
+      result$data['includeDisplay'] = l$includeDisplay;
+    }
     return result$data;
   }
 
@@ -13983,13 +14486,61 @@ class Variables$Query$MultiGetObjects {
         return false;
       }
     }
+    final l$includeContent = includeContent;
+    final lOther$includeContent = other.includeContent;
+    if (_$data.containsKey('includeContent') !=
+        other._$data.containsKey('includeContent')) {
+      return false;
+    }
+    if (l$includeContent != lOther$includeContent) {
+      return false;
+    }
+    final l$includePreviousTransaction = includePreviousTransaction;
+    final lOther$includePreviousTransaction = other.includePreviousTransaction;
+    if (_$data.containsKey('includePreviousTransaction') !=
+        other._$data.containsKey('includePreviousTransaction')) {
+      return false;
+    }
+    if (l$includePreviousTransaction != lOther$includePreviousTransaction) {
+      return false;
+    }
+    final l$includeObjectBcs = includeObjectBcs;
+    final lOther$includeObjectBcs = other.includeObjectBcs;
+    if (_$data.containsKey('includeObjectBcs') !=
+        other._$data.containsKey('includeObjectBcs')) {
+      return false;
+    }
+    if (l$includeObjectBcs != lOther$includeObjectBcs) {
+      return false;
+    }
+    final l$includeDisplay = includeDisplay;
+    final lOther$includeDisplay = other.includeDisplay;
+    if (_$data.containsKey('includeDisplay') !=
+        other._$data.containsKey('includeDisplay')) {
+      return false;
+    }
+    if (l$includeDisplay != lOther$includeDisplay) {
+      return false;
+    }
     return true;
   }
 
   @override
   int get hashCode {
     final l$keys = keys;
-    return Object.hashAll([Object.hashAll(l$keys.map((v) => v))]);
+    final l$includeContent = includeContent;
+    final l$includePreviousTransaction = includePreviousTransaction;
+    final l$includeObjectBcs = includeObjectBcs;
+    final l$includeDisplay = includeDisplay;
+    return Object.hashAll([
+      Object.hashAll(l$keys.map((v) => v)),
+      _$data.containsKey('includeContent') ? l$includeContent : const {},
+      _$data.containsKey('includePreviousTransaction')
+          ? l$includePreviousTransaction
+          : const {},
+      _$data.containsKey('includeObjectBcs') ? l$includeObjectBcs : const {},
+      _$data.containsKey('includeDisplay') ? l$includeDisplay : const {},
+    ]);
   }
 }
 
@@ -14070,6 +14621,44 @@ const documentNodeQueryMultiGetObjects = DocumentNode(
           defaultValue: DefaultValueNode(value: null),
           directives: [],
         ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'includeContent')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(
+            name: NameNode(value: 'includePreviousTransaction'),
+          ),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'includeObjectBcs')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'includeDisplay')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'Boolean'),
+            isNonNull: false,
+          ),
+          defaultValue: DefaultValueNode(value: BooleanValueNode(value: false)),
+          directives: [],
+        ),
       ],
       directives: [],
       selectionSet: SelectionSetNode(
@@ -14122,6 +14711,54 @@ const documentNodeQueryMultiGetObjects = DocumentNode(
                   ),
                 ),
                 FieldNode(
+                  name: NameNode(value: 'objectBcs'),
+                  alias: null,
+                  arguments: [],
+                  directives: [
+                    DirectiveNode(
+                      name: NameNode(value: 'include'),
+                      arguments: [
+                        ArgumentNode(
+                          name: NameNode(value: 'if'),
+                          value: VariableNode(
+                            name: NameNode(value: 'includeObjectBcs'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  selectionSet: null,
+                ),
+                FieldNode(
+                  name: NameNode(value: 'previousTransaction'),
+                  alias: null,
+                  arguments: [],
+                  directives: [
+                    DirectiveNode(
+                      name: NameNode(value: 'include'),
+                      arguments: [
+                        ArgumentNode(
+                          name: NameNode(value: 'if'),
+                          value: VariableNode(
+                            name: NameNode(value: 'includePreviousTransaction'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  selectionSet: SelectionSetNode(
+                    selections: [
+                      FieldNode(
+                        name: NameNode(value: 'digest'),
+                        alias: null,
+                        arguments: [],
+                        directives: [],
+                        selectionSet: null,
+                      ),
+                    ],
+                  ),
+                ),
+                FieldNode(
                   name: NameNode(value: 'asMoveObject'),
                   alias: null,
                   arguments: [],
@@ -14135,32 +14772,29 @@ const documentNodeQueryMultiGetObjects = DocumentNode(
                         directives: [],
                         selectionSet: SelectionSetNode(
                           selections: [
-                            FieldNode(
-                              name: NameNode(value: 'type'),
-                              alias: null,
-                              arguments: [],
+                            FragmentSpreadNode(
+                              name: NameNode(value: 'CoreObjectContents'),
                               directives: [],
-                              selectionSet: SelectionSetNode(
-                                selections: [
-                                  FieldNode(
-                                    name: NameNode(value: 'repr'),
-                                    alias: null,
-                                    arguments: [],
-                                    directives: [],
-                                    selectionSet: null,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            FieldNode(
-                              name: NameNode(value: 'json'),
-                              alias: null,
-                              arguments: [],
-                              directives: [],
-                              selectionSet: null,
                             ),
                           ],
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+                FieldNode(
+                  name: NameNode(value: 'asMovePackage'),
+                  alias: null,
+                  arguments: [],
+                  directives: [],
+                  selectionSet: SelectionSetNode(
+                    selections: [
+                      FieldNode(
+                        name: NameNode(value: 'address'),
+                        alias: null,
+                        arguments: [],
+                        directives: [],
+                        selectionSet: null,
                       ),
                     ],
                   ),
@@ -14172,6 +14806,7 @@ const documentNodeQueryMultiGetObjects = DocumentNode(
       ),
     ),
     fragmentDefinitionCoreOwnerFields,
+    fragmentDefinitionCoreObjectContents,
   ],
 );
 
@@ -14181,7 +14816,10 @@ class Query$MultiGetObjects$multiGetObjects {
     this.version,
     this.digest,
     this.owner,
+    this.objectBcs,
+    this.previousTransaction,
     this.asMoveObject,
+    this.asMovePackage,
   });
 
   factory Query$MultiGetObjects$multiGetObjects.fromJson(
@@ -14191,7 +14829,10 @@ class Query$MultiGetObjects$multiGetObjects {
     final l$version = json['version'];
     final l$digest = json['digest'];
     final l$owner = json['owner'];
+    final l$objectBcs = json['objectBcs'];
+    final l$previousTransaction = json['previousTransaction'];
     final l$asMoveObject = json['asMoveObject'];
+    final l$asMovePackage = json['asMovePackage'];
     return Query$MultiGetObjects$multiGetObjects(
       address: (l$address as String),
       version: (l$version as int?),
@@ -14201,10 +14842,21 @@ class Query$MultiGetObjects$multiGetObjects {
           : Fragment$CoreOwnerFields.fromJson(
               (l$owner as Map<String, dynamic>),
             ),
+      objectBcs: (l$objectBcs as String?),
+      previousTransaction: l$previousTransaction == null
+          ? null
+          : Query$MultiGetObjects$multiGetObjects$previousTransaction.fromJson(
+              (l$previousTransaction as Map<String, dynamic>),
+            ),
       asMoveObject: l$asMoveObject == null
           ? null
           : Query$MultiGetObjects$multiGetObjects$asMoveObject.fromJson(
               (l$asMoveObject as Map<String, dynamic>),
+            ),
+      asMovePackage: l$asMovePackage == null
+          ? null
+          : Query$MultiGetObjects$multiGetObjects$asMovePackage.fromJson(
+              (l$asMovePackage as Map<String, dynamic>),
             ),
     );
   }
@@ -14217,7 +14869,14 @@ class Query$MultiGetObjects$multiGetObjects {
 
   final Fragment$CoreOwnerFields? owner;
 
+  final String? objectBcs;
+
+  final Query$MultiGetObjects$multiGetObjects$previousTransaction?
+  previousTransaction;
+
   final Query$MultiGetObjects$multiGetObjects$asMoveObject? asMoveObject;
+
+  final Query$MultiGetObjects$multiGetObjects$asMovePackage? asMovePackage;
 
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
@@ -14229,8 +14888,14 @@ class Query$MultiGetObjects$multiGetObjects {
     _resultData['digest'] = l$digest;
     final l$owner = owner;
     _resultData['owner'] = l$owner?.toJson();
+    final l$objectBcs = objectBcs;
+    _resultData['objectBcs'] = l$objectBcs;
+    final l$previousTransaction = previousTransaction;
+    _resultData['previousTransaction'] = l$previousTransaction?.toJson();
     final l$asMoveObject = asMoveObject;
     _resultData['asMoveObject'] = l$asMoveObject?.toJson();
+    final l$asMovePackage = asMovePackage;
+    _resultData['asMovePackage'] = l$asMovePackage?.toJson();
     return _resultData;
   }
 
@@ -14240,13 +14905,19 @@ class Query$MultiGetObjects$multiGetObjects {
     final l$version = version;
     final l$digest = digest;
     final l$owner = owner;
+    final l$objectBcs = objectBcs;
+    final l$previousTransaction = previousTransaction;
     final l$asMoveObject = asMoveObject;
+    final l$asMovePackage = asMovePackage;
     return Object.hashAll([
       l$address,
       l$version,
       l$digest,
       l$owner,
+      l$objectBcs,
+      l$previousTransaction,
       l$asMoveObject,
+      l$asMovePackage,
     ]);
   }
 
@@ -14279,9 +14950,71 @@ class Query$MultiGetObjects$multiGetObjects {
     if (l$owner != lOther$owner) {
       return false;
     }
+    final l$objectBcs = objectBcs;
+    final lOther$objectBcs = other.objectBcs;
+    if (l$objectBcs != lOther$objectBcs) {
+      return false;
+    }
+    final l$previousTransaction = previousTransaction;
+    final lOther$previousTransaction = other.previousTransaction;
+    if (l$previousTransaction != lOther$previousTransaction) {
+      return false;
+    }
     final l$asMoveObject = asMoveObject;
     final lOther$asMoveObject = other.asMoveObject;
     if (l$asMoveObject != lOther$asMoveObject) {
+      return false;
+    }
+    final l$asMovePackage = asMovePackage;
+    final lOther$asMovePackage = other.asMovePackage;
+    if (l$asMovePackage != lOther$asMovePackage) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Query$MultiGetObjects$multiGetObjects$previousTransaction {
+  Query$MultiGetObjects$multiGetObjects$previousTransaction({
+    required this.digest,
+  });
+
+  factory Query$MultiGetObjects$multiGetObjects$previousTransaction.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$digest = json['digest'];
+    return Query$MultiGetObjects$multiGetObjects$previousTransaction(
+      digest: (l$digest as String),
+    );
+  }
+
+  final String digest;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$digest = digest;
+    _resultData['digest'] = l$digest;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$digest = digest;
+    return Object.hashAll([l$digest]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Query$MultiGetObjects$multiGetObjects$previousTransaction ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$digest = digest;
+    final lOther$digest = other.digest;
+    if (l$digest != lOther$digest) {
       return false;
     }
     return true;
@@ -14298,13 +15031,13 @@ class Query$MultiGetObjects$multiGetObjects$asMoveObject {
     return Query$MultiGetObjects$multiGetObjects$asMoveObject(
       contents: l$contents == null
           ? null
-          : Query$MultiGetObjects$multiGetObjects$asMoveObject$contents.fromJson(
+          : Fragment$CoreObjectContents.fromJson(
               (l$contents as Map<String, dynamic>),
             ),
     );
   }
 
-  final Query$MultiGetObjects$multiGetObjects$asMoveObject$contents? contents;
+  final Fragment$CoreObjectContents? contents;
 
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
@@ -14337,45 +15070,31 @@ class Query$MultiGetObjects$multiGetObjects$asMoveObject {
   }
 }
 
-class Query$MultiGetObjects$multiGetObjects$asMoveObject$contents {
-  Query$MultiGetObjects$multiGetObjects$asMoveObject$contents({
-    this.type,
-    this.json,
-  });
+class Query$MultiGetObjects$multiGetObjects$asMovePackage {
+  Query$MultiGetObjects$multiGetObjects$asMovePackage({required this.address});
 
-  factory Query$MultiGetObjects$multiGetObjects$asMoveObject$contents.fromJson(
+  factory Query$MultiGetObjects$multiGetObjects$asMovePackage.fromJson(
     Map<String, dynamic> json,
   ) {
-    final l$type = json['type'];
-    final l$json = json['json'];
-    return Query$MultiGetObjects$multiGetObjects$asMoveObject$contents(
-      type: l$type == null
-          ? null
-          : Query$MultiGetObjects$multiGetObjects$asMoveObject$contents$type.fromJson(
-              (l$type as Map<String, dynamic>),
-            ),
-      json: (l$json as Map<String, dynamic>?),
+    final l$address = json['address'];
+    return Query$MultiGetObjects$multiGetObjects$asMovePackage(
+      address: (l$address as String),
     );
   }
 
-  final Query$MultiGetObjects$multiGetObjects$asMoveObject$contents$type? type;
-
-  final Map<String, dynamic>? json;
+  final String address;
 
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
-    final l$type = type;
-    _resultData['type'] = l$type?.toJson();
-    final l$json = json;
-    _resultData['json'] = l$json;
+    final l$address = address;
+    _resultData['address'] = l$address;
     return _resultData;
   }
 
   @override
   int get hashCode {
-    final l$type = type;
-    final l$json = json;
-    return Object.hashAll([l$type, l$json]);
+    final l$address = address;
+    return Object.hashAll([l$address]);
   }
 
   @override
@@ -14383,66 +15102,13 @@ class Query$MultiGetObjects$multiGetObjects$asMoveObject$contents {
     if (identical(this, other)) {
       return true;
     }
-    if (other is! Query$MultiGetObjects$multiGetObjects$asMoveObject$contents ||
+    if (other is! Query$MultiGetObjects$multiGetObjects$asMovePackage ||
         runtimeType != other.runtimeType) {
       return false;
     }
-    final l$type = type;
-    final lOther$type = other.type;
-    if (l$type != lOther$type) {
-      return false;
-    }
-    final l$json = json;
-    final lOther$json = other.json;
-    if (l$json != lOther$json) {
-      return false;
-    }
-    return true;
-  }
-}
-
-class Query$MultiGetObjects$multiGetObjects$asMoveObject$contents$type {
-  Query$MultiGetObjects$multiGetObjects$asMoveObject$contents$type({
-    required this.repr,
-  });
-
-  factory Query$MultiGetObjects$multiGetObjects$asMoveObject$contents$type.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final l$repr = json['repr'];
-    return Query$MultiGetObjects$multiGetObjects$asMoveObject$contents$type(
-      repr: (l$repr as String),
-    );
-  }
-
-  final String repr;
-
-  Map<String, dynamic> toJson() {
-    final _resultData = <String, dynamic>{};
-    final l$repr = repr;
-    _resultData['repr'] = l$repr;
-    return _resultData;
-  }
-
-  @override
-  int get hashCode {
-    final l$repr = repr;
-    return Object.hashAll([l$repr]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other
-            is! Query$MultiGetObjects$multiGetObjects$asMoveObject$contents$type ||
-        runtimeType != other.runtimeType) {
-      return false;
-    }
-    final l$repr = repr;
-    final lOther$repr = other.repr;
-    if (l$repr != lOther$repr) {
+    final l$address = address;
+    final lOther$address = other.address;
+    if (l$address != lOther$address) {
       return false;
     }
     return true;

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:sui_dart/cryptography/intent.dart' show IntentScope;
 import 'package:sui_dart/builder/transaction.dart' as sui_dart show Transaction;
 import 'package:sui_dart/grpc/types.dart';
 
@@ -360,8 +361,14 @@ class SuiGraphQLClient {
     Uint8List bytes,
     String signature, {
     String? address,
+    IntentScope intentScope = IntentScope.transactionData,
   }) {
-    return core.verifyZkLoginSignature(bytes, signature, address: address);
+    return core.verifyZkLoginSignature(
+      bytes,
+      signature,
+      address: address,
+      intentScope: intentScope,
+    );
   }
 
   Future<String?> defaultNameServiceName(String address) {
@@ -459,7 +466,8 @@ class SuiGraphQLClient {
     String? endCursor,
   }) {
     return SenderTransactionPage(
-      transactions: nodes.map(SenderTransaction._fromNode).toList(),
+      // read with `last`, so nodes arrive oldest first
+      transactions: nodes.reversed.map(SenderTransaction._fromNode).toList(),
       hasNextPage: hasNextPage,
       endCursor: endCursor,
     );

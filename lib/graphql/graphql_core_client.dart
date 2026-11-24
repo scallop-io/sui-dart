@@ -1,9 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:sui_dart/builder/transaction_block_data.dart'
+    show tryParseTransactionData;
+import 'package:sui_dart/cryptography/intent.dart' show IntentScope;
 import 'package:sui_dart/builder/transaction.dart'
     show
         ResolvedSimulation,
+        SerializeTransactionOptions,
         Transaction,
         TransactionPlugin,
         simulationResolvePlugin;
@@ -34,8 +38,6 @@ typedef _DfMoveObjectValue =
     generated.Query$GetDynamicFields$address$dynamicFields$nodes$value$$MoveObject;
 typedef _DfMoveValue =
     generated.Query$GetDynamicFields$address$dynamicFields$nodes$value$$MoveValue;
-typedef _SimEventNode =
-    generated.Query$SimulateTransaction$simulateTransaction$effects$events$nodes;
 typedef _SimCommand =
     generated.Query$SimulateTransaction$simulateTransaction$outputs;
 typedef _ListedEvent = generated.Query$ListEvents$events$nodes;
@@ -264,8 +266,13 @@ class GraphQLCoreClient implements SuiCoreClient {
       version: obj.version?.toString() ?? '',
       digest: obj.digest ?? '',
       owner: _mapOwner(obj.owner),
-      type: contents?.type?.repr ?? '',
+      type:
+          contents?.type?.repr ?? (obj.asMovePackage != null ? 'package' : ''),
       json: contents?.json,
+      content: contents?.bcs == null ? null : base64Decode(contents!.bcs!),
+      objectBcs: obj.objectBcs == null ? null : base64Decode(obj.objectBcs!),
+      previousTransaction: obj.previousTransaction?.digest,
+      display: contents?.display?.output,
     );
   }
 
@@ -278,6 +285,10 @@ class GraphQLCoreClient implements SuiCoreClient {
       owner: _mapOwner(node.owner),
       type: contents?.type?.repr ?? '',
       json: contents?.json,
+      content: contents?.bcs == null ? null : base64Decode(contents!.bcs!),
+      objectBcs: node.objectBcs == null ? null : base64Decode(node.objectBcs!),
+      previousTransaction: node.previousTransaction?.digest,
+      display: contents?.display?.output,
     );
   }
 
@@ -356,21 +367,6 @@ class GraphQLCoreClient implements SuiCoreClient {
         _ => 'Unknown',
       };
 
-  static Event _mapSimEvent(_SimEventNode node) {
-    final contents = node.contents;
-    final eventType = contents?.type?.repr ?? '';
-    final parts = eventType.split('::');
-    return Event(
-      packageId: parts.isNotEmpty ? parts.first : '',
-      module:
-          node.transactionModule?.name ?? (parts.length > 1 ? parts[1] : ''),
-      sender: node.sender?.address ?? '',
-      eventType: eventType,
-      bcs: _decodeBcs(contents?.bcs),
-      json: contents?.json,
-    );
-  }
-
   static CommandResult _mapSimCommand(_SimCommand cmd) => CommandResult(
     returnValues:
         cmd.returnValues
@@ -445,6 +441,10 @@ class GraphQLCoreClient implements SuiCoreClient {
         _multiGetObjectsOperation,
         generated.Variables$Query$MultiGetObjects(
           keys: batch.map((id) => schema.Input$ObjectKey(address: id)).toList(),
+          includeContent: include?.content,
+          includePreviousTransaction: include?.previousTransaction,
+          includeObjectBcs: include?.objectBcs,
+          includeDisplay: include?.display,
         ),
       );
       final objects = data.multiGetObjects;
@@ -479,6 +479,10 @@ class GraphQLCoreClient implements SuiCoreClient {
         type: type,
         first: limit,
         after: cursor,
+        includeContent: include?.content,
+        includePreviousTransaction: include?.previousTransaction,
+        includeObjectBcs: include?.objectBcs,
+        includeDisplay: include?.display,
       ),
     );
     final connection = data.address?.objects;
@@ -599,7 +603,9 @@ class GraphQLCoreClient implements SuiCoreClient {
             include?.effects == true || include?.objectTypes == true
             ? true
             : null,
-        includeBcs: include?.bcs,
+        includeBcs: include?.bcs == true || include?.transaction == true
+            ? true
+            : null,
       ),
     );
     final tx = data.transaction;
@@ -675,7 +681,12 @@ class GraphQLCoreClient implements SuiCoreClient {
                 if (obj.objectType case final type?) obj.objectId: type,
             }
           : null,
-      bcs: tx.transactionBcs == null ? null : base64Decode(tx.transactionBcs!),
+      transaction: include?.transaction == true && tx.transactionBcs != null
+          ? tryParseTransactionData(base64Decode(tx.transactionBcs!))
+          : null,
+      bcs: include?.bcs == true && tx.transactionBcs != null
+          ? base64Decode(tx.transactionBcs!)
+          : null,
       timestampMs: timestamp == null
           ? null
           : DateTime.tryParse(timestamp)?.millisecondsSinceEpoch.toString(),
@@ -759,8 +770,14 @@ class GraphQLCoreClient implements SuiCoreClient {
     bool? doGasSelection,
     bool? checksEnabled,
   }) async {
+    // gRPC conversion is synchronous, so intents must resolve before it.
+    if (!transactionBlock.isPreparedForSerialization()) {
+      await transactionBlock.prepareForSerialization(
+        SerializeTransactionOptions(client: this),
+      );
+    }
     final txJson =
-        transactionBlock.toGrpcTransaction().toProto3Json()
+        transactionBlock.toGrpcSimulationTransaction().toProto3Json()
             as Map<String, dynamic>;
     final payment = transactionBlock.getData().gasData.payment;
     final data = await _client.executeData(
@@ -769,36 +786,25 @@ class GraphQLCoreClient implements SuiCoreClient {
         tx: txJson,
         checksEnabled: checksEnabled,
         doGasSelection: doGasSelection ?? (payment != null && payment.isEmpty),
+        includeEffects: include?.effects,
+        includeEvents: include?.events,
+        includeBalanceChanges: include?.balanceChanges,
+        includeEffectsJson:
+            include?.effects == true || include?.objectTypes == true
+            ? true
+            : null,
+        includeBcs: include?.bcs == true || include?.transaction == true
+            ? true
+            : null,
       ),
     );
     final result = data.simulateTransaction;
-    final effects = result.effects;
-    final gasObjectId = effects?.gasEffects?.gasObject?.address;
-    final transactionBcs = effects?.transaction?.transactionBcs;
-    final executionError = effects?.executionError;
-    return TransactionResponse(
-      digest: '',
-      epoch: effects?.epoch?.epochId.toString(),
-      status: ExecutionStatus(
-        success: effects?.status == schema.Enum$ExecutionStatus.SUCCESS,
-        error: executionError == null
-            ? null
-            : _parseExecutionError(
-                message: executionError.message,
-                abortCode: executionError.abortCode,
-                sourceLineNumber: executionError.sourceLineNumber,
-                instructionOffset: executionError.instructionOffset,
-                identifier: executionError.identifier,
-                constant: executionError.constant,
-                package: executionError.module?.package?.address,
-                module: executionError.module?.name,
-                functionName: executionError.function?.name,
-              ),
-      ),
-      bcs: include?.bcs == true && transactionBcs != null
-          ? base64Decode(transactionBcs)
-          : null,
-      events: effects?.events?.nodes.map(_mapSimEvent).toList(),
+    final tx = result.effects?.transaction;
+    final gasObjectId = tx?.effects?.gasEffects?.gasObject?.address;
+    final mapped = tx == null
+        ? const TransactionResponse(digest: '')
+        : await _mapTransaction(tx, include);
+    return mapped.copyWith(
       commandResults: result.outputs?.map(_mapSimCommand).toList(),
       gasPaymentMocked:
           gasObjectId != null &&
@@ -871,7 +877,6 @@ class GraphQLCoreClient implements SuiCoreClient {
       limit: limit,
     );
     final resolved = filter == null ? null : resolveTransactionFilter(filter);
-    validateTransactionQuery(resolved, pagination);
 
     final data = await _client.executeData(
       _listTransactionsOperation,
@@ -893,7 +898,9 @@ class GraphQLCoreClient implements SuiCoreClient {
             include?.effects == true || include?.objectTypes == true
             ? true
             : null,
-        includeBcs: include?.bcs,
+        includeBcs: include?.bcs == true || include?.transaction == true
+            ? true
+            : null,
       ),
     );
 
@@ -995,13 +1002,13 @@ class GraphQLCoreClient implements SuiCoreClient {
   static Event _mapListedEvent(_ListedEvent event) {
     final packageId = event.transactionModule?.package?.address;
     final module = event.transactionModule?.name;
-    final sender = event.sender?.address;
+    // system transactions have no sender
+    final sender = event.sender?.address ?? '0x0';
     final eventType = event.contents?.type?.repr;
     final digest = event.transaction?.digest;
 
     if (packageId == null ||
         module == null ||
-        sender == null ||
         eventType == null ||
         digest == null) {
       throw const GraphQLResponseDecodingException(
@@ -1098,6 +1105,7 @@ class GraphQLCoreClient implements SuiCoreClient {
     Uint8List bytes,
     String signature, {
     String? address,
+    IntentScope intentScope = IntentScope.transactionData,
   }) => _unsupported('verifyZkLoginSignature');
 
   @override
@@ -1151,9 +1159,49 @@ class GraphQLCoreClient implements SuiCoreClient {
               )
               .toList() ??
           const [],
-      parameters: const [],
-      returnTypes: const [],
+      parameters: [
+        for (final p in fn.parameters ?? const []) _parseSignature(p.signature),
+      ],
+      returnTypes: [
+        for (final r in fn.$return ?? const []) _parseSignature(r.signature),
+      ],
     );
+  }
+
+  /// `{ref: '&' | '&mut' | null, body: ...}`
+  static NormalizedMoveType _parseSignature(Map<String, dynamic> signature) {
+    final body = _parseSignatureBody(signature['body']);
+    return switch (signature['ref']) {
+      '&' => MoveTypeReference(body),
+      '&mut' => MoveTypeMutableReference(body),
+      _ => body,
+    };
+  }
+
+  static NormalizedMoveType _parseSignatureBody(dynamic body) {
+    if (body is String) {
+      return MoveTypePrimitive(body[0].toUpperCase() + body.substring(1));
+    }
+    if (body is Map) {
+      if (body.containsKey('vector')) {
+        return MoveTypeVector(_parseSignatureBody(body['vector']));
+      }
+      if (body['datatype'] case final Map datatype) {
+        return MoveTypeStruct(
+          address: normalizeSuiAddress(datatype['package']),
+          module: datatype['module'],
+          name: datatype['type'],
+          typeArguments: [
+            for (final arg in datatype['typeParameters'] ?? const [])
+              _parseSignatureBody(arg),
+          ],
+        );
+      }
+      if (body.containsKey('typeParameter')) {
+        return MoveTypeParameter(body['typeParameter']);
+      }
+    }
+    return const MoveTypePrimitive('Unknown');
   }
 
   @override

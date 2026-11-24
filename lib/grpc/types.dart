@@ -1,5 +1,8 @@
 import 'dart:typed_data';
 
+import 'package:sui_dart/builder/transaction_block_data.dart'
+    show TransactionData;
+
 class ObjectIncludeOptions {
   final bool content;
   final bool previousTransaction;
@@ -257,7 +260,9 @@ class TransactionResponse {
   final List<String> signatures;
   final String? epoch;
   final ExecutionStatus status;
-  final String? transaction;
+
+  /// Sender, gas data, inputs and commands. Null for kinds with no commands.
+  final TransactionData? transaction;
   final TransactionEffects? effects;
   final List<Event>? events;
   final List<BalanceChange>? balanceChanges;
@@ -292,7 +297,7 @@ class TransactionResponse {
     List<String>? signatures,
     String? epoch,
     ExecutionStatus? status,
-    String? transaction,
+    TransactionData? transaction,
     TransactionEffects? effects,
     List<Event>? events,
     List<BalanceChange>? balanceChanges,
