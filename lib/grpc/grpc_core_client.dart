@@ -134,7 +134,13 @@ dynamic _protoValueToDart(pb_struct.Value value) {
     case pb_struct.Value_Kind.nullValue:
       return null;
     case pb_struct.Value_Kind.numberValue:
-      return value.numberValue;
+      // proto numbers are doubles; whole ones read back as int
+      final number = value.numberValue;
+      return number.isFinite &&
+              number == number.truncateToDouble() &&
+              number.abs() <= 9007199254740991
+          ? number.toInt()
+          : number;
     case pb_struct.Value_Kind.stringValue:
       return value.stringValue;
     case pb_struct.Value_Kind.boolValue:
@@ -191,10 +197,21 @@ class GrpcCoreClient implements SuiCoreClient {
 
     return [
       for (var i = 0; i < results.length; i++)
-        if (results[i].whichResult() == GetObjectResult_Result.error)
-          _objectError(results[i].error, i < ids.length ? ids[i] : null)
-        else
-          ObjectSuccess(_parseObject(results[i].object, include)),
+        switch (results[i].whichResult()) {
+          GetObjectResult_Result.error => _objectError(
+            results[i].error,
+            i < ids.length ? ids[i] : null,
+          ),
+          GetObjectResult_Result.object => ObjectSuccess(
+            _parseObject(results[i].object, include),
+          ),
+          _ => ObjectError(
+            'Unexpected result type',
+            code: 'unknown',
+            reason: ObjectErrorReason.unknown,
+            objectId: i < ids.length ? ids[i] : null,
+          ),
+        },
     ];
   }
 
@@ -279,7 +296,7 @@ class GrpcCoreClient implements SuiCoreClient {
           version: obj.version.toStringUnsigned(),
           digest: obj.digest,
           owner: obj.hasOwner() ? _mapOwner(obj.owner) : const UnknownOwner(),
-          type: normalizedCoinType,
+          type: obj.hasObjectType() ? obj.objectType : objectType,
           balance: obj.balance.toStringUnsigned(),
         );
       }).toList(),
@@ -618,6 +635,7 @@ class GrpcCoreClient implements SuiCoreClient {
       limit: limit,
     );
     final resolved = filter == null ? null : resolveTransactionFilter(filter);
+    validateCheckpointRange(startCheckpoint, endCheckpoint);
 
     final stream = _client.ledgerService.listTransactions(
       ListTransactionsRequest(
@@ -658,6 +676,7 @@ class GrpcCoreClient implements SuiCoreClient {
       limit: limit,
     );
     final resolved = filter == null ? null : resolveEventFilter(filter);
+    validateCheckpointRange(startCheckpoint, endCheckpoint);
 
     final stream = _client.ledgerService.listEvents(
       ListEventsRequest(
@@ -798,6 +817,9 @@ class GrpcCoreClient implements SuiCoreClient {
       GetEpochRequest(readMask: FieldMask(paths: ['protocol_config'])),
     );
 
+    if (!response.hasEpoch() || !response.epoch.hasProtocolConfig()) {
+      throw StateError('Protocol config not found in response');
+    }
     final config = response.epoch.protocolConfig;
     return ProtocolConfig(
       protocolVersion: config.protocolVersion.toStringUnsigned(),
@@ -963,6 +985,9 @@ class GrpcCoreClient implements SuiCoreClient {
     final response = await _client.ledgerService.getServiceInfo(
       GetServiceInfoRequest(),
     );
+    if (response.chainId.isEmpty) {
+      throw StateError('Chain identifier not found in service info');
+    }
     return response.chainId;
   }
 
@@ -1081,7 +1106,11 @@ class GrpcCoreClient implements SuiCoreClient {
     ExecutedTransaction tx,
     TransactionIncludeOptions? include,
   ) {
-    ExecutionStatus status = const ExecutionStatus(success: true);
+    // no status must not read as success
+    ExecutionStatus status = const ExecutionStatus(
+      success: false,
+      error: ExecutionError(message: 'Transaction failed', kind: 'Unknown'),
+    );
     if (tx.hasEffects() && tx.effects.hasStatus()) {
       status = ExecutionStatus(
         success: tx.effects.status.success,
@@ -1244,6 +1273,9 @@ class GrpcCoreClient implements SuiCoreClient {
             }).toList()
           : null,
       eventsDigest: effects.hasEventsDigest() ? effects.eventsDigest : null,
+      auxiliaryDataDigest: effects.hasAuxiliaryDataDigest()
+          ? effects.auxiliaryDataDigest
+          : null,
       bcs: effects.hasBcs() ? Uint8List.fromList(effects.bcs.value) : null,
     );
   }

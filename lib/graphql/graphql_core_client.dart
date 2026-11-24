@@ -823,12 +823,16 @@ class GraphQLCoreClient implements SuiCoreClient {
     String? module,
     String? functionName,
   }) {
-    if (abortCode == null) {
-      return ExecutionError(message: message, kind: 'UNKNOWN');
-    }
-
+    // the failing command is only in the message ("in 3rd command")
     final match = RegExp(r'in (\d+)\w* command').firstMatch(message);
     final command = match == null ? null : int.parse(match.group(1)!) - 1;
+    if (abortCode == null) {
+      return ExecutionError(
+        message: message,
+        kind: 'UNKNOWN',
+        command: command,
+      );
+    }
     final location = package == null || module == null
         ? null
         : MoveAbortLocation(
@@ -837,7 +841,8 @@ class GraphQLCoreClient implements SuiCoreClient {
             functionName: functionName,
             instruction: instructionOffset,
           );
-    final clever = identifier != null || constant != null;
+    // the server sends a source line only for a clever error
+    final clever = sourceLineNumber != null;
     return ExecutionError(
       message: formatMoveAbortMessage(
         command: command,
@@ -877,6 +882,7 @@ class GraphQLCoreClient implements SuiCoreClient {
       limit: limit,
     );
     final resolved = filter == null ? null : resolveTransactionFilter(filter);
+    validateCheckpointRange(startCheckpoint, endCheckpoint);
 
     final data = await _client.executeData(
       _listTransactionsOperation,
@@ -940,6 +946,7 @@ class GraphQLCoreClient implements SuiCoreClient {
       limit: limit,
     );
     final resolved = filter == null ? null : resolveEventFilter(filter);
+    validateCheckpointRange(startCheckpoint, endCheckpoint);
 
     final data = await _client.executeData(
       _listEventsOperation,

@@ -149,6 +149,24 @@ class ResolvedPagination {
   });
 }
 
+/// [end] is exclusive, so it may equal [start].
+void validateCheckpointRange(int? start, int? end) {
+  const maxSafe = 9007199254740991;
+  for (final (name, value) in [
+    ('startCheckpoint', start),
+    ('endCheckpoint', end),
+  ]) {
+    if (value != null && (value < 0 || value > maxSafe)) {
+      throw ArgumentError.value(value, name, 'expected a non-negative integer');
+    }
+  }
+  if (start != null && end != null && end < start) {
+    throw ArgumentError(
+      '`endCheckpoint` must be greater than or equal to `startCheckpoint`',
+    );
+  }
+}
+
 /// [after] and [before] are exclusive bounds, whatever the order, and can be
 /// combined. With only [before] the query reads descending.
 ResolvedPagination resolvePagination({
@@ -295,9 +313,13 @@ extension WaitForTransaction on SuiCoreClient {
   }) async {
     final started = DateTime.now();
     final deadline = started.add(timeout);
-    final lastGap = pollSchedule.length < 2
-        ? const Duration(seconds: 2)
-        : pollSchedule.last - pollSchedule[pollSchedule.length - 2];
+    final gap = pollSchedule.isEmpty
+        ? Duration.zero
+        : pollSchedule.last -
+              (pollSchedule.length > 1
+                  ? pollSchedule[pollSchedule.length - 2]
+                  : Duration.zero);
+    final lastGap = gap > Duration.zero ? gap : const Duration(seconds: 2);
 
     for (var i = 0; ; i++) {
       final now = DateTime.now();
