@@ -164,6 +164,24 @@ Future<void> resolveCoinBalance(
       if (objectId != null) usedIds.add(normalizeSuiAddress(objectId));
     }
 
+    // withdrawals already in the transaction spend the same address balance
+    final reserved = <String, BigInt>{};
+    for (final input in transactionData.inputs) {
+      final withdrawal = input['FundsWithdrawal'];
+      if (withdrawal == null) continue;
+      final from = withdrawal['withdrawFrom'];
+      final payer =
+          from['SenderAllowance']?['funder'] ??
+          (from['Sender'] != null
+              ? sender
+              : transactionData.gasData.owner ?? sender);
+      if (normalizeSuiAddress(payer) != normalizeSuiAddress(sender)) continue;
+      final type = normalizeStructTagString(withdrawal['typeArg']['Balance']);
+      reserved[type] =
+          (reserved[type] ?? BigInt.zero) +
+          BigInt.parse('${withdrawal['reservation']['MaxAmountU64']}');
+    }
+
     for (final entry in totalByType.entries) {
       final isGas = entry.key == 'gas';
       final source = await _loadSources(
@@ -172,6 +190,8 @@ Future<void> resolveCoinBalance(
         isGas ? SUI_TYPE : entry.key,
         entry.value,
         usedIds,
+        reserved[normalizeStructTagString(isGas ? SUI_TYPE : entry.key)] ??
+            BigInt.zero,
         withCoins: !isGas,
       );
       addressBalanceByType[entry.key] = source.addressBalance;
@@ -375,16 +395,24 @@ Future<({List<CoinData> coins, BigInt addressBalance})> _loadSources(
   String owner,
   String coinType,
   BigInt needed,
-  Set<String> usedIds, {
+  Set<String> usedIds,
+  BigInt reserved, {
   bool withCoins = true,
 }) async {
   final balance = await client.getBalance(owner, coinType: coinType);
-  final addressBalance = BigInt.tryParse(balance.addressBalance) ?? BigInt.zero;
+  final addressBalance =
+      (BigInt.tryParse(balance.addressBalance) ?? BigInt.zero) - reserved;
+  if (addressBalance.isNegative) {
+    throw ArgumentError(
+      'Insufficient address balance for existing withdrawals. '
+      'Required: $reserved, Available: ${balance.addressBalance}',
+    );
+  }
 
   // the gas coin isn't in a balance query and covers any shortfall itself.
   if (!withCoins) return (coins: <CoinData>[], addressBalance: addressBalance);
 
-  final total = BigInt.tryParse(balance.balance) ?? BigInt.zero;
+  final total = (BigInt.tryParse(balance.balance) ?? BigInt.zero) - reserved;
   if (total < needed) {
     throw ArgumentError(
       'Insufficient balance of $coinType for $owner. '

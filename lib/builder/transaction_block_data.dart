@@ -124,6 +124,55 @@ String prepareSuiAddress(String address) {
   return normalizeSuiAddress(address).replaceAll('0x', '');
 }
 
+const _kinds = {
+  'GasCoin', 'Input', 'Result', 'NestedResult', //
+  'MoveCall', 'TransferObjects', 'SplitCoins', 'MergeCoins', 'Publish',
+  'MakeMoveVec', 'Upgrade', r'$Intent', //
+  'Pure', 'Object', 'UnresolvedPure', 'UnresolvedObject', 'FundsWithdrawal',
+  'ImmOrOwnedObject', 'SharedObject', 'Receiving',
+};
+
+/// Adds the `$kind` other SDKs' JSON lacks; makes lazy iterables lists.
+dynamic _tagKinds(dynamic value) {
+  if (value is Map) {
+    final map = <String, dynamic>{
+      for (final entry in value.entries) '${entry.key}': _tagKinds(entry.value),
+    };
+    // an Input argument also carries `type`, so count variant keys only
+    final keys = map.keys.where((k) => _kinds.contains(k) && map[k] != null);
+    if (map[r'$kind'] == null && keys.length == 1) {
+      map[r'$kind'] = keys.first;
+    }
+    return map;
+  }
+  if (value is Iterable && value is! TypedData) {
+    return value.map(_tagKinds).toList();
+  }
+  return value;
+}
+
+/// Null for kinds with no commands (epoch change, consensus prologue, ...).
+TransactionData? tryParseTransactionData(Uint8List bcs) {
+  try {
+    final data = SuiBcs.TransactionData.parse(bcs)["V1"];
+    final kind = data?["kind"];
+    final programmable =
+        kind?["ProgrammableTransaction"] ??
+        kind?["ProgrammableSystemTransaction"];
+    if (programmable == null) return null;
+    return TransactionBlockDataBuilder.restore({
+      "version": 2,
+      "sender": data["sender"],
+      "expiration": data["expiration"],
+      "gasData": data["gasData"],
+      "inputs": programmable["inputs"],
+      "commands": programmable["commands"],
+    }).snapshot();
+  } catch (_) {
+    return null;
+  }
+}
+
 dynamic _deepClone(dynamic value) {
   if (value is Map) {
     // keys stay String-typed; a dynamic-keyed clone fails the gRPC cast.
@@ -179,7 +228,7 @@ class TransactionBlockDataBuilder {
   static TransactionBlockDataBuilder restore(Map<String, dynamic> data) {
     final transactionData = TransactionBlockDataBuilder(
       TransactionData.fromJson(
-        data["version"] == 2 ? data : transactionDataFromV1(data),
+        _tagKinds(data["version"] == 2 ? data : transactionDataFromV1(data)),
       ),
     );
 

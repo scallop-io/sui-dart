@@ -354,7 +354,11 @@ dynamic transactionDataFromV1(dynamic data) {
           {
             return {
               "Publish": {
-                "modules": transaction["modules"]?.map((mod) => toB64(mod)),
+                "modules": transaction["modules"]
+                    ?.map(
+                      (mod) => toB64(Uint8List.fromList(List<int>.from(mod))),
+                    )
+                    .toList(),
                 "dependencies": transaction["dependencies"],
               },
             };
@@ -385,7 +389,11 @@ dynamic transactionDataFromV1(dynamic data) {
           {
             return {
               "Upgrade": {
-                "modules": transaction["modules"]?.map((mod) => toB64(mod)),
+                "modules": transaction["modules"]
+                    ?.map(
+                      (mod) => toB64(Uint8List.fromList(List<int>.from(mod))),
+                    )
+                    .toList(),
                 "dependencies": transaction["dependencies"],
                 "package": transaction["packageId"],
                 "ticket": parseV1TransactionArgument(transaction["ticket"]),
@@ -403,20 +411,19 @@ dynamic parseV1TransactionArgument(dynamic arg) {
   switch (arg["kind"]) {
     case 'GasCoin':
       {
-        return {...arg, "GasCoin": true};
+        return {"GasCoin": true};
       }
     case 'Result':
-      return {...arg, "Result": arg["index"]};
+      return {"Result": arg["index"]};
     case 'NestedResult':
       {
         return {
-          ...arg,
           "NestedResult": [arg["index"], arg["resultIndex"]],
         };
       }
     case 'Input':
       {
-        return {...arg, "Input": arg["index"]};
+        return {"Input": arg["index"]};
       }
   }
 }

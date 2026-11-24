@@ -8,6 +8,8 @@ import 'package:grpc/grpc.dart' show GrpcError;
 import 'package:sui_dart/bcs/sui_bcs.dart';
 import 'package:sui_dart/builder/commands.dart';
 import 'package:sui_dart/builder/inputs.dart';
+import 'package:sui_dart/builder/intents/coin_with_balance.dart'
+    show COIN_WITH_BALANCE, resolveCoinBalance;
 import 'package:sui_dart/builder/pure.dart';
 import 'package:sui_dart/builder/transaction_block_data.dart';
 import 'package:sui_dart/builder/transaction_resolver.dart';
@@ -160,6 +162,8 @@ class Transaction {
     final trimmed = serialized.trim();
     if (trimmed.startsWith('{')) {
       tx._blockData = TransactionBlockDataBuilder.restore(jsonDecode(trimmed));
+      // JSON carries intents but not their resolver
+      tx.addIntentResolver(COIN_WITH_BALANCE, resolveCoinBalance);
     } else {
       // base64-encoded BCS transaction data
       tx._blockData = TransactionBlockDataBuilder.fromBytes(fromB64(trimmed));
@@ -223,6 +227,13 @@ class Transaction {
     return transactionDataToGrpcTransaction(_blockData.snapshot());
   }
 
+  /// A transaction without a sender simulates as the zero address.
+  grpc_transaction.Transaction toGrpcSimulationTransaction() {
+    final data = _blockData.snapshot();
+    data.sender ??= normalizeSuiAddress('0x0');
+    return transactionDataToGrpcTransaction(data);
+  }
+
   Pure? _pure;
 
   Pure get pure {
@@ -250,6 +261,9 @@ class Transaction {
 
   Transaction([Transaction? transaction]) {
     _blockData = TransactionBlockDataBuilder(transaction?.getData());
+    if (transaction != null) {
+      _intentResolvers.addAll(transaction._intentResolvers);
+    }
   }
 
   /// Returns an argument for the gas coin, to be used in a transaction.
@@ -456,10 +470,20 @@ class Transaction {
 
   // Method shorthands:
 
+  dynamic _argument(dynamic value) {
+    if (value is SerializedBcs || value is Uint8List) return pure(value);
+    if (value is Function) return _argument(value(this));
+    return value;
+  }
+
   TransactionResult splitCoins(dynamic coin, List<dynamic> amounts) {
-    final coinArg = coin is String ? object(coin) : coin;
+    final coinArg = coin is String ? object(coin) : _argument(coin);
     final result = amounts
-        .map((x) => x is! Map ? pure.u64(BigInt.parse(x.toString())) : x)
+        .map(
+          (x) => x is num || x is BigInt || x is String
+              ? pure.u64(BigInt.parse(x.toString()))
+              : _argument(x),
+        )
         .toList();
     return add(Commands.splitCoins(coinArg, result));
   }
@@ -502,13 +526,15 @@ class Transaction {
       Commands.moveCall({
         "target": target,
         "typeArguments": typeArguments,
-        "arguments": arguments,
+        "arguments": arguments?.map(_argument).toList(),
       }),
     );
   }
 
   TransactionResult transferObjects(List<dynamic> objects, dynamic address) {
-    final result = address is! Map ? pure.address(address) : address;
+    final result = address is String
+        ? pure.address(address)
+        : _argument(address);
     return add(
       Commands.transferObjects(
         objects.map((obj) => object(obj)).toList(),
