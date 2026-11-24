@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:bcs_dart/bcs.dart';
 import 'package:sui_dart/grpc/types.dart';
 import 'package:sui_dart/sui.dart' hide AddressOwner, ObjectData;
 import 'package:test/test.dart';
@@ -330,6 +334,175 @@ void main() {
 
       expect(original.getData().commands, hasLength(before));
       expect(_hasIntent(original.getData().commands!), isTrue);
+    });
+  });
+
+  group('arguments and restored transactions', () {
+    Future<List<int>> kind(Transaction tx) {
+      tx.setSender(_owner);
+      return tx.build(
+        BuildOptions(
+          onlyTransactionKind: true,
+          assumeSufficientAddressBalances: true,
+        ),
+      );
+    }
+
+    test('moveCall and splitCoins take serialized values', () async {
+      final tx = Transaction();
+      tx.moveCall('0x2::m::f', arguments: [Bcs.u64().serialize(5)]);
+      expect(
+        base64Encode(await kind(tx)),
+        'AAEACAUAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgFtAWYAAQEAAA==',
+      );
+
+      final split = Transaction();
+      final amount = split.moveCall('0x2::m::amt');
+      split.splitCoins(split.gas, [Bcs.u64().serialize(7), amount, 3]);
+      final amounts = split.getData().commands!.last['SplitCoins']['amounts'];
+      expect(amounts.map((a) => a[r'$kind']), ['Input', 'Result', 'Input']);
+    });
+
+    test('a thunk argument runs on the transaction', () async {
+      final tx = Transaction();
+      tx.moveCall(
+        '0x2::m::f',
+        typeArguments: [_fooType],
+        arguments: [coinWithBalance(type: _fooType, balance: 5)],
+      );
+      final commands = tx.getData().commands!;
+      expect(commands.first[r'$kind'], r'$Intent');
+      expect(commands.last['MoveCall']['arguments'].single, {
+        r'$kind': 'Result',
+        'Result': 0,
+      });
+    });
+
+    test('JSON without \$kind keeps intents and argument links', () async {
+      final direct = Transaction();
+      final coin = direct.add(coinWithBalance(type: _fooType, balance: 100));
+      final opened = direct.moveCall('0x2::m::open', arguments: [coin]);
+      direct.moveCall('0x2::m::a', arguments: [opened[0]]);
+      direct.setSender(_owner);
+
+      dynamic strip(dynamic v) => v is Map
+          ? {
+              for (final e in v.entries)
+                if (e.key != r'$kind') e.key: strip(e.value),
+            }
+          : v is List
+          ? v.map(strip).toList()
+          : v;
+      final json = jsonEncode(strip(jsonDecode(direct.toJson())));
+      expect(json, isNot(contains(r'$kind')));
+
+      final restored = Transaction.from(json);
+      expect(await kind(restored), await kind(direct));
+    });
+
+    test('an Input argument with a type and no \$kind is tagged', () {
+      final restored = Transaction.from(
+        jsonEncode({
+          'version': 2,
+          'sender': _owner,
+          'expiration': null,
+          'gasData': <String, dynamic>{},
+          'inputs': [
+            {
+              'Pure': {'bytes': 'CQAAAAAAAAA='},
+            },
+          ],
+          'commands': [
+            {
+              'MoveCall': {
+                'package': '0x2',
+                'module': 'm',
+                'function': 'f',
+                'typeArguments': [],
+                'arguments': [
+                  {'Input': 0, 'type': 'pure'},
+                ],
+              },
+            },
+          ],
+        }),
+      );
+      final data = restored.getData();
+      expect(data.inputs!.single[r'$kind'], 'Pure');
+      expect(data.commands!.single[r'$kind'], 'MoveCall');
+      expect(
+        data.commands!.single['MoveCall']['arguments'].single[r'$kind'],
+        'Input',
+      );
+    });
+
+    test('raw bytes become a pure argument', () {
+      final tx = Transaction();
+      tx.moveCall(
+        '0x2::m::f',
+        arguments: [
+          Uint8List.fromList([9, 0, 0, 0, 0, 0, 0, 0]),
+        ],
+      );
+      expect(tx.getData().inputs!.single[r'$kind'], 'Pure');
+    });
+
+    test('a copy keeps the intent resolver', () async {
+      final tx = Transaction();
+      tx.add(coinWithBalance(type: _fooType, balance: 100));
+      await kind(Transaction(tx));
+    });
+
+    test('v1 JSON restores to plain lists and maps', () {
+      final tx = Transaction();
+      final split = tx.splitCoins(tx.gas, [1]);
+      tx.transferObjects([split], _recipient);
+      tx.setSender(_owner);
+      // ignore: deprecated_member_use_from_same_package
+      final restored = Transaction.from(tx.serialize());
+      expect(jsonDecode(restored.toJson())['commands'], hasLength(2));
+      restored.toGrpcTransaction();
+    });
+  });
+
+  group('existing withdrawals', () {
+    test(
+      'an intent does not spend funds another withdrawal reserved',
+      () async {
+        final tx = Transaction();
+        tx.object(
+          Inputs.fundsWithdrawal(
+            maxAmount: BigInt.from(900),
+            coinType: _fooType,
+          ),
+        );
+        final coin = tx.add(coinWithBalance(type: _fooType, balance: 200));
+        tx.transferObjects([coin], _recipient);
+
+        await _resolve(tx, [
+          _coin('0x1', '500'),
+        ], addressBalance: BigInt.from(1000));
+        expect(
+          jsonEncode(tx.getData().inputs),
+          contains(normalizeSuiAddress('0x1')),
+          reason: 'the coin object must be used',
+        );
+      },
+    );
+
+    test('throw when they exceed the address balance', () async {
+      final tx = Transaction();
+      tx.object(
+        Inputs.fundsWithdrawal(
+          maxAmount: BigInt.from(1500),
+          coinType: _fooType,
+        ),
+      );
+      tx.add(coinWithBalance(type: _fooType, balance: 1));
+      await expectLater(
+        _resolve(tx, [_coin('0x1', '500')], addressBalance: BigInt.from(1000)),
+        throwsArgumentError,
+      );
     });
   });
 
