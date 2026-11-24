@@ -18,7 +18,8 @@ String deriveDynamicFieldId({
   final parentBytes = Hex.decode(normalizeSuiAddress(parentObjectId));
   final keyTypeTagBcs = SuiBcs.TypeTag.serialize(keyTypeTag).toBytes();
 
-  final lenLE = ByteData(8)..setUint64(0, keyBcs.length, Endian.little);
+  // setUint64 throws on the web; the high 4 bytes stay zero
+  final lenLE = ByteData(8)..setUint32(0, keyBcs.length, Endian.little);
 
   final input = BytesBuilder(copy: false)
     ..addByte(_kHashingIntentChildObjectId)

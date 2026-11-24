@@ -71,9 +71,11 @@ class FaucetClient {
     }
 
     try {
+      // not `1 << 32`: that is 0 on the web
+      final random = Random.secure();
       var nonce =
-          BigInt.from(Random.secure().nextInt(1 << 32)) << 32 |
-          BigInt.from(Random.secure().nextInt(1 << 32));
+          BigInt.from(random.nextInt(0x100000000)) << 32 |
+          BigInt.from(random.nextInt(0x100000000));
       while (true) {
         final startedAt = DateTime.now();
         final challenge = FaucetChallenge.fromJson(
