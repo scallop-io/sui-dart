@@ -8,6 +8,7 @@ import 'package:sui_dart/builder/transaction.dart'
         TransactionPlugin,
         simulationResolvePlugin;
 import 'package:sui_dart/core/sui_core_client.dart';
+import 'package:sui_dart/grpc/grpc_core_client.dart' show GrpcCoreClient;
 import 'package:sui_dart/grpc/types.dart';
 import 'package:sui_dart/types/common.dart'
     show normalizeStructTagString, normalizeSuiAddress;
@@ -28,11 +29,11 @@ typedef _CoreShared = generated.Fragment$CoreOwnerFields$$Shared;
 typedef _CoreConsensusOwner =
     generated.Fragment$CoreOwnerFields$$ConsensusAddressOwner;
 typedef _CoreImmutable = generated.Fragment$CoreOwnerFields$$Immutable;
-typedef _DfNode = generated.Query$GetDynamicFields$object$dynamicFields$nodes;
+typedef _DfNode = generated.Query$GetDynamicFields$address$dynamicFields$nodes;
 typedef _DfMoveObjectValue =
-    generated.Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveObject;
+    generated.Query$GetDynamicFields$address$dynamicFields$nodes$value$$MoveObject;
 typedef _DfMoveValue =
-    generated.Query$GetDynamicFields$object$dynamicFields$nodes$value$$MoveValue;
+    generated.Query$GetDynamicFields$address$dynamicFields$nodes$value$$MoveValue;
 typedef _SimEventNode =
     generated.Query$SimulateTransaction$simulateTransaction$effects$events$nodes;
 typedef _SimCommand =
@@ -167,6 +168,28 @@ class GraphQLCoreClient implements SuiCoreClient {
         document: generated.documentNodeQueryGetTransaction,
         operationName: 'GetTransaction',
         decodeData: generated.Query$GetTransaction.fromJson,
+        encodeVariables: (v) => v.toJson(),
+      );
+
+  static final _getTransactionEventsOperation =
+      GraphQLOperation<
+        generated.Query$GetTransactionEvents,
+        generated.Variables$Query$GetTransactionEvents
+      >(
+        document: generated.documentNodeQueryGetTransactionEvents,
+        operationName: 'GetTransactionEvents',
+        decodeData: generated.Query$GetTransactionEvents.fromJson,
+        encodeVariables: (v) => v.toJson(),
+      );
+
+  static final _getTransactionBalanceChangesOperation =
+      GraphQLOperation<
+        generated.Query$GetTransactionBalanceChanges,
+        generated.Variables$Query$GetTransactionBalanceChanges
+      >(
+        document: generated.documentNodeQueryGetTransactionBalanceChanges,
+        operationName: 'GetTransactionBalanceChanges',
+        decodeData: generated.Query$GetTransactionBalanceChanges.fromJson,
         encodeVariables: (v) => v.toJson(),
       );
 
@@ -567,24 +590,159 @@ class GraphQLCoreClient implements SuiCoreClient {
   }) async {
     final data = await _client.executeData(
       _getTransactionOperation,
-      generated.Variables$Query$GetTransaction(digest: digest),
+      generated.Variables$Query$GetTransaction(
+        digest: digest,
+        includeEffects: include?.effects,
+        includeEvents: include?.events,
+        includeBalanceChanges: include?.balanceChanges,
+        includeEffectsJson:
+            include?.effects == true || include?.objectTypes == true
+            ? true
+            : null,
+        includeBcs: include?.bcs,
+      ),
     );
     final tx = data.transaction;
     if (tx == null) {
       throw TransactionError(TransactionErrorReason.notFound, digest);
     }
+    return _mapTransaction(tx, include);
+  }
+
+  Future<TransactionResponse> _mapTransaction(
+    generated.Fragment$CoreTransactionFields tx,
+    TransactionIncludeOptions? include,
+  ) async {
     final effects = tx.effects;
     final timestamp = effects?.timestamp;
+    final error = effects?.executionError;
+    final status = ExecutionStatus(
+      success: effects?.status == schema.Enum$ExecutionStatus.SUCCESS,
+      error: error == null
+          ? null
+          : _parseExecutionError(
+              message: error.message,
+              abortCode: error.abortCode,
+              sourceLineNumber: error.sourceLineNumber,
+              instructionOffset: error.instructionOffset,
+              identifier: error.identifier,
+              constant: error.constant,
+              package: error.module?.package?.address,
+              module: error.module?.name,
+              functionName: error.function?.name,
+            ),
+    );
+    final effectsJson = effects?.effectsJson;
+    final parsed = effectsJson == null
+        ? null
+        : GrpcCoreClient.parseEffectsJson(effectsJson);
     return TransactionResponse(
       digest: tx.digest,
-      status: ExecutionStatus(
-        success: effects?.status == schema.Enum$ExecutionStatus.SUCCESS,
-      ),
+      signatures: [
+        for (final sig in tx.signatures)
+          if (sig.signatureBytes != null) sig.signatureBytes!,
+      ],
+      epoch: effects?.epoch?.epochId.toString(),
+      status: status,
+      effects: include?.effects == true && parsed != null
+          ? TransactionEffects(
+              bcs: effects?.effectsBcs == null
+                  ? null
+                  : base64Decode(effects!.effectsBcs!),
+              version: parsed.version,
+              transactionDigest: parsed.transactionDigest,
+              lamportVersion: parsed.lamportVersion,
+              status: parsed.status,
+              gasUsed: parsed.gasUsed,
+              gasObject: parsed.gasObject,
+              dependencies: parsed.dependencies,
+              changedObjects: parsed.changedObjects,
+              unchangedConsensusObjects: parsed.unchangedConsensusObjects,
+              eventsDigest: parsed.eventsDigest,
+              auxiliaryDataDigest: parsed.auxiliaryDataDigest,
+            )
+          : null,
+      events: include?.events == true
+          ? await _allEvents(tx.digest, effects?.events)
+          : null,
+      balanceChanges: include?.balanceChanges == true
+          ? await _allBalanceChanges(tx.digest, effects?.balanceChanges)
+          : null,
+      objectTypes: include?.objectTypes == true
+          ? {
+              for (final obj
+                  in parsed?.changedObjects ?? const <ChangedObject>[])
+                if (obj.objectType case final type?) obj.objectId: type,
+            }
+          : null,
+      bcs: tx.transactionBcs == null ? null : base64Decode(tx.transactionBcs!),
       timestampMs: timestamp == null
           ? null
           : DateTime.tryParse(timestamp)?.millisecondsSinceEpoch.toString(),
       checkpoint: effects?.checkpoint?.sequenceNumber.toString(),
     );
+  }
+
+  Future<List<Event>> _allEvents(
+    String digest,
+    generated.Fragment$CoreEventPage? page,
+  ) async {
+    final events = <Event>[];
+    while (page != null) {
+      for (final node in page.nodes) {
+        final type = node.contents?.type?.repr ?? '';
+        events.add(
+          Event(
+            packageId:
+                node.transactionModule?.package?.address ??
+                type.split('::').first,
+            module: node.transactionModule?.name ?? '',
+            sender: node.sender?.address ?? '',
+            eventType: type,
+            bcs: _decodeBcs(node.contents?.bcs),
+            json: node.contents?.json,
+          ),
+        );
+      }
+      if (!page.pageInfo.hasNextPage) break;
+      final data = await _client.executeData(
+        _getTransactionEventsOperation,
+        generated.Variables$Query$GetTransactionEvents(
+          digest: digest,
+          after: page.pageInfo.endCursor,
+        ),
+      );
+      page = data.transaction?.effects?.events;
+    }
+    return events;
+  }
+
+  Future<List<BalanceChange>> _allBalanceChanges(
+    String digest,
+    generated.Fragment$CoreBalanceChangePage? page,
+  ) async {
+    final changes = <BalanceChange>[];
+    while (page != null) {
+      for (final node in page.nodes) {
+        changes.add(
+          BalanceChange(
+            address: node.owner?.address ?? '',
+            coinType: node.coinType?.repr ?? '',
+            amount: node.amount ?? '0',
+          ),
+        );
+      }
+      if (!page.pageInfo.hasNextPage) break;
+      final data = await _client.executeData(
+        _getTransactionBalanceChangesOperation,
+        generated.Variables$Query$GetTransactionBalanceChanges(
+          digest: digest,
+          after: page.pageInfo.endCursor,
+        ),
+      );
+      page = data.transaction?.effects?.balanceChanges;
+    }
+    return changes;
   }
 
   @override
@@ -728,6 +886,14 @@ class GraphQLCoreClient implements SuiCoreClient {
         after: pagination.after,
         last: pagination.descending ? pagination.limit : null,
         before: pagination.before,
+        includeEffects: include?.effects,
+        includeEvents: include?.events,
+        includeBalanceChanges: include?.balanceChanges,
+        includeEffectsJson:
+            include?.effects == true || include?.objectTypes == true
+            ? true
+            : null,
+        includeBcs: include?.bcs,
       ),
     );
 
@@ -741,20 +907,7 @@ class GraphQLCoreClient implements SuiCoreClient {
         : connection.nodes;
 
     return _pageOf(
-      nodes.map((tx) {
-        final effects = tx.effects;
-        final timestamp = effects?.timestamp;
-        return TransactionResponse(
-          digest: tx.digest,
-          status: ExecutionStatus(
-            success: effects?.status == schema.Enum$ExecutionStatus.SUCCESS,
-          ),
-          timestampMs: timestamp == null
-              ? null
-              : DateTime.tryParse(timestamp)?.millisecondsSinceEpoch.toString(),
-          checkpoint: effects?.checkpoint?.sequenceNumber.toString(),
-        );
-      }).toList(),
+      await Future.wait(nodes.map((tx) => _mapTransaction(tx, include))),
       descending: pagination.descending,
       hasNextPage: connection.pageInfo.hasNextPage,
       hasPreviousPage: connection.pageInfo.hasPreviousPage,
@@ -931,7 +1084,7 @@ class GraphQLCoreClient implements SuiCoreClient {
         includeValue: includeValue,
       ),
     );
-    final connection = data.object?.dynamicFields;
+    final connection = data.address?.dynamicFields;
     if (connection == null) return const Page(data: [], hasNextPage: false);
     return Page(
       data: connection.nodes.map(_mapDynamicField).toList(),

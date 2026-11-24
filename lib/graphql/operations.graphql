@@ -10,14 +10,118 @@ query GetDefaultNameServiceName($address: SuiAddress!) {
   }
 }
 
-query GetTransaction($digest: String!) {
+query GetTransaction(
+  $digest: String!
+  $includeEffects: Boolean = false
+  $includeEvents: Boolean = false
+  $includeBalanceChanges: Boolean = false
+  $includeEffectsJson: Boolean = false
+  $includeBcs: Boolean = false
+) {
   transaction(digest: $digest) {
-    digest
+    ...CoreTransactionFields
+  }
+}
+
+fragment CoreTransactionFields on Transaction {
+  digest
+  transactionBcs @include(if: $includeBcs)
+  signatures {
+    signatureBytes
+  }
+  effects {
+    status
+    timestamp
+    checkpoint {
+      sequenceNumber
+    }
+    epoch {
+      epochId
+    }
+    executionError {
+      message
+      abortCode
+      sourceLineNumber
+      instructionOffset
+      identifier
+      constant
+      module {
+        name
+        package {
+          address
+        }
+      }
+      function {
+        name
+      }
+    }
+    effectsBcs @include(if: $includeEffects)
+    effectsJson @include(if: $includeEffectsJson)
+    balanceChanges(first: 50) @include(if: $includeBalanceChanges) {
+      ...CoreBalanceChangePage
+    }
+    events(first: 50) @include(if: $includeEvents) {
+      ...CoreEventPage
+    }
+  }
+}
+
+fragment CoreBalanceChangePage on BalanceChangeConnection {
+  pageInfo {
+    hasNextPage
+    endCursor
+  }
+  nodes {
+    owner {
+      address
+    }
+    coinType {
+      repr
+    }
+    amount
+  }
+}
+
+fragment CoreEventPage on EventConnection {
+  pageInfo {
+    hasNextPage
+    endCursor
+  }
+  nodes {
+    sender {
+      address
+    }
+    transactionModule {
+      name
+      package {
+        address
+      }
+    }
+    contents {
+      type {
+        repr
+      }
+      json
+      bcs
+    }
+  }
+}
+
+query GetTransactionBalanceChanges($digest: String!, $after: String) {
+  transaction(digest: $digest) {
     effects {
-      status
-      timestamp
-      checkpoint {
-        sequenceNumber
+      balanceChanges(first: 50, after: $after) {
+        ...CoreBalanceChangePage
+      }
+    }
+  }
+}
+
+query GetTransactionEvents($digest: String!, $after: String) {
+  transaction(digest: $digest) {
+    effects {
+      events(first: 50, after: $after) {
+        ...CoreEventPage
       }
     }
   }
@@ -128,7 +232,7 @@ query GetDynamicFields(
   $after: String
   $includeValue: Boolean = false
 ) {
-  object(address: $parentId) {
+  address(address: $parentId) {
     dynamicFields(first: $first, after: $after) {
       pageInfo {
         hasNextPage
@@ -535,6 +639,11 @@ query ListTransactions(
   $after: String
   $last: Int
   $before: String
+  $includeEffects: Boolean = false
+  $includeEvents: Boolean = false
+  $includeBalanceChanges: Boolean = false
+  $includeEffectsJson: Boolean = false
+  $includeBcs: Boolean = false
 ) {
   transactions(
     filter: $filter
@@ -550,14 +659,7 @@ query ListTransactions(
       endCursor
     }
     nodes {
-      digest
-      effects {
-        status
-        timestamp
-        checkpoint {
-          sequenceNumber
-        }
-      }
+      ...CoreTransactionFields
     }
   }
 }
