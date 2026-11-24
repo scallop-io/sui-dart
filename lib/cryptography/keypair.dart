@@ -71,10 +71,11 @@ mixin Keypair implements Signer {
 
   @override
   SignatureWithBytes signPersonalMessage(Uint8List bytes) {
-    return signWithIntent(
+    final signed = signWithIntent(
       Bcs.vector(Bcs.u8()).serialize(bytes).toBytes(),
       IntentScope.personalMessage,
     );
+    return SignatureWithBytes(signed.signature, base64Encode(bytes));
   }
 
   bool verifyWithIntent(Uint8List bytes, String signature, IntentScope intent) {

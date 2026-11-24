@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:bcs_dart/bcs.dart';
@@ -22,11 +23,18 @@ abstract class AsyncSigner {
   FutureOr<SignatureWithBytes> signTransaction(Uint8List bytes) =>
       signWithIntent(bytes, IntentScope.transactionData);
 
-  FutureOr<SignatureWithBytes> signPersonalMessage(Uint8List bytes) =>
-      signWithIntent(
-        Bcs.vector(Bcs.u8()).serialize(bytes).toBytes(),
-        IntentScope.personalMessage,
-      );
+  /// Returns the raw message as `bytes`, not the BCS form that is signed.
+  FutureOr<SignatureWithBytes> signPersonalMessage(Uint8List bytes) {
+    final signed = signWithIntent(
+      Bcs.vector(Bcs.u8()).serialize(bytes).toBytes(),
+      IntentScope.personalMessage,
+    );
+    SignatureWithBytes raw(SignatureWithBytes s) =>
+        SignatureWithBytes(s.signature, base64Encode(bytes));
+    return signed is Future<SignatureWithBytes>
+        ? signed.then(raw)
+        : raw(signed);
+  }
 
   String toSuiAddress() => getPublicKey().toSuiAddress();
 }
@@ -41,8 +49,11 @@ abstract class Signer extends AsyncSigner {
       signWithIntent(bytes, IntentScope.transactionData);
 
   @override
-  SignatureWithBytes signPersonalMessage(Uint8List bytes) => signWithIntent(
-    Bcs.vector(Bcs.u8()).serialize(bytes).toBytes(),
-    IntentScope.personalMessage,
-  );
+  SignatureWithBytes signPersonalMessage(Uint8List bytes) {
+    final signed = signWithIntent(
+      Bcs.vector(Bcs.u8()).serialize(bytes).toBytes(),
+      IntentScope.personalMessage,
+    );
+    return SignatureWithBytes(signed.signature, base64Encode(bytes));
+  }
 }

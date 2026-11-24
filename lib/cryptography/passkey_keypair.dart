@@ -161,11 +161,12 @@ class PasskeyKeypair {
     return signWithIntent(bytes, IntentScope.transactionData);
   }
 
-  Future<SignatureWithBytes> signPersonalMessage(Uint8List bytes) {
-    return signWithIntent(
+  Future<SignatureWithBytes> signPersonalMessage(Uint8List bytes) async {
+    final signed = await signWithIntent(
       Bcs.vector(Bcs.u8()).serialize(bytes).toBytes(),
       IntentScope.personalMessage,
     );
+    return SignatureWithBytes(signed.signature, base64Encode(bytes));
   }
 
   /// Signs [message] and returns every public key (up to 4) that could have

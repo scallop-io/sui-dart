@@ -110,14 +110,19 @@ class Secp256 {
     if (!signature.isNormalized(_ecDomainParams)) {
       return false;
     }
-    int recId = recoveryId(signature, messageHash, publicKey);
-    final recoveredPublicKey = ecRecover(
-      recId,
-      messageHash,
-      signature,
-      publicKey.length == 33,
-    );
-    return Hex.encode(publicKey) == Hex.encode(recoveredPublicKey);
+    try {
+      int recId = recoveryId(signature, messageHash, publicKey);
+      final recoveredPublicKey = ecRecover(
+        recId,
+        messageHash,
+        signature,
+        publicKey.length == 33,
+      );
+      return Hex.encode(publicKey) == Hex.encode(recoveredPublicKey);
+    } catch (_) {
+      // recovery throws for a signature that fits no key
+      return false;
+    }
   }
 
   SignatureData sign(

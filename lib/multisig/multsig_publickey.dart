@@ -400,29 +400,35 @@ PublicKey publicKeyFromRawBytes(
   Uint8List bytes, {
   String? address,
 }) {
+  if (address != null) address = normalizeSuiAddress(address);
+  final PublicKey publicKey;
   switch (signatureScheme) {
     case "Ed25519":
-      return Ed25519PublicKey.fromBytes(bytes);
+      publicKey = Ed25519PublicKey.fromBytes(bytes);
     case "Secp256k1":
-      return Secp256PublicKey.fromBytes(
+      publicKey = Secp256PublicKey.fromBytes(
         bytes,
         SIGNATURE_SCHEME_TO_FLAG.Secp256k1,
       );
     case "Secp256r1":
-      return Secp256PublicKey.fromBytes(
+      publicKey = Secp256PublicKey.fromBytes(
         bytes,
         SIGNATURE_SCHEME_TO_FLAG.Secp256r1,
       );
     case "MultiSig":
-      return MultiSigPublicKey.fromBytes(bytes);
+      publicKey = MultiSigPublicKey.fromBytes(bytes);
     case "ZkLogin":
       // A supplied address disambiguates legacy vs current zkLogin derivation; else auto-detect.
-      return ZkLoginPublicIdentifier.fromBytes(bytes, address: address);
+      publicKey = ZkLoginPublicIdentifier.fromBytes(bytes, address: address);
     case "Passkey":
-      return PasskeyPublicKey(bytes);
+      publicKey = PasskeyPublicKey(bytes);
     case "MLDSA65":
-      return MLDSA65PublicKey(bytes);
+      publicKey = MLDSA65PublicKey(bytes);
     default:
       throw ArgumentError("Unsupported signature scheme $signatureScheme");
   }
+  if (address != null && publicKey.toSuiAddress() != address) {
+    throw ArgumentError('Public key bytes do not match the provided address');
+  }
+  return publicKey;
 }
