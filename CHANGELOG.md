@@ -1,3 +1,11 @@
+## 0.13.3
+
+### Added
+
+* `getDynamicFields(..., includeValue: true)` returns each field's value BCS in
+  `DynamicFieldEntry.value`, on gRPC and GraphQL. It stays null by default and
+  for dynamic object fields, whose value lives in the child object.
+
 ## 0.13.2
 
 ### Changed
