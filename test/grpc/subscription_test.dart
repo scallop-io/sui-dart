@@ -6,6 +6,7 @@ import 'package:protobuf/well_known_types/google/protobuf/timestamp.pb.dart';
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/checkpoint.pb.dart' as pb;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/checkpoint_summary.pb.dart'
     as pb;
+import 'package:sui_dart/grpc/generated/sui/rpc/v2/effects.pb.dart' as pb;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/event.pb.dart' as pb;
 import 'package:sui_dart/grpc/generated/sui/rpc/v2/executed_transaction.pb.dart'
     as pb;
@@ -38,6 +39,13 @@ class _FakeNode extends SubscriptionServiceBase {
             transaction: pb.ExecutedTransaction(
               digest: 'tx${n++}',
               checkpoint: Int64(7),
+              effects: pb.TransactionEffects(
+                epoch: Int64(9),
+                changedObjects: [
+                  pb.ChangedObject(objectId: '0xa', objectType: '0x2::c::C'),
+                  pb.ChangedObject(objectId: '0xb'),
+                ],
+              ),
             ),
           ),
         );
@@ -88,7 +96,6 @@ class _FakeNode extends SubscriptionServiceBase {
         transactions: [pb.ExecutedTransaction(digest: 'tx9')],
       ),
     );
-    // masked out: only the cursor tells the sequence number
     yield SubscribeCheckpointsResponse(cursor: Int64(101));
   }
 }
@@ -138,6 +145,21 @@ void main() {
     await node.cancelled.future.timeout(const Duration(seconds: 5));
   });
 
+  test('transactions carry epoch and object types', () async {
+    final tx = await client
+        .subscribeTransactions(
+          include: TransactionIncludeOptions(objectTypes: true),
+        )
+        .first;
+
+    expect(tx.epoch, '9');
+    expect(tx.objectTypes, {'0xa': '0x2::c::C'});
+    expect(
+      node.txRequest!.readMask.paths,
+      containsAll(['effects.epoch', 'effects.changed_objects.object_type']),
+    );
+  });
+
   test('events skip frames without an event', () async {
     final events = await client
         .subscribeEvents(filter: const EventFilter(sender: _sender))
@@ -150,13 +172,14 @@ void main() {
     expect(node.eventRequest!.hasFilter(), isTrue);
   });
 
-  test('checkpoints map the summary and fall back to the cursor', () async {
+  test('checkpoints map the summary and skip progress frames', () async {
     final cps = await client
         .subscribeCheckpoints(
           transactions: TransactionIncludeOptions(effects: true),
         )
         .toList();
 
+    expect(cps, hasLength(1));
     expect(cps.first.sequenceNumber, '100');
     expect(cps.first.digest, 'cp100');
     expect(cps.first.epoch, '5');
@@ -164,8 +187,6 @@ void main() {
     expect(cps.first.previousDigest, 'cp99');
     expect(cps.first.totalNetworkTransactions, '42');
     expect(cps.first.transactions!.single.digest, 'tx9');
-    expect(cps.last.sequenceNumber, '101');
-    expect(cps.last.digest, isNull);
     expect(
       node.checkpointRequest!.readMask.paths,
       containsAll(['summary.epoch', 'transactions.effects']),
