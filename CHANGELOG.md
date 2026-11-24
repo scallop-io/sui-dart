@@ -1,3 +1,18 @@
+## 0.13.4
+
+### Fixed
+
+* `Transaction(tx)` and `getData()` copies no longer share state with the
+  original.
+* Balance intents no longer mis-point or crash later commands that reuse a
+  result.
+* GraphQL: `getDynamicFields` works on wrapped parents (a `Table` inside an
+  object); `getTransaction` and `listTransactions` return the error, epoch and
+  signatures and honor `include`.
+* gRPC: `objectTypes` is filled when asked, and `epoch` without effects.
+* Filtered `subscribeCheckpoints` no longer emits progress frames as
+  checkpoints.
+
 ## 0.13.3
 
 ### Added
