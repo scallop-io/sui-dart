@@ -243,13 +243,10 @@ void main() {
       final publicKey = MultiSigPublicKey(parsed.multisig!.multisigPK);
 
       // Invalid order can't be verified.
+      expect(publicKey.verifyPersonalMessage(signData, multisig), isFalse);
       expect(
-        () => publicKey.verifyPersonalMessage(signData, multisig),
-        throwsException,
-      );
-      expect(
-        () => multiSigPublicKey.verifyPersonalMessage(signData, multisig),
-        throwsException,
+        multiSigPublicKey.verifyPersonalMessage(signData, multisig),
+        isFalse,
       );
     });
 
@@ -290,14 +287,8 @@ void main() {
       final publicKey = MultiSigPublicKey(parsed.multisig!.multisigPK);
 
       // Invalid intentScope.
-      expect(
-        () => publicKey.verifyTransaction(signData, multisig),
-        throwsException,
-      );
-      expect(
-        () => multiSigPublicKey.verifyTransaction(signData, multisig),
-        throwsException,
-      );
+      expect(publicKey.verifyTransaction(signData, multisig), isFalse);
+      expect(multiSigPublicKey.verifyTransaction(signData, multisig), isFalse);
     });
 
     test('providing empty values', () {
