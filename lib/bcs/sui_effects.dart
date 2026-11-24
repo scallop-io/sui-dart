@@ -151,7 +151,7 @@ class SuiEffects {
         'maxScaledSize': Bcs.u64(),
       }),
       'InvalidLinkage': null,
-      'InsufficientBalanceForWithdraw': null,
+      'InsufficientFundsForWithdraw': null,
       'NonExclusiveWriteInputObjectModified': Bcs.struct(
         'NonExclusiveWriteInputObjectModified',
         {'id': SuiBcs.Address},

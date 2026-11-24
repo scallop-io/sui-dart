@@ -112,6 +112,18 @@ class SuiBcs {
       'startVersion': Bcs.u64(),
       'owner': Address,
     }),
+    'Party': Bcs.struct('PartyOwner', {
+      'startVersion': Bcs.u64(),
+      'permissions': Bcs.struct('Party', {
+        'defaultPermissions': Bcs.u64(),
+        'members': Bcs.vector(
+          Bcs.struct('PartyMember', {
+            'address': Address,
+            'permissions': Bcs.u64(),
+          }),
+        ),
+      }),
+    }),
   });
 
   static final Reservation = Bcs.enumeration('Reservation', {
@@ -596,7 +608,8 @@ class SuiBcs {
     'GasCoin': null,
     'StakedSui': null,
     'Coin': TypeTag,
-    'AccumulatorBalanceWrapper': null,
+    'SuiBalanceAccumulatorField': null,
+    'BalanceAccumulatorField': TypeTag,
   });
 
   static final TypeOrigin = Bcs.struct('TypeOrigin', {
