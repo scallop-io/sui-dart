@@ -1,3 +1,34 @@
+## 0.14.1
+
+### Changed
+
+* `UpgradePolicy` carries the protocol values: use `.value` (0, 128, 192), not
+  `.index`.
+* BCS names follow upstream: `InsufficientFundsForWithdraw` and
+  `SuiBalanceAccumulatorField`.
+* gRPC `CoinData.type` is the object type `Coin<T>`, as on GraphQL.
+* `setSender` and `setGasOwner` validate and normalize the address.
+
+### Fixed
+
+* BCS: `Owner` decodes `Party`; `MoveObjectType` decodes
+  `BalanceAccumulatorField`.
+* Builder: arguments without `$kind`, a thunk added twice, whole-number
+  `double` balances, string shared versions, and bad gas values in JSON.
+* Crypto: `verifyAddress` takes any spelling of an address; `verify` rejects a
+  serialized signature of another key or scheme; `equals` across key types is
+  false; Secp256 rejects out-of-range keys and path indexes; a `0x` seed works;
+  a negative zkLogin seed throws.
+* Multisig `verify` returns false for a wrong-scheme member. Passkeys reject an
+  off-curve key and a non-base64 challenge.
+* gRPC: no status reads as failed, whole JSON numbers are `int`, a missing
+  chain id or protocol config throws, `auxiliaryDataDigest` is filled.
+* Checkpoint ranges are validated. `waitForTransaction` keeps the gap of a
+  one-entry schedule.
+* GraphQL errors keep the command index and the source line.
+* Faucet: trailing-slash hosts, V2 failure messages, V3 payout checks.
+* `formatDigest` on short input; invalid hex and invalid parent ids throw.
+
 ## 0.14.0
 
 ### Breaking
