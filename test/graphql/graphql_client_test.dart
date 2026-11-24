@@ -864,6 +864,49 @@ void main() {
     expect(await client.resolveNameServiceAddress('missing.sui'), isNull);
   });
 
+  test('dynamic fields carry value bytes only when asked', () async {
+    final adapter = _MockAdapter(
+      (body) => {
+        'data': {
+          'object': {
+            'dynamicFields': {
+              'pageInfo': {'hasNextPage': false, 'endCursor': null},
+              'nodes': [
+                {
+                  'address': '0x1',
+                  'name': {
+                    'type': {'repr': 'u64'},
+                    'bcs': 'Bw==',
+                  },
+                  'value': {
+                    '__typename': 'MoveValue',
+                    'type': {'repr': 'bool'},
+                    if (body['variables']['includeValue'] == true)
+                      'bcs': 'AQ==',
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    );
+    final client = SuiGraphQLClient(
+      endpoint: 'https://example.test/graphql',
+      dio: _dioWith(adapter),
+    );
+
+    final plain = await client.getDynamicFields('0xabc');
+    expect(adapter.lastBody!['variables']['includeValue'], false);
+    expect(plain.data.single.value, isNull);
+
+    final withValue = await client.getDynamicFields(
+      '0xabc',
+      includeValue: true,
+    );
+    expect(withValue.data.single.value, Uint8List.fromList([1]));
+  });
+
   test('protocol config maps attributes and feature flags', () async {
     final adapter = _MockAdapter(
       (_) => {
